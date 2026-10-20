@@ -46,6 +46,9 @@ jobs:
           apple-certificate-password: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
           keychain-password: ${{ secrets.KEYCHAIN_PASSWORD }}
 
+      - name: Stage bundled llama-server
+        run: ./apps/desktop/src-tauri/scripts/fetch-llama-server.sh
+
       - name: Build desktop app
         run: |
           BUILD_ARGS=(
