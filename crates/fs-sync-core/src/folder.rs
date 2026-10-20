@@ -42,20 +42,18 @@ pub fn scan_directory_recursive(
             result
                 .session_folder_map
                 .insert(name, current_path.to_string());
-        } else if !is_uuid(&name) {
-            let prev_session_count = result.session_folder_map.len();
+        } else if !is_uuid(&name) && !name.starts_with('.') {
             scan_directory_recursive(sessions_dir, &entry_path, result);
-            let has_sessions = result.session_folder_map.len() > prev_session_count;
 
-            if has_sessions {
-                result.folders.insert(
-                    entry_path.clone(),
-                    FolderInfo {
-                        name,
-                        parent_folder_id: get_parent_folder_path(&entry_path),
-                    },
-                );
-            }
+            // Empty folders count too: a folder the user just created must show
+            // up before the first note is moved into it.
+            result.folders.insert(
+                entry_path.clone(),
+                FolderInfo {
+                    name,
+                    parent_folder_id: get_parent_folder_path(&entry_path),
+                },
+            );
         }
     }
 }

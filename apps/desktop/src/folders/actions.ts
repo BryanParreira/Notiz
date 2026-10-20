@@ -51,7 +51,10 @@ export async function createFolder(
     return null;
   }
 
-  await refreshFolders();
+  // Show it in the sidebar straight away; the next re-read from disk agrees.
+  queryClient.setQueryData<string[]>(FOLDERS_QUERY_KEY, (current = []) =>
+    current.includes(path) ? current : [...current, path],
+  );
   return path;
 }
 

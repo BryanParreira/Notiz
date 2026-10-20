@@ -540,6 +540,28 @@ mod tests {
     }
 
     #[test]
+    fn list_folders_includes_empty_and_nested_folders_but_not_hidden_ones() {
+        let temp = TempDir::new().unwrap();
+        temp.child("sessions").create_dir_all().unwrap();
+        let core = FsSyncCore::new(temp.path().to_path_buf());
+
+        core.create_folder("Clients").unwrap();
+        core.create_folder("Clients/Acme").unwrap();
+        temp.child("sessions")
+            .child(".hidden")
+            .create_dir_all()
+            .unwrap();
+
+        let folders = core.list_folders().unwrap().folders;
+
+        assert!(folders.contains_key("Clients"));
+        let acme = folders.get("Clients/Acme").unwrap();
+        assert_eq!(acme.name, "Acme");
+        assert_eq!(acme.parent_folder_id.as_deref(), Some("Clients"));
+        assert!(!folders.contains_key(".hidden"));
+    }
+
+    #[test]
     fn delete_folder_with_sessions_errors() {
         let temp = TempDir::new().unwrap();
         temp.child("sessions")

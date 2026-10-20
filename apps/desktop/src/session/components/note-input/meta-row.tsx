@@ -5,13 +5,13 @@ import {
   FolderPlusIcon,
   UsersIcon,
 } from "lucide-react";
-import { forwardRef, useMemo } from "react";
+import { forwardRef, useMemo, useState } from "react";
 
 import { cn } from "@notiz/utils";
 
 import { MetadataButton } from "../outer-header/metadata";
 
-import { moveNoteToFolder } from "~/folders/actions";
+import { createFolder, moveNoteToFolder } from "~/folders/actions";
 import { useFolders } from "~/folders/hooks";
 import {
   type MenuItemDef,
@@ -86,7 +86,20 @@ export function NoteMetaRow({ sessionId }: { sessionId: string }) {
         : `${names[0]} +${names.length - 1}`;
 
   const folders = useFolders();
+  const [naming, setNaming] = useState(false);
+
+  // One step: make the folder and put this note in it, so nothing needs to be
+  // moved by hand afterwards.
+  const createAndMove = async (rawName: string) => {
+    setNaming(false);
+    if (!rawName.trim()) return;
+    const path = await createFolder(rawName);
+    if (path) await moveNoteToFolder(sessionId, path);
+  };
+
   const folderItems: MenuItemDef[] = [
+    { id: "folder-new", text: "New folder…", action: () => setNaming(true) },
+    { separator: true },
     {
       id: "folder-none",
       text: "No folder",
@@ -136,19 +149,55 @@ export function NoteMetaRow({ sessionId }: { sessionId: string }) {
           </Chip>
         )}
       />
-      <Chip
-        aria-label="Choose folder"
-        onClick={(e) => void showFolderMenu(e)}
-        icon={
-          folderId ? (
-            <FolderIcon className="size-3.5" />
-          ) : (
-            <FolderPlusIcon className="size-3.5" />
-          )
-        }
-      >
-        {folderId ? (folderId.split("/").pop() ?? folderId) : "Add to folder"}
-      </Chip>
+      {naming ? (
+        <NewFolderInput
+          onSubmit={(name) => void createAndMove(name)}
+          onCancel={() => setNaming(false)}
+        />
+      ) : (
+        <Chip
+          aria-label="Choose folder"
+          onClick={(e) => void showFolderMenu(e)}
+          icon={
+            folderId ? (
+              <FolderIcon className="size-3.5" />
+            ) : (
+              <FolderPlusIcon className="size-3.5" />
+            )
+          }
+        >
+          {folderId ? (folderId.split("/").pop() ?? folderId) : "Add to folder"}
+        </Chip>
+      )}
     </div>
+  );
+}
+
+function NewFolderInput({
+  onSubmit,
+  onCancel,
+}: {
+  onSubmit: (name: string) => void;
+  onCancel: () => void;
+}) {
+  const [value, setValue] = useState("");
+
+  return (
+    <span className="border-primary text-foreground flex items-center gap-1.5 rounded-full border px-3 py-1 text-sm">
+      <FolderPlusIcon className="text-muted-foreground size-3.5" />
+      <input
+        autoFocus
+        value={value}
+        placeholder="Folder name"
+        aria-label="New folder name"
+        onChange={(e) => setValue(e.target.value)}
+        onKeyDown={(e) => {
+          if (e.key === "Enter") onSubmit(value);
+          if (e.key === "Escape") onCancel();
+        }}
+        onBlur={() => onSubmit(value)}
+        className="placeholder:text-muted-foreground w-32 bg-transparent outline-none"
+      />
+    </span>
   );
 }
