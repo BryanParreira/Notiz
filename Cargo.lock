@@ -19325,11 +19325,13 @@ name = "tauri-plugin-updater2"
 version = "0.1.0"
 dependencies = [
  "serde",
+ "serde_json",
  "specta",
  "specta-typescript",
  "strum 0.28.0",
  "tauri",
  "tauri-plugin",
+ "tauri-plugin-settings",
  "tauri-plugin-store2",
  "tauri-plugin-updater",
  "tauri-specta",

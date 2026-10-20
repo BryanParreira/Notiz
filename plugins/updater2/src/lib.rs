@@ -63,8 +63,28 @@ pub fn init<R: tauri::Runtime>() -> tauri::plugin::TauriPlugin<R> {
         .build()
 }
 
+/// Reads `general.auto_update` from the user's settings. Updates are on unless
+/// the user switched them off, and an unreadable settings file never blocks them.
+pub(crate) fn auto_update_enabled(settings: &serde_json::Value) -> bool {
+    settings
+        .get("general")
+        .and_then(|general| general.get("auto_update"))
+        .and_then(serde_json::Value::as_bool)
+        .unwrap_or(true)
+}
+
 async fn check_and_download<R: tauri::Runtime>(app: &tauri::AppHandle<R>) {
+    use tauri_plugin_settings::SettingsPluginExt;
+
     if cfg!(debug_assertions) {
+        return;
+    }
+
+    let enabled = match app.settings().load().await {
+        Ok(settings) => auto_update_enabled(&settings),
+        Err(_) => true,
+    };
+    if !enabled {
         return;
     }
 
@@ -87,6 +107,21 @@ async fn check_and_download<R: tauri::Runtime>(app: &tauri::AppHandle<R>) {
 #[cfg(test)]
 mod test {
     use super::*;
+
+    #[test]
+    fn auto_update_defaults_to_on_and_respects_the_switch() {
+        assert!(auto_update_enabled(&serde_json::json!({})));
+        assert!(auto_update_enabled(&serde_json::json!({"general": {}})));
+        assert!(auto_update_enabled(
+            &serde_json::json!({"general": {"auto_update": true}})
+        ));
+        assert!(!auto_update_enabled(
+            &serde_json::json!({"general": {"auto_update": false}})
+        ));
+        assert!(auto_update_enabled(
+            &serde_json::json!({"general": {"auto_update": "no"}})
+        ));
+    }
 
     #[test]
     fn export_types() {

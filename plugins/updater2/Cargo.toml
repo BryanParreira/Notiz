@@ -14,6 +14,7 @@ tauri-plugin = { workspace = true, features = ["build"] }
 specta-typescript = { workspace = true }
 
 [dependencies]
+tauri-plugin-settings = { workspace = true }
 tauri-plugin-store2 = { workspace = true }
 tauri-plugin-updater = { workspace = true }
 tokio = { workspace = true, features = ["macros", "time", "sync"] }
@@ -22,6 +23,7 @@ tauri = { workspace = true, features = ["test"] }
 tauri-specta = { workspace = true, features = ["derive", "typescript"] }
 
 serde = { workspace = true }
+serde_json = { workspace = true }
 specta = { workspace = true }
 strum = { workspace = true, features = ["derive"] }
 thiserror = { workspace = true }
