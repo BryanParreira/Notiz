@@ -184,7 +184,7 @@ describe("SidebarTimelineUpdateButton", () => {
     expect(button.className.split(" ")).toEqual(
       expect.arrayContaining(["bg-primary", "hover:opacity-90"]),
     );
-    expect(button.className.split(" ")).not.toContain("bg-primary");
+    expect(button.className.split(" ")).not.toContain("bg-blue-500");
 
     fireEvent.click(button);
 
