@@ -1,6 +1,8 @@
 import { Trans } from "@lingui/react/macro";
 import { useForm } from "@tanstack/react-form";
 import { useNavigate } from "@tanstack/react-router";
+import { getVersion } from "@tauri-apps/api/app";
+import { useQuery } from "@tanstack/react-query";
 import { disable, enable } from "@tauri-apps/plugin-autostart";
 
 import { commands as trayCommands } from "@notiz/plugin-tray";
@@ -23,7 +25,9 @@ import { WeekStartSelector } from "./week-start";
 
 import { Data } from "~/settings/data";
 import { SettingsPageTitle } from "~/settings/page-title";
-import { useConfigValues } from "~/shared/config";
+import { useConfigValue, useConfigValues } from "~/shared/config";
+import { useDesktopUpdateControl } from "~/main/update-banner";
+import { SettingRow } from "./app-settings";
 import * as settings from "~/store/tinybase/store/settings";
 
 type GeneralFormValues = Omit<General, "personalization_dictionary_terms">;
@@ -271,8 +275,68 @@ export function SettingsApp() {
               />
             )}
           </form.Field>
+          <UpdatesSettings />
           <ReplayWelcomeTour />
         </div>
+      </div>
+    </div>
+  );
+}
+
+function UpdatesSettings() {
+  const autoUpdate = useConfigValue("auto_update");
+  const setAutoUpdate = settings.UI.useSetValueCallback(
+    "auto_update",
+    (value: boolean) => value,
+    [],
+    settings.STORE_ID,
+  );
+  const update = useDesktopUpdateControl();
+  const { data: version } = useQuery({
+    queryKey: ["app-version"],
+    queryFn: () => getVersion(),
+  });
+
+  return (
+    <div className="flex flex-col gap-4">
+      <SettingRow
+        title={<Trans>Update automatically</Trans>}
+        description={<Trans>Check for new versions and download them in the background.</Trans>}
+        checked={autoUpdate}
+        onChange={setAutoUpdate}
+      />
+      <div className="flex items-center justify-between gap-4">
+        <p className="text-muted-foreground text-xs">
+          {update.status === "ready" ? (
+            <Trans>Version {update.version} is ready to install.</Trans>
+          ) : update.status === "available" ? (
+            <Trans>Version {update.version} is available.</Trans>
+          ) : (
+            <Trans>Notiz {version ?? ""} is up to date.</Trans>
+          )}
+        </p>
+        <button
+          type="button"
+          disabled={update.checking}
+          onClick={() =>
+            update.status === "ready"
+              ? update.installUpdate()
+              : update.status === "available"
+                ? update.downloadUpdate()
+                : void update.checkForUpdates()
+          }
+          className="border-border hover:bg-muted rounded-full border px-3 py-1.5 text-sm transition-colors disabled:opacity-60"
+        >
+          {update.status === "ready" ? (
+            <Trans>Restart to update</Trans>
+          ) : update.status === "available" ? (
+            <Trans>Download</Trans>
+          ) : update.checking ? (
+            <Trans>Checking…</Trans>
+          ) : (
+            <Trans>Check for updates</Trans>
+          )}
+        </button>
       </div>
     </div>
   );

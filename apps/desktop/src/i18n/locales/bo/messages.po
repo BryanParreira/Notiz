@@ -192,7 +192,7 @@ msgstr ""
 msgid "API Key"
 msgstr ""
 
-#: src/settings/general/index.tsx:149
+#: src/settings/general/index.tsx:153
 #: src/sidebar/settings.tsx:62
 msgid "App"
 msgstr "མཉེན་ཆས།"
@@ -318,6 +318,14 @@ msgstr ""
 msgid "Chat history"
 msgstr ""
 
+#: src/settings/general/index.tsx:304
+msgid "Check for new versions and download them in the background."
+msgstr ""
+
+#: src/settings/general/index.tsx:337
+msgid "Check for updates"
+msgstr ""
+
 #: src/settings/general/storage/index.tsx:271
 msgid "Checking folder..."
 msgstr ""
@@ -328,6 +336,7 @@ msgstr ""
 
 #: src/settings/calendar/index.tsx:248
 #: src/settings/email/index.tsx:235
+#: src/settings/general/index.tsx:335
 msgid "Checking…"
 msgstr ""
 
@@ -536,7 +545,7 @@ msgstr ""
 msgid "Dark"
 msgstr ""
 
-#: src/settings/general/index.tsx:307
+#: src/settings/general/index.tsx:371
 msgid "Data"
 msgstr "གཞི་གྲངས།"
 
@@ -621,6 +630,7 @@ msgid "Don't show notifications when Do-Not-Disturb is enabled on your system"
 msgstr ""
 
 #: src/settings/ai/stt/select.tsx:646
+#: src/settings/general/index.tsx:333
 msgid "Download"
 msgstr ""
 
@@ -982,7 +992,7 @@ msgstr ""
 msgid "Keep recordings until manually deleted"
 msgstr ""
 
-#: src/settings/general/index.tsx:234
+#: src/settings/general/index.tsx:238
 msgid "Language & Region"
 msgstr "སྐད་ཡིག་དང་ས་ཁུལ།"
 
@@ -1254,13 +1264,18 @@ msgstr ""
 msgid "Nothing in your inbox."
 msgstr ""
 
-#: src/settings/general/index.tsx:317
+#: src/settings/general/index.tsx:381
 #: src/sidebar/settings.tsx:64
 msgid "Notifications"
 msgstr "བརྡ་ཐོ"
 
 #: src/settings/general/account.tsx:12
 msgid "Notiz"
+msgstr ""
+
+#. placeholder {0}: version ?? ""
+#: src/settings/general/index.tsx:315
+msgid "Notiz {0} is up to date."
 msgstr ""
 
 #: src/onboarding/permissions.tsx:153
@@ -1412,7 +1427,7 @@ msgstr ""
 msgid "permission panel."
 msgstr ""
 
-#: src/settings/general/index.tsx:326
+#: src/settings/general/index.tsx:390
 #: src/sidebar/settings.tsx:85
 msgid "Permissions"
 msgstr ""
@@ -1533,7 +1548,7 @@ msgstr ""
 msgid "Replace with..."
 msgstr ""
 
-#: src/settings/general/index.tsx:298
+#: src/settings/general/index.tsx:362
 msgid "Replay"
 msgstr ""
 
@@ -1592,12 +1607,16 @@ msgstr ""
 msgid "Respect Do-Not-Disturb mode"
 msgstr ""
 
+#: src/settings/general/index.tsx:331
+msgid "Restart to update"
+msgstr ""
+
 #: src/chat/components/message/error.tsx:57
 #: src/session/components/note-input/enhanced/enhance-error.tsx:57
 msgid "Retry"
 msgstr ""
 
-#: src/settings/general/index.tsx:290
+#: src/settings/general/index.tsx:354
 msgid "Run the first-time setup again."
 msgstr ""
 
@@ -1998,6 +2017,10 @@ msgstr ""
 msgid "Untitled Note"
 msgstr ""
 
+#: src/settings/general/index.tsx:303
+msgid "Update automatically"
+msgstr ""
+
 #: src/settings/todo/github.tsx:113
 msgid "Upgrade for private repos."
 msgstr ""
@@ -2029,6 +2052,16 @@ msgstr ""
 msgid "Upload transcript"
 msgstr ""
 
+#. placeholder {0}: update.version
+#: src/settings/general/index.tsx:313
+msgid "Version {0} is available."
+msgstr ""
+
+#. placeholder {0}: update.version
+#: src/settings/general/index.tsx:311
+msgid "Version {0} is ready to install."
+msgstr ""
+
 #: src/contacts/organization-details.tsx:153
 msgid "View LinkedIn profile"
 msgstr ""
@@ -2045,7 +2078,7 @@ msgstr ""
 msgid "Welcome to Notiz"
 msgstr ""
 
-#: src/settings/general/index.tsx:287
+#: src/settings/general/index.tsx:351
 msgid "Welcome tour"
 msgstr ""
 

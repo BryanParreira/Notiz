@@ -45,6 +45,11 @@ export const SETTINGS_MAPPING = {
       path: ["general", "auto_start_scheduled_meetings"],
       default: true as boolean,
     },
+    auto_update: {
+      type: "boolean",
+      path: ["general", "auto_update"],
+      default: true as boolean,
+    },
     floating_bar_enabled: {
       type: "boolean",
       path: ["general", "floating_bar_enabled"],

@@ -79,8 +79,8 @@ jobs:
         env:
           CI: false
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
-          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.NOTIZ_UPDATER_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ""
           APPLE_ID: ${{ secrets.APPLE_ID }}
           APPLE_PASSWORD: ${{ secrets.APPLE_PASSWORD }}
           APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
@@ -102,5 +102,21 @@ jobs:
           DMG=$(find apps/desktop/src-tauri/target/${{ matrix.target }}/release/bundle/dmg/ -name "*.dmg" | head -1)
           cp "$DMG" "${{ matrix.artifact }}"
           gh release upload "${{ inputs.tag }}" "${{ matrix.artifact }}" --clobber
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Upload updater bundle and manifest
+        run: |
+          BUNDLE_DIR=apps/desktop/src-tauri/target/${{ matrix.target }}/release/bundle/macos
+          TARBALL=$(find "$BUNDLE_DIR" -name "*.app.tar.gz" | head -1)
+          SIG=$(cat "$TARBALL.sig")
+          VERSION="${{ inputs.tag }}"
+          VERSION="${VERSION#desktop_v}"
+          ASSET=Notiz-macos-silicon.app.tar.gz
+          cp "$TARBALL" "$ASSET"
+          URL="https://github.com/${{ github.repository }}/releases/download/${{ inputs.tag }}/$ASSET"
+          jq -n --arg v "$VERSION" --arg sig "$SIG" --arg url "$URL" \
+            '{version: $v, pub_date: (now | todate), platforms: {"darwin-aarch64": {signature: $sig, url: $url}}}' > latest.json
+          gh release upload "${{ inputs.tag }}" "$ASSET" latest.json --clobber
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

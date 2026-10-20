@@ -168,6 +168,7 @@ export const valueSchemaForTinybase = {
   autostart: { type: "boolean" },
   auto_stop_meetings: { type: "boolean" },
   auto_start_scheduled_meetings: { type: "boolean" },
+  auto_update: { type: "boolean" },
   floating_bar_enabled: { type: "boolean" },
   floating_bar_opacity: { type: "number" },
   live_caption_opacity: { type: "number" },

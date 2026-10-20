@@ -9,6 +9,7 @@ import {
 } from "@notiz/plugin-updater2";
 import { cn } from "@notiz/utils";
 
+import { useConfigValue } from "~/shared/config";
 import { useMountEffect } from "~/shared/hooks/useMountEffect";
 import { useDevtoolsOtaPreview } from "~/store/zustand/devtools-ota-preview";
 
@@ -27,6 +28,8 @@ export type DesktopUpdateControl = {
   installing: boolean;
   downloadUpdate: () => void;
   installUpdate: () => void;
+  checkForUpdates: () => Promise<void>;
+  checking: boolean;
 };
 
 type UpdateEventState = {
@@ -46,6 +49,7 @@ const UPDATE_CHECK_QUERY_KEY = ["updater2", "check"] as const;
 const UPDATE_CHECK_INTERVAL_MS = 30 * 60 * 1000;
 
 export function useDesktopUpdateControl(): DesktopUpdateControl {
+  const autoUpdate = useConfigValue("auto_update");
   const [eventState, setEventState] = useState<UpdateEventState | null>(null);
   const [acknowledgedVersion, setAcknowledgedVersion] = useState<string | null>(
     null,
@@ -191,7 +195,8 @@ export function useDesktopUpdateControl(): DesktopUpdateControl {
 
       return nextUpdate;
     },
-    refetchInterval: UPDATE_CHECK_INTERVAL_MS,
+    enabled: autoUpdate,
+    refetchInterval: autoUpdate ? UPDATE_CHECK_INTERVAL_MS : false,
     retry: false,
     staleTime: UPDATE_CHECK_INTERVAL_MS,
   });
@@ -295,6 +300,11 @@ export function useDesktopUpdateControl(): DesktopUpdateControl {
     installUpdate(version);
   }, [installUpdate, version]);
 
+  const { refetch, isFetching: checking } = updateCheck;
+  const checkForUpdates = useCallback(async () => {
+    await refetch();
+  }, [refetch]);
+
   const handleDevtoolsDownload = useCallback(() => {
     showDevtoolsOtaPreview("downloading");
   }, [showDevtoolsOtaPreview]);
@@ -316,6 +326,8 @@ export function useDesktopUpdateControl(): DesktopUpdateControl {
       installing: false,
       downloadUpdate: handleDevtoolsDownload,
       installUpdate: handleDevtoolsInstall,
+      checkForUpdates,
+      checking,
     };
   }
 
@@ -328,6 +340,8 @@ export function useDesktopUpdateControl(): DesktopUpdateControl {
     installing,
     downloadUpdate: handleDownload,
     installUpdate: handleInstall,
+    checkForUpdates,
+    checking,
   };
 }
 
@@ -353,9 +367,9 @@ export function SidebarTimelineUpdateButton({
       disabled={isDownloading || update.downloadStarting || update.installing}
       className={cn([
         "relative flex h-7 min-h-7 w-7 min-w-7 shrink-0 items-center justify-center rounded-full p-0",
-        "bg-blue-500 text-white shadow-sm transition-colors hover:bg-blue-600",
+        "bg-primary text-primary-foreground shadow-sm transition-opacity hover:opacity-90",
         "focus-visible:ring-ring focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-hidden",
-        "disabled:cursor-default disabled:bg-blue-500 disabled:text-white disabled:opacity-70 disabled:hover:bg-blue-500",
+        "disabled:cursor-default disabled:opacity-70",
       ])}
       onClick={isReady ? update.installUpdate : update.downloadUpdate}
     >

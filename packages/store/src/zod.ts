@@ -278,6 +278,7 @@ export const generalSchema = z.object({
   autostart: z.boolean().default(false),
   auto_stop_meetings: z.boolean().default(true),
   auto_start_scheduled_meetings: z.boolean().default(true),
+  auto_update: z.boolean().default(true),
   floating_bar_enabled: z.boolean().default(true),
   floating_bar_opacity: z.number().default(0.78),
   live_caption_opacity: z.number().default(0.3),
