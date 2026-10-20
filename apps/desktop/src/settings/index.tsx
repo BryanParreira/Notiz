@@ -1,5 +1,7 @@
 import { cn } from "@notiz/utils";
 
+import { SettingsCalendar } from "./calendar";
+import { SettingsEmail } from "./email";
 import {
   SettingsApp,
   SettingsData,
@@ -48,6 +50,10 @@ function SettingsView({ tab }: { tab: Extract<Tab, { type: "settings" }> }) {
         return <LLM />;
       case "dictation":
         return <SettingsDictation />;
+      case "email":
+        return <SettingsEmail />;
+      case "calendar":
+        return <SettingsCalendar />;
       case "todo":
         return <SettingsTodo />;
     }

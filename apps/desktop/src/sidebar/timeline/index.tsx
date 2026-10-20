@@ -553,7 +553,7 @@ export function TimelineView({
                   "bg-background/95 py-1 pr-1 pl-3 backdrop-blur",
                 ])}
               >
-                <div className="text-foreground text-base font-bold">
+                <div className="text-muted-foreground text-sm">
                   {bucket.label}
                 </div>
               </div>

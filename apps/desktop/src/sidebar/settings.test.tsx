@@ -89,7 +89,7 @@ describe("SettingsNav", () => {
       "Import",
       "Notifications",
       "Permissions",
-      "Calendar",
+      "Calendars",
       "AI",
       "Transcription",
       "Intelligence",

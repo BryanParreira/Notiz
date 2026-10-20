@@ -1,11 +1,6 @@
 import { useCallback, useMemo } from "react";
 
 import type { ConnectionItem } from "@notiz/api-client";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from "@notiz/ui/components/ui/tooltip";
 
 import {
   OAuthCalendarSelection,
@@ -13,8 +8,6 @@ import {
 } from "./calendar-selection";
 import { ReconnectRequiredIndicator } from "./status";
 
-import { useAuth } from "~/auth";
-import { useBillingAccess } from "~/auth/billing";
 import { useConnections } from "~/auth/useConnections";
 import type { CalendarProvider } from "~/calendar/components/shared";
 import { openIntegrationUrl } from "~/shared/integration";
@@ -26,9 +19,7 @@ export function OAuthProviderContent({
   config: CalendarProvider;
   returnTo?: string;
 }) {
-  const auth = useAuth();
-  const { isPro, upgradeToPro } = useBillingAccess();
-  const { data: connections, isError } = useConnections(isPro);
+  const { data: connections, isError } = useConnections();
   const providerConnections = useMemo(
     () =>
       connections?.filter(
@@ -47,39 +38,6 @@ export function OAuthProviderContent({
       ),
     [config.nangoIntegrationId, returnTo],
   );
-
-  if (!auth.session) {
-    return (
-      <div className="pt-1 pb-2">
-        <Tooltip delayDuration={0}>
-          <TooltipTrigger asChild>
-            <span
-              tabIndex={0}
-              className="text-muted-foreground cursor-not-allowed text-xs opacity-50"
-            >
-              Connect {config.displayName} Calendar
-            </span>
-          </TooltipTrigger>
-          <TooltipContent side="bottom">
-            Sign in to connect your calendar
-          </TooltipContent>
-        </Tooltip>
-      </div>
-    );
-  }
-
-  if (!isPro) {
-    return (
-      <div className="pt-1 pb-2">
-        <button
-          onClick={upgradeToPro}
-          className="text-muted-foreground hover:text-foreground cursor-pointer text-xs underline transition-colors"
-        >
-          Upgrade to connect
-        </button>
-      </div>
-    );
-  }
 
   if (providerConnections.length > 0) {
     const reconnectRequired = providerConnections.filter(

@@ -33,13 +33,24 @@ describe("app entry path resolution", () => {
     await expect(resolveAppEntryPath()).resolves.toBe("/app/main");
   });
 
-  it("always resolves to the main shell since onboarding is disabled", async () => {
+  it("sends first-run users to onboarding", async () => {
     vi.mocked(commands.getOnboardingNeeded).mockResolvedValue({
       status: "ok",
       data: true,
     });
 
+    await expect(getOnboardingNeeded()).resolves.toBe(true);
+    await expect(resolveAppEntryPath()).resolves.toBe("/app/onboarding");
+  });
+
+  it("never blocks the app when the onboarding check fails", async () => {
+    vi.mocked(commands.getOnboardingNeeded).mockResolvedValue({
+      status: "error",
+      error: "store unavailable",
+    });
     await expect(getOnboardingNeeded()).resolves.toBe(false);
+
+    vi.mocked(commands.getOnboardingNeeded).mockRejectedValue(new Error("x"));
     await expect(resolveAppEntryPath()).resolves.toBe("/app/main");
   });
 

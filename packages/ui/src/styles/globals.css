@@ -35,6 +35,8 @@
 
   --color-popover: hsl(var(--popover));
   --color-popover-foreground: hsl(var(--popover-foreground));
+  --color-live: hsl(var(--live));
+  --color-hairline: hsl(var(--hairline));
   --color-app-floating-chrome: hsl(var(--app-floating-chrome));
   --color-app-floating-panel: hsl(var(--app-floating-panel));
   --color-app-floating-border: hsl(var(--app-floating-border));
@@ -182,84 +184,87 @@
 
 @layer base {
   :root {
-    --background: 60 9% 98%;
-    --foreground: 24 10% 10%;
+    --background: 60 39% 98%;
+    --foreground: 0 0% 13%;
     --card: 0 0% 100%;
-    --card-foreground: 24 10% 10%;
+    --card-foreground: 0 0% 13%;
     --popover: 0 0% 100%;
-    --popover-foreground: 24 10% 10%;
-    --primary: 24 10% 16%;
-    --primary-foreground: 60 9% 98%;
-    --secondary: 60 5% 96%;
-    --secondary-foreground: 24 10% 10%;
-    --muted: 60 5% 96%;
-    --muted-foreground: 25 5% 45%;
-    --accent: 60 5% 94%;
-    --accent-foreground: 24 10% 10%;
+    --popover-foreground: 0 0% 13%;
+    --primary: 71 100% 22%;
+    --primary-foreground: 60 39% 98%;
+    --secondary: 60 24% 96%;
+    --secondary-foreground: 0 0% 13%;
+    --muted: 60 24% 96%;
+    --muted-foreground: 60 2% 44%;
+    --accent: 70 13% 91%;
+    --accent-foreground: 0 0% 13%;
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 0 0% 98%;
     --alert: 0 86% 97%;
     --alert-foreground: 0 72% 42%;
     --alert-border: 0 90% 86%;
-    --border: 24 6% 90%;
-    --input: 24 6% 90%;
-    --ring: 24 10% 10%;
-    --app-floating-chrome: 60 5% 94%;
-    --app-floating-panel: 60 9% 98%;
-    --app-floating-border: 24 6% 86%;
+    --border: 60 12% 89%;
+    --input: 60 12% 89%;
+    --ring: 71 100% 22%;
+    --app-floating-chrome: 70 13% 93%;
+    --app-floating-panel: 60 39% 98%;
+    --app-floating-border: 60 10% 85%;
     --chart-1: 12 76% 61%;
     --chart-2: 173 58% 39%;
     --chart-3: 197 37% 24%;
     --chart-4: 43 74% 66%;
     --chart-5: 27 87% 67%;
     --radius: 0.5rem;
-    --sidebar-accent: 60 5% 90%;
+    --sidebar-accent: 70 13% 91%;
     --kbd-shadow-outer: rgba(0, 0, 0, 0.1);
     --kbd-shadow-inset: rgba(255, 255, 255, 0.8);
     --kbd-shadow-outer-hover: rgba(0, 0, 0, 0.15);
+    --live: 80 100% 37%;
+    --hairline: 60 12% 89%;
   }
 
   .dark {
-    --background: 24 10% 11%;
-    --foreground: 60 9% 98%;
-    --card: 24 10% 16%;
-    --card-foreground: 60 9% 98%;
-    --popover: 24 10% 16%;
-    --popover-foreground: 60 9% 98%;
-    --primary: 24 10% 16%;
-    --primary-foreground: 60 9% 98%;
-    --secondary: 24 6% 20%;
-    --secondary-foreground: 60 9% 98%;
-    --muted: 24 6% 20%;
-    --muted-foreground: 25 5% 55%;
-    --accent: 24 6% 25%;
-    --accent-foreground: 60 9% 98%;
+    --background: 0 0% 12%;
+    --foreground: 60 39% 98%;
+    --card: 0 0% 13%;
+    --card-foreground: 60 39% 98%;
+    --popover: 0 0% 16%;
+    --popover-foreground: 60 39% 98%;
+    --primary: 68 50% 52%;
+    --primary-foreground: 0 0% 12%;
+    --secondary: 0 0% 16%;
+    --secondary-foreground: 60 39% 98%;
+    --muted: 0 0% 16%;
+    --muted-foreground: 70 3% 67%;
+    --accent: 0 0% 21%;
+    --accent-foreground: 60 39% 98%;
     --destructive: 0 62.8% 30.6%;
     --destructive-foreground: 0 0% 98%;
     --alert: 0 50% 14%;
     --alert-foreground: 0 86% 72%;
     --alert-border: 0 45% 24%;
-    --border: 24 6% 28%;
-    --input: 24 6% 28%;
-    --ring: 60 9% 75%;
-    --app-floating-chrome: 24 7% 21%;
-    --app-floating-panel: 24 8% 14%;
-    --app-floating-border: 24 6% 33%;
+    --border: 0 0% 24%;
+    --input: 0 0% 24%;
+    --ring: 68 50% 52%;
+    --app-floating-chrome: 0 0% 18%;
+    --app-floating-panel: 0 0% 14%;
+    --app-floating-border: 0 0% 26%;
     --chart-1: 220 70% 50%;
     --chart-2: 160 60% 45%;
     --chart-3: 30 80% 55%;
     --chart-4: 280 65% 60%;
     --chart-5: 340 75% 55%;
-    --sidebar-accent: 24 6% 23%;
+    --sidebar-accent: 0 0% 19%;
     --kbd-shadow-outer: rgba(0, 0, 0, 0.35);
     --kbd-shadow-inset: rgba(255, 255, 255, 0.08);
     --kbd-shadow-outer-hover: rgba(0, 0, 0, 0.5);
+    --live: 80 100% 37%;
+    --hairline: 0 0% 20%;
   }
 
   .theme {
     --animate-marquee: marquee var(--duration) infinite linear;
-    --animate-marquee-vertical: marquee-vertical var(--duration) linear
-      infinite;
+    --animate-marquee-vertical: marquee-vertical var(--duration) linear infinite;
   }
 }
 

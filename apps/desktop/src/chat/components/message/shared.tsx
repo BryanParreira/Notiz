@@ -15,7 +15,7 @@ export function MessageContainer({
   return (
     <div
       className={cn([
-        "flex py-2",
+        "flex py-2.5",
         align === "end" ? "justify-end" : "justify-start",
       ])}
     >
@@ -38,9 +38,9 @@ export function MessageBubble({
   return (
     <div
       className={cn([
-        "select-text-deep text-sm",
+        "select-text-deep text-[15px] leading-relaxed",
         variant === "user" &&
-          "w-fit max-w-full rounded-2xl bg-blue-100 px-3 py-1 text-neutral-800 [&_p]:[text-wrap:wrap]",
+          "bg-secondary text-foreground w-fit max-w-full rounded-2xl px-4 py-2 [&_p]:[text-wrap:wrap]",
         variant === "assistant" &&
           (isDarkAppearance
             ? "bg-accent text-accent-foreground rounded-2xl px-3 py-1"

@@ -8,6 +8,7 @@ import {
 } from "lucide-react";
 import { useMemo } from "react";
 
+import { BriefEmails } from "./brief-emails";
 import { getCompiledInsightFacts } from "./insights";
 
 import { useSessionBrief } from "~/session/insights/brief";
@@ -110,6 +111,8 @@ export function Brief({ sessionId }: { sessionId: string }) {
             </ul>
           </div>
         ) : null}
+
+        <BriefEmails sessionId={sessionId} />
 
         {insightFacts.length > 0 ? (
           <div className="flex flex-col gap-2">

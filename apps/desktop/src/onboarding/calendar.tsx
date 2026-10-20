@@ -3,7 +3,6 @@ import { platform } from "@tauri-apps/plugin-os";
 import { useCallback, useMemo, useState } from "react";
 
 import type { ConnectionItem } from "@notiz/api-client";
-import { commands as openerCommands } from "@notiz/plugin-opener2";
 
 import { OnboardingButton } from "./shared";
 
@@ -19,34 +18,15 @@ import { useOAuthCalendarSelection } from "~/calendar/components/oauth/calendar-
 import { ReconnectRequiredIndicator } from "~/calendar/components/oauth/status";
 import { PROVIDERS } from "~/calendar/components/shared";
 import { useEnabledCalendars } from "~/calendar/hooks";
+import { AddCalendarLinkForm } from "~/settings/calendar";
 import { useMountEffect } from "~/shared/hooks/useMountEffect";
 import { usePermission } from "~/shared/hooks/usePermissions";
-import { buildWebAppUrl } from "~/shared/utils";
+import { openIntegrationUrl } from "~/shared/integration";
 
 const GOOGLE_PROVIDER = PROVIDERS.find((provider) => provider.id === "google");
 const OUTLOOK_PROVIDER = PROVIDERS.find(
   (provider) => provider.id === "outlook",
 );
-
-async function openOnboardingIntegrationUrl(
-  nangoIntegrationId: string | undefined,
-  connectionId: string | undefined,
-  action: "connect" | "reconnect" | "disconnect",
-) {
-  if (!nangoIntegrationId) return;
-
-  const params: Record<string, string> = {
-    action,
-    integration_id: nangoIntegrationId,
-  };
-
-  if (connectionId) {
-    params.connection_id = connectionId;
-  }
-
-  const url = await buildWebAppUrl("/app/integration", params);
-  await openerCommands.openUrl(url, null);
-}
 
 function getCalendarSelectionKey(groups: CalendarGroup[]) {
   return groups.length === 0
@@ -177,7 +157,7 @@ function GoogleCalendarConnectedContent({
       <OnboardingButton
         type="button"
         onClick={() =>
-          void openOnboardingIntegrationUrl(
+          void openIntegrationUrl(
             GOOGLE_PROVIDER?.nangoIntegrationId,
             undefined,
             "connect",
@@ -219,7 +199,7 @@ function addIntegrationMenus({
           id: `reconnect-${connection.connection_id}`,
           text: "Reconnect",
           action: () =>
-            void openOnboardingIntegrationUrl(
+            void openIntegrationUrl(
               provider.nangoIntegrationId,
               connection.connection_id,
               "reconnect",
@@ -229,7 +209,7 @@ function addIntegrationMenus({
           id: `disconnect-${connection.connection_id}`,
           text: "Disconnect",
           action: () =>
-            void openOnboardingIntegrationUrl(
+            void openIntegrationUrl(
               provider.nangoIntegrationId,
               connection.connection_id,
               "disconnect",
@@ -302,7 +282,7 @@ function OutlookCalendarConnectedContent({
       <OnboardingButton
         type="button"
         onClick={() =>
-          void openOnboardingIntegrationUrl(
+          void openIntegrationUrl(
             OUTLOOK_PROVIDER?.nangoIntegrationId,
             undefined,
             "connect",
@@ -329,7 +309,7 @@ function OutlookCalendarProvider() {
   );
 
   const handleConnect = useCallback(() => {
-    void openOnboardingIntegrationUrl(
+    void openIntegrationUrl(
       OUTLOOK_PROVIDER?.nangoIntegrationId,
       undefined,
       "connect",
@@ -380,7 +360,7 @@ function GoogleCalendarProvider() {
   );
 
   const handleConnect = useCallback(() => {
-    void openOnboardingIntegrationUrl(
+    void openIntegrationUrl(
       GOOGLE_PROVIDER?.nangoIntegrationId,
       undefined,
       "connect",
@@ -421,6 +401,28 @@ function GoogleCalendarProvider() {
   );
 }
 
+function CalendarLinkOption() {
+  const { scheduleSync } = useSync();
+  const [open, setOpen] = useState(false);
+
+  return (
+    <div className="flex flex-col gap-3">
+      <button
+        type="button"
+        onClick={() => setOpen((value) => !value)}
+        className="text-muted-foreground hover:text-foreground w-fit text-sm underline underline-offset-4 transition-colors"
+      >
+        {open ? (
+          <Trans>Hide calendar link</Trans>
+        ) : (
+          <Trans>Add Google, Outlook or iCloud with a calendar link</Trans>
+        )}
+      </button>
+      {open && <AddCalendarLinkForm onAdded={() => scheduleSync()} />}
+    </div>
+  );
+}
+
 function CalendarSectionContent({ onContinue }: { onContinue: () => void }) {
   const isMacos = platform() === "macos";
   const calendar = usePermission("calendar");
@@ -447,6 +449,7 @@ function CalendarSectionContent({ onContinue }: { onContinue: () => void }) {
             <GoogleCalendarProvider />
             <OutlookCalendarProvider />
           </div>
+          <CalendarLinkOption />
           {hasConnectedCalendar && (
             <OnboardingButton onClick={onContinue}>
               <Trans>Continue</Trans>
@@ -469,6 +472,8 @@ function CalendarSectionContent({ onContinue }: { onContinue: () => void }) {
           <OutlookCalendarProvider />
         </div>
       )}
+
+      {!hasAnyConnected && <CalendarLinkOption />}
 
       {showTroubleshooting && !isAuthorized && (
         <TroubleShootingLink

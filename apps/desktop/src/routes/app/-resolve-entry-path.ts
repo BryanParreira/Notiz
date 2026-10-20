@@ -1,6 +1,19 @@
-// Onboarding/login disabled — always go straight to app
+import { isTauri } from "@tauri-apps/api/core";
+
+import { commands } from "~/types/tauri.gen";
+
+// First-run setup only. Any failure here must never keep the user out of the app.
 export async function getOnboardingNeeded(): Promise<boolean> {
-  return false;
+  if (!isTauri()) {
+    return false;
+  }
+
+  try {
+    const result = await commands.getOnboardingNeeded();
+    return result.status === "ok" && result.data;
+  } catch {
+    return false;
+  }
 }
 
 export async function resolveShellEntryPath(): Promise<"/app/main"> {

@@ -19,6 +19,12 @@ pub enum Error {
     HttpClient(#[from] reqwest::Error),
     #[error("api error: {0}")]
     Api(String),
+    #[error("sign-in failed: {0}")]
+    OAuth(String),
+    #[error("secure storage error: {0}")]
+    Keychain(String),
+    #[error("{provider:?} sign-in is not configured in this build")]
+    NotConfigured { provider: CalendarProviderType },
     #[error("apple calendar error: {0}")]
     Apple(String),
 }

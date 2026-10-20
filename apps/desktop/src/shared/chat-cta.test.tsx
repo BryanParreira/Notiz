@@ -39,92 +39,30 @@ describe("ChatCTA", () => {
     expect(mocks.sendEvent).toHaveBeenCalledWith({ type: "OPEN" });
   });
 
-  it("rests as a handle and expands into an input-like field on hover", () => {
+  it("is always visible as an input-like pill", () => {
     render(<ChatCTA />);
 
     const button = screen.getByRole("button", {
       name: "Ask Notiz anything",
     });
     const surface = button.querySelector("[data-chat-cta-surface]");
-    const label = screen.getByText("Ask anything");
 
     expect(button.hasAttribute("data-chat-cta-trigger")).toBe(true);
-    expect(button.className).toContain("h-10");
-    expect(button.className).toContain("w-40");
     expect(button.className).toContain("cursor-text");
-    expect(surface?.className).toContain("absolute");
-    expect(surface?.className).toContain("bottom-0");
-    expect(surface?.className).toContain("left-1/2");
-    expect(surface?.className).toContain("w-[min(640px,calc(100cqw_-_2rem))]");
-    expect(surface?.className).toContain(
-      "[clip-path:inset(0_calc(50%_-_3rem)_0_calc(50%_-_3rem)_round_9999px)]",
-    );
-    expect(surface?.className).toContain(
-      "transition-[clip-path,height,padding,background-color,border-color,box-shadow]",
-    );
-    expect(surface?.className).toContain("origin-bottom");
-    expect(surface?.className).toContain("h-2");
     expect(surface?.className).toContain("rounded-full");
-    expect(surface?.className).toContain("bg-black");
-    expect(surface?.className).toContain("dark:bg-white");
-    expect(surface?.className).toContain(
-      "shadow-[0_10px_26px_rgba(0,0,0,0.22)]",
-    );
-    expect(surface?.className).toContain(
-      "dark:shadow-[0_10px_30px_rgba(0,0,0,0.5)]",
-    );
-    expect(surface?.className).toContain(
-      "group-hover/notiz-chat-cta:shadow-[0_16px_42px_rgba(0,0,0,0.26)]",
-    );
-    expect(surface?.className).toContain(
-      "dark:group-hover/notiz-chat-cta:shadow-[0_18px_52px_rgba(0,0,0,0.64)]",
-    );
-    expect(surface?.className).toContain("border");
-    expect(surface?.className).toContain("border-transparent");
-    expect(surface?.className).not.toContain("border-2");
     expect(surface?.className).toContain("pointer-events-none");
-    expect(surface?.className).toContain(
-      "group-hover/notiz-chat-cta:border-border/70",
-    );
-    expect(surface?.className).toContain(
-      "group-hover/notiz-chat-cta:bg-[#f4f4f5]",
-    );
-    expect(surface?.className).toContain(
-      "dark:group-hover/notiz-chat-cta:bg-[#202020]",
-    );
-    expect(surface?.className).toContain("group-hover/notiz-chat-cta:h-10");
-    expect(surface?.className).toContain(
-      "group-hover/notiz-chat-cta:[clip-path:inset(0_0_0_0_round_9999px)]",
-    );
-    expect(surface?.className).toContain(
-      "group-focus-visible/notiz-chat-cta:[clip-path:inset(0_0_0_0_round_9999px)]",
-    );
-    expect(surface?.className).not.toContain("inset_0_0_0_1px");
-    expect(button.querySelectorAll("svg")).toHaveLength(0);
-    expect(label.className).toContain("max-w-0");
-    expect(label.className).toContain("opacity-0");
-    expect(label.className).toContain("text-white/55");
-    expect(label.className).not.toContain("ml-2");
-    expect(label.className).toContain(
-      "group-hover/notiz-chat-cta:text-muted-foreground",
-    );
-    expect(label.className).toContain("group-hover/notiz-chat-cta:max-w-full");
-    expect(label.className).toContain(
-      "group-focus-within/notiz-chat-cta:max-w-full",
-    );
+    expect(screen.getByText("Ask anything")).toBeTruthy();
   });
 
-  it("uses a compact hover rectangle for the floating trigger", () => {
+  it("centres the floating trigger at the bottom", () => {
     render(<FloatingChatCTA />);
 
-    const hoverZone = screen.getByRole("button", {
+    const wrapper = screen.getByRole("button", {
       name: "Ask Notiz anything",
     }).parentElement?.parentElement;
 
-    expect(hoverZone?.className).toContain("h-10");
-    expect(hoverZone?.className).toContain("w-40");
-    expect(hoverZone?.className).toContain("bottom-3");
-    expect(hoverZone?.className).toContain("pb-0");
+    expect(wrapper?.className).toContain("bottom-4");
+    expect(wrapper?.className).toContain("left-1/2");
   });
 
   it("hides while the floating chat is open", () => {

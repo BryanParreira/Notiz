@@ -20,6 +20,7 @@ import { Brief } from "./brief";
 import { Enhanced } from "./enhanced";
 import { Header, useEditorTabs } from "./header";
 import { Insights } from "./insights";
+import { NoteMetaRow } from "./meta-row";
 import { SearchBar } from "./search/bar";
 import { useSearch } from "./search/context";
 import { Transcript } from "./transcript";
@@ -213,6 +214,10 @@ export const NoteInput = forwardRef<
               isTranscribing={shouldShowTranscriptSpinner}
             />
           </div>
+        )}
+
+        {renderedCurrentTab.type === "enhanced" && (
+          <NoteMetaRow sessionId={sessionId} />
         )}
 
         {showSearchBar && isSearchableTab && (

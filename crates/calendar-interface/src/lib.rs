@@ -8,6 +8,8 @@ pub enum CalendarProviderType {
     Apple,
     Google,
     Outlook,
+    /// A calendar read from a private iCal (.ics) link.
+    Ics,
 }
 
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize, specta::Type)]

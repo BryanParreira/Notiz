@@ -1,0 +1,13 @@
+# Automatically generated - DO NOT EDIT!
+
+"$schema" = "../../schemas/schema.json"
+
+[[permission]]
+identifier = "allow-recent-mail"
+description = "Enables the recent_mail command without any pre-configured scope."
+commands.allow = ["recent_mail"]
+
+[[permission]]
+identifier = "deny-recent-mail"
+description = "Denies the recent_mail command without any pre-configured scope."
+commands.deny = ["recent_mail"]

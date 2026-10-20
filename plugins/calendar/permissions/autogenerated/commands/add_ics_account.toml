@@ -1,0 +1,13 @@
+# Automatically generated - DO NOT EDIT!
+
+"$schema" = "../../schemas/schema.json"
+
+[[permission]]
+identifier = "allow-add-ics-account"
+description = "Enables the add_ics_account command without any pre-configured scope."
+commands.allow = ["add_ics_account"]
+
+[[permission]]
+identifier = "deny-add-ics-account"
+description = "Denies the add_ics_account command without any pre-configured scope."
+commands.deny = ["add_ics_account"]

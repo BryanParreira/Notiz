@@ -235,9 +235,9 @@ mod tests {
     #[test]
     fn ignores_non_legacy_bundle_names() {
         for path in [
-            "/Applications/Notiz.app",
-            "/Applications/Notiz Nightly.app",
-            "/Applications/Notiz Staging.app",
+            "/Applications/Other.app",
+            "/Applications/Other Nightly.app",
+            "/Applications/Notiz Beta.app",
         ] {
             assert_eq!(legacy_target_app_path(Path::new(path)), None);
         }

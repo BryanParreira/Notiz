@@ -1,0 +1,20 @@
+/*
+ * While a chat is empty, group the greeting, the composer and recent chats in
+ * the centre of the page. Once messages exist the attribute disappears and the
+ * thread fills the page with the composer pinned to the bottom.
+ */
+[data-chat-empty] [data-chat-content] {
+  justify-content: center;
+}
+
+[data-chat-empty] [data-chat-content] > [data-chat-part="greeting"] {
+  order: 1;
+}
+
+[data-chat-empty] [data-chat-content] > div:has([data-chat-message-input]) {
+  order: 2;
+}
+
+[data-chat-empty] [data-chat-content] > [data-chat-part="recents"] {
+  order: 3;
+}

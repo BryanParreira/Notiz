@@ -14,7 +14,7 @@ function provider(id: string) {
 describe("getLlmProviderStatus", () => {
   test("does not configure API-key providers without a saved key", () => {
     const status = getLlmProviderStatus({
-      provider: provider("openai"),
+      provider: provider("custom"),
       config: { api_key: "" },
       isAuthenticated: false,
       isPaid: false,
@@ -26,8 +26,8 @@ describe("getLlmProviderStatus", () => {
 
   test("configures API-key providers when a key is saved", () => {
     const status = getLlmProviderStatus({
-      provider: provider("openai"),
-      config: { api_key: "sk-test" },
+      provider: provider("custom"),
+      config: { base_url: "http://127.0.0.1:8080/v1", api_key: "sk-test" },
       isAuthenticated: false,
       isPaid: false,
     });

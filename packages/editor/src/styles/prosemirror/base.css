@@ -11,13 +11,16 @@
 
 .prosemirror-editor {
   font-variant-ligatures: common-ligatures contextual;
-  font-feature-settings: "liga" 1, "calt" 1;
+  font-feature-settings:
+    "liga" 1,
+    "calt" 1;
   word-break: break-word;
   overflow-wrap: break-word;
   white-space: pre-wrap;
   hyphens: auto;
   padding-bottom: 24px;
-  caret-color: #374151;
+  font-size: 15px;
+  caret-color: hsl(var(--primary));
   min-height: 100%;
 
   :first-child {
@@ -31,9 +34,9 @@
   }
 
   p {
-    margin-bottom: 0.25rem;
+    margin-bottom: 0.4rem;
     text-wrap: wrap;
-    line-height: 20px;
+    line-height: 1.65;
   }
 
   .node-image {

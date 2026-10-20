@@ -7,18 +7,26 @@ edition = "2024"
 specta = ["dep:specta"]
 
 [dependencies]
-notiz-api-client = { workspace = true }
 notiz-apple-calendar = { workspace = true, features = ["specta"] }
 notiz-calendar-interface = { workspace = true }
+notiz-http = { workspace = true }
 notiz-google-calendar = { workspace = true, features = ["specta"] }
 notiz-outlook-calendar = { workspace = true, features = ["specta"] }
 
+base64 = { workspace = true }
 chrono = { workspace = true, features = ["serde"] }
 chrono-tz = { workspace = true }
+ical = "0.11"
+rrule = "0.13"
+keyring = { version = "3", default-features = false, features = ["apple-native", "windows-native", "sync-secret-service", "crypto-rust"] }
 regex = { workspace = true }
 reqwest = { workspace = true, features = ["json"] }
 serde = { workspace = true, features = ["derive"] }
 serde_json = { workspace = true }
+sha2 = { workspace = true }
 specta = { workspace = true, features = ["chrono"], optional = true }
 thiserror = { workspace = true }
+tokio = { workspace = true, features = ["net", "io-util", "time", "sync", "rt"] }
 tracing = { workspace = true }
+url = { workspace = true }
+uuid = { workspace = true, features = ["v4"] }

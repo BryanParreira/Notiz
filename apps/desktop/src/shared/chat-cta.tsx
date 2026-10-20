@@ -1,4 +1,5 @@
 import { useLingui } from "@lingui/react/macro";
+import { SparklesIcon } from "lucide-react";
 import type { ReactNode } from "react";
 
 import { cn } from "@notiz/utils";
@@ -31,32 +32,22 @@ export function ChatCTA({
       data-chat-cta-trigger
       aria-label={ariaLabel ?? t`Ask Notiz anything`}
       onClick={handleClick}
-      className="group/notiz-chat-cta relative h-10 w-40 max-w-full cursor-text focus-visible:outline-none"
+      className="group/notiz-chat-cta relative h-11 w-[28rem] max-w-full cursor-text focus-visible:outline-none"
     >
       <span
         data-chat-cta-surface
         aria-hidden="true"
         className={cn([
-          "pointer-events-none absolute bottom-0 left-1/2 inline-flex h-2 w-[min(640px,calc(100cqw_-_2rem))] -translate-x-1/2 items-center overflow-hidden rounded-full border border-transparent bg-black dark:bg-white",
-          "[clip-path:inset(0_calc(50%_-_3rem)_0_calc(50%_-_3rem)_round_9999px)]",
-          "origin-bottom px-0 text-sm shadow-[0_10px_26px_rgba(0,0,0,0.22)] transition-[clip-path,height,padding,background-color,border-color,box-shadow] duration-200 ease-out dark:shadow-[0_10px_30px_rgba(0,0,0,0.5)]",
-          "group-hover/notiz-chat-cta:border-border/70 group-focus-visible/notiz-chat-cta:border-border/70 group-hover/notiz-chat-cta:bg-[#f4f4f5] group-focus-visible/notiz-chat-cta:bg-[#f4f4f5] dark:group-hover/notiz-chat-cta:bg-[#202020] dark:group-focus-visible/notiz-chat-cta:bg-[#202020]",
-          "group-hover/notiz-chat-cta:shadow-[0_16px_42px_rgba(0,0,0,0.26)] group-focus-visible/notiz-chat-cta:shadow-[0_16px_42px_rgba(0,0,0,0.26)] dark:group-hover/notiz-chat-cta:shadow-[0_18px_52px_rgba(0,0,0,0.64)] dark:group-focus-visible/notiz-chat-cta:shadow-[0_18px_52px_rgba(0,0,0,0.64)]",
-          "group-hover/notiz-chat-cta:h-10 group-hover/notiz-chat-cta:px-4 group-hover/notiz-chat-cta:[clip-path:inset(0_0_0_0_round_9999px)]",
-          "group-focus-visible/notiz-chat-cta:h-10 group-focus-visible/notiz-chat-cta:px-4 group-focus-visible/notiz-chat-cta:[clip-path:inset(0_0_0_0_round_9999px)]",
-          "group-focus-visible/notiz-chat-cta:ring-ring group-focus-visible/notiz-chat-cta:ring-2 group-focus-visible/notiz-chat-cta:ring-offset-2",
+          "pointer-events-none absolute inset-0 flex items-center gap-3 rounded-full border px-5 text-sm",
+          "border-border bg-card/95 text-muted-foreground backdrop-blur",
+          "shadow-[0_8px_30px_rgba(0,0,0,0.08)] dark:shadow-[0_8px_30px_rgba(0,0,0,0.4)]",
+          "transition-[border-color,box-shadow] duration-200 ease-out",
+          "group-hover/notiz-chat-cta:border-primary/40 group-hover/notiz-chat-cta:shadow-[0_12px_36px_rgba(0,0,0,0.12)]",
+          "group-focus-visible/notiz-chat-cta:ring-ring group-focus-visible/notiz-chat-cta:ring-2",
         ])}
       >
-        <span
-          aria-hidden="true"
-          className={cn([
-            "max-w-0 min-w-0 flex-1 truncate text-left opacity-0",
-            "group-focus-within/notiz-chat-cta:text-muted-foreground group-hover/notiz-chat-cta:text-muted-foreground text-white/55",
-            "transition-[max-width,opacity] duration-200 ease-out",
-            "group-hover/notiz-chat-cta:max-w-full group-hover/notiz-chat-cta:opacity-100",
-            "group-focus-within/notiz-chat-cta:max-w-full group-focus-within/notiz-chat-cta:opacity-100",
-          ])}
-        >
+        <SparklesIcon className="size-4 shrink-0" />
+        <span className="min-w-0 flex-1 truncate text-left">
           {resolvedLabel}
         </span>
       </span>
@@ -66,7 +57,7 @@ export function ChatCTA({
 
 export function FloatingChatCTA({ label }: { label?: ReactNode }) {
   return (
-    <div className="pointer-events-none absolute bottom-3 left-1/2 z-20 flex h-10 w-40 max-w-[calc(100%-2rem)] -translate-x-1/2 items-end justify-center pb-0">
+    <div className="pointer-events-none absolute bottom-4 left-1/2 z-20 flex w-[calc(100%-2rem)] -translate-x-1/2 items-end justify-center">
       <div className="pointer-events-auto max-w-full">
         <ChatCTA label={label} />
       </div>

@@ -232,9 +232,7 @@ function ItemBase({
                     : "text-muted-foreground",
                 ])}
               >
-                {displayTime && (
-                  <span className="shrink-0 font-mono">{displayTime}</span>
-                )}
+                {displayTime && <span className="shrink-0">{displayTime}</span>}
                 {preview && (
                   <span className="pointer-events-none min-w-0 truncate">
                     {preview}

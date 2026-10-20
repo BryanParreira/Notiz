@@ -1,8 +1,11 @@
 import { TabContentCalendar } from "~/calendar";
 import { TabContentChangelog } from "~/changelog";
+import { TabContentChat } from "~/chat/page";
 import { TabContentContact } from "~/contacts";
 import { TabContentHuman } from "~/contacts/humans";
 import { TabContentEdit } from "~/edit";
+import { TabContentFolders } from "~/folders";
+import { TabContentInbox } from "~/inbox";
 import { TabContentOnboarding } from "~/onboarding";
 import { TabContentNote } from "~/session";
 import { TabContentSettings } from "~/settings";
@@ -37,6 +40,15 @@ export function MainTabContent({ tab }: { tab: Tab }) {
   }
   if (tab.type === "edit") {
     return <TabContentEdit tab={tab} />;
+  }
+  if (tab.type === "chat") {
+    return <TabContentChat />;
+  }
+  if (tab.type === "inbox") {
+    return <TabContentInbox />;
+  }
+  if (tab.type === "folders") {
+    return <TabContentFolders tab={tab} />;
   }
   if (tab.type === "task") {
     return <TabContentTask tab={tab} />;

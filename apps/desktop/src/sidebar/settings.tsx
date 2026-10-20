@@ -8,6 +8,7 @@ import {
   CalendarIcon,
   ImportIcon,
   LockIcon,
+  MailIcon,
   SlidersHorizontalIcon,
   SmartphoneIcon,
   SparklesIcon,
@@ -61,6 +62,7 @@ export function SettingsNav() {
         { id: "app", label: t`App`, icon: SmartphoneIcon },
         { id: "data", label: t`Import`, icon: ImportIcon },
         { id: "notifications", label: t`Notifications`, icon: BellIcon },
+        { id: "email", label: t`Email`, icon: MailIcon },
       ],
     },
     {
@@ -91,8 +93,8 @@ export function SettingsNav() {
   }
 
   groups[0].items.push({
-    action: "open-calendar",
-    label: t`Calendar`,
+    id: "calendar" as const,
+    label: t`Calendars`,
     icon: CalendarIcon,
   });
 

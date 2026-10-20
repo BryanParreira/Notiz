@@ -19,15 +19,11 @@ export type {
 
 export type TabInput = Exclude<
   WindowsTabInput,
-  { type: "extension" } | { type: "extensions" } | { type: "folders" }
+  { type: "extension" } | { type: "extensions" }
 >;
 
 export const isTabInputSupported = (tab: WindowsTabInput): tab is TabInput => {
-  return (
-    tab.type !== "extension" &&
-    tab.type !== "extensions" &&
-    tab.type !== "folders"
-  );
+  return tab.type !== "extension" && tab.type !== "extensions";
 };
 
 export type SettingsTab =
@@ -40,6 +36,8 @@ export type SettingsTab =
   | "transcription"
   | "intelligence"
   | "dictation"
+  | "email"
+  | "calendar"
   | "todo";
 
 const isSettingsTab = (tab: string | null | undefined): tab is SettingsTab => {
@@ -53,6 +51,8 @@ const isSettingsTab = (tab: string | null | undefined): tab is SettingsTab => {
     case "transcription":
     case "intelligence":
     case "dictation":
+    case "email":
+    case "calendar":
     case "todo":
       return true;
     default:
@@ -121,6 +121,9 @@ export type Tab =
     })
   | (BaseTab & { type: "organizations"; id: string })
   | (BaseTab & { type: "empty" })
+  | (BaseTab & { type: "inbox" })
+  | (BaseTab & { type: "chat" })
+  | (BaseTab & { type: "folders"; id: string | null })
   | (BaseTab & { type: "calendar" })
   | (BaseTab & {
       type: "changelog";
@@ -180,6 +183,12 @@ export const getDefaultState = (tab: TabInput): Tab => {
       return { ...base, type: "organizations", id: tab.id };
     case "empty":
       return { ...base, type: "empty" };
+    case "inbox":
+      return { ...base, type: "inbox" };
+    case "chat":
+      return { ...base, type: "chat" };
+    case "folders":
+      return { ...base, type: "folders", id: tab.id };
     case "calendar":
       return { ...base, type: "calendar" };
     case "changelog":
@@ -223,6 +232,12 @@ export const uniqueIdfromTab = (tab: Tab): string => {
       return `templates`;
     case "empty":
       return `empty-${tab.slotId}`;
+    case "inbox":
+      return `inbox`;
+    case "chat":
+      return `chat`;
+    case "folders":
+      return `folders-${tab.id ?? "all"}`;
     case "calendar":
       return `calendar`;
     case "changelog":

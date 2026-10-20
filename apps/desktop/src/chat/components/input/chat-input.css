@@ -82,3 +82,8 @@
   .chat-input-send-shortcut {
   color: hsl(var(--muted-foreground) / 0.6) !important;
 }
+
+[data-chat-input-surface="floating"][data-chat-page]
+  .chat-input-editor.prosemirror-editor {
+  padding-right: 0 !important;
+}

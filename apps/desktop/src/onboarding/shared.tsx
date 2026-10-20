@@ -77,7 +77,7 @@ export function OnboardingSection({
                 "transition-all duration-300",
                 isCompleted
                   ? "text-muted-foreground/70 text-xs font-normal"
-                  : "text-foreground font-sans text-xl font-semibold",
+                  : "text-foreground font-display text-2xl",
               ])}
             >
               {isCompleted ? (completedTitle ?? title) : title}
@@ -93,27 +93,15 @@ export function OnboardingSection({
                     <ChevronLeftIcon className="size-3" />
                   </button>
                 )}
-                {onNext &&
-                  (skippable ? (
-                    <button
-                      onClick={() => {
-                        onSkip?.();
-                        onNext?.();
-                      }}
-                      className="text-muted-foreground hover:text-muted-foreground flex items-center gap-1 text-sm transition-colors"
-                    >
-                      <Trans>Skip</Trans>
-                      <ChevronRightIcon className="size-3" />
-                    </button>
-                  ) : import.meta.env.DEV ? (
-                    <button
-                      onClick={onNext}
-                      aria-label={t`Go to next section`}
-                      className="text-muted-foreground hover:text-muted-foreground rounded p-0.5 transition-colors"
-                    >
-                      <ChevronRightIcon className="size-3" />
-                    </button>
-                  ) : null)}
+                {import.meta.env.DEV && onNext && !skippable && (
+                  <button
+                    onClick={onNext}
+                    aria-label={t`Go to next section`}
+                    className="text-muted-foreground hover:text-muted-foreground rounded p-0.5 transition-colors"
+                  >
+                    <ChevronRightIcon className="size-3" />
+                  </button>
+                )}
               </div>
             )}
           </div>
@@ -130,10 +118,23 @@ export function OnboardingSection({
             initial={{ height: 0, opacity: 0 }}
             animate={{ height: "auto", opacity: 1 }}
             exit={{ height: 0, opacity: 0 }}
-            transition={{ duration: 0.3, ease: "easeInOut" }}
+            transition={{ duration: 0.45, ease: [0.16, 1, 0.3, 1] }}
             className="-mx-5 -mb-5 overflow-hidden px-5 pt-3 pb-5"
           >
             {children}
+            {skippable && onNext && (
+              <button
+                type="button"
+                onClick={() => {
+                  onSkip?.();
+                  onNext();
+                }}
+                className="text-muted-foreground hover:text-foreground mt-5 flex items-center gap-1 text-sm transition-colors"
+              >
+                <Trans>Skip for now</Trans>
+                <ChevronRightIcon className="size-3" />
+              </button>
+            )}
           </motion.div>
         )}
       </AnimatePresence>

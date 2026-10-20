@@ -1,4 +1,5 @@
 import { Icon } from "@iconify-icon/react";
+import { LinkIcon } from "lucide-react";
 import type { ReactNode } from "react";
 
 import { OutlookIcon } from "@notiz/ui/components/icons/outlook";
@@ -50,6 +51,16 @@ const _PROVIDERS = [
     platform: "all",
     docsPath: "https://github.com/BryanParreira/Notiz",
     nangoIntegrationId: "outlook",
+  },
+  {
+    disabled: false,
+    id: "ics",
+    displayName: "Calendar link",
+    badge: "",
+    icon: <LinkIcon size={16} />,
+    platform: "all",
+    docsPath: "https://github.com/BryanParreira/Notiz",
+    nangoIntegrationId: "ics",
   },
 ] as const satisfies readonly CalendarProvider[];
 

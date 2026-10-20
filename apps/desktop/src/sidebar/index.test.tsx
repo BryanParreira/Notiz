@@ -7,24 +7,27 @@ const mocks = vi.hoisted(() => ({
 
 vi.mock("~/store/zustand/tabs", () => ({
   useTabs: (
-    selector: (state: { currentTab: typeof mocks.currentTab }) => unknown,
-  ) => selector({ currentTab: mocks.currentTab }),
+    selector: (state: {
+      currentTab: typeof mocks.currentTab;
+      openCurrent: () => void;
+      openNew: () => void;
+    }) => unknown,
+  ) =>
+    selector({
+      currentTab: mocks.currentTab,
+      openCurrent: vi.fn(),
+      openNew: vi.fn(),
+    }),
 }));
 
-vi.mock("~/sidebar/timeline", () => ({
-  TimelineView: ({
-    showOpenCalendarButton = true,
-    topChromeInset = false,
-  }: {
-    showOpenCalendarButton?: boolean;
-    topChromeInset?: boolean;
-  }) => (
-    <div
-      data-testid="timeline-view"
-      data-show-open-calendar-button={String(showOpenCalendarButton)}
-      data-top-chrome-inset={String(topChromeInset)}
-    />
-  ),
+vi.mock("~/sidebar/folders", () => ({
+  SidebarFolders: () => <div data-testid="folders" />,
+}));
+
+vi.mock("~/contexts/shell", () => ({
+  useShell: () => ({
+    chat: { mode: "FloatingClosed", sendEvent: vi.fn() },
+  }),
 }));
 
 vi.mock("~/sidebar/toast", () => ({
@@ -54,19 +57,16 @@ describe("LeftSidebar", () => {
     mocks.currentTab = { type: "empty" };
   });
 
-  it("uses the timeline layout without a duplicate sidebar top offset", () => {
+  it("shows the nav, folders and footer below the window chrome", () => {
     const { container } = render(<LeftSidebar />);
 
-    expect(screen.getByTestId("timeline-view")).toBeTruthy();
-    expect(
-      screen
-        .getByTestId("timeline-view")
-        .getAttribute("data-show-open-calendar-button"),
-    ).toBe("true");
-    expect(
-      screen.getByTestId("timeline-view").getAttribute("data-top-chrome-inset"),
-    ).toBe("true");
+    expect(screen.getByTestId("folders")).toBeTruthy();
     expect(container.firstElementChild?.className).toContain("pt-0");
+    expect(screen.getByRole("navigation")).toBeTruthy();
+    expect(screen.getByText("Home")).toBeTruthy();
+    expect(screen.getByText("Chat")).toBeTruthy();
+    expect(screen.getByLabelText("Private, on this device")).toBeTruthy();
+    expect(screen.getByText("Settings")).toBeTruthy();
   });
 
   it.each([

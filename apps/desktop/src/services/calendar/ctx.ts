@@ -184,7 +184,8 @@ export async function syncCalendars(
             created_at: existing?.created_at || new Date().toISOString(),
             tracking_id_calendar: cal.id,
             name: cal.title,
-            enabled: existing?.enabled ?? false,
+            // A calendar link was added on purpose, so show its events right away.
+            enabled: existing?.enabled ?? provider === "ics",
             provider,
             source: cal.source ?? undefined,
             color: cal.color ?? "#888",

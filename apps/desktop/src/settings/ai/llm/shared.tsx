@@ -177,5 +177,14 @@ const _PROVIDERS = [
   },
 ] as const satisfies readonly Provider[];
 
-export const PROVIDERS = sortProviders(_PROVIDERS);
+const LOCAL_PROVIDER_IDS: ReadonlySet<string> = new Set([
+  "notiz_local",
+  "lmstudio",
+  "ollama",
+  "custom",
+]);
+
+export const PROVIDERS = sortProviders(
+  _PROVIDERS.filter((p) => LOCAL_PROVIDER_IDS.has(p.id)),
+);
 export type ProviderId = (typeof _PROVIDERS)[number]["id"];

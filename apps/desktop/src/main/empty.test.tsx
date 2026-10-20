@@ -3,23 +3,13 @@ import type React from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 vi.mock("~/shared/main", () => ({
-  StandardTabWrapper: ({
-    children,
-    floatingButton,
-  }: {
-    children: React.ReactNode;
-    floatingButton?: React.ReactNode;
-  }) => (
-    <div>
-      {children}
-      {floatingButton}
-    </div>
+  StandardTabWrapper: ({ children }: { children: React.ReactNode }) => (
+    <div>{children}</div>
   ),
 }));
 
 vi.mock("~/shared/useNewNote", () => ({
   useNewNote: () => vi.fn(),
-  useNewNoteAndListen: () => vi.fn(),
 }));
 
 vi.mock("~/contexts/shell", () => ({
@@ -38,6 +28,22 @@ vi.mock("~/store/zustand/tabs", () => ({
     }),
 }));
 
+vi.mock("~/store/tinybase/store/main", () => ({
+  STORE_ID: "main",
+  UI: {
+    useTable: () => ({}),
+    useStore: () => undefined,
+  },
+}));
+
+vi.mock("~/store/tinybase/store/sessions", () => ({
+  getOrCreateSessionForEventId: vi.fn(),
+}));
+
+vi.mock("~/folders/notes-list", () => ({
+  NotesList: ({ empty }: { empty: React.ReactNode }) => <>{empty}</>,
+}));
+
 import { TabContentEmpty } from "./empty";
 
 describe("TabContentEmpty", () => {
@@ -45,51 +51,25 @@ describe("TabContentEmpty", () => {
     cleanup();
   });
 
-  it("shows the home actions and global chat FAB", () => {
+  it("shows upcoming events, an empty-notes prompt and the ask bar", () => {
     render(
       <TabContentEmpty
         tab={{
-          active: true,
-          pinned: false,
-          slotId: "slot-home",
           type: "empty",
+          active: true,
+          slotId: "",
+          pinned: false,
         }}
       />,
     );
 
-    expect(screen.getByRole("button", { name: /New Note/ })).toBeTruthy();
+    expect(screen.getByText("Coming up")).toBeTruthy();
+    expect(screen.getByText("No events today")).toBeTruthy();
     expect(
-      screen.getByRole("button", { name: "Ask Notiz anything" }),
+      screen.getByText(
+        "Your notes live only on this device. Start your first one.",
+      ),
     ).toBeTruthy();
-  });
-
-  it("centers actions in a draggable empty surface while keeping actions clickable", () => {
-    render(
-      <TabContentEmpty
-        tab={{
-          active: true,
-          pinned: false,
-          slotId: "slot-home",
-          type: "empty",
-        }}
-      />,
-    );
-
-    const newNoteButton = screen.getByRole("button", { name: /New Note/ });
-    const dragSurface = newNoteButton.parentElement?.parentElement;
-
-    expect(dragSurface?.hasAttribute("data-tauri-drag-region")).toBe(true);
-    expect(dragSurface?.className).not.toContain("mb-12");
-    expect(newNoteButton.getAttribute("data-tauri-drag-region")).toBe("false");
-    expect(
-      screen
-        .getByRole("button", { name: /Start Recording/ })
-        .getAttribute("data-tauri-drag-region"),
-    ).toBe("false");
-    expect(
-      screen
-        .getByRole("button", { name: /Settings/ })
-        .getAttribute("data-tauri-drag-region"),
-    ).toBe("false");
+    expect(screen.getByPlaceholderText("Ask anything")).toBeTruthy();
   });
 });

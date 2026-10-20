@@ -10,6 +10,7 @@ import { ChatBodyNonEmpty } from "./non-empty";
 import { useChatAutoScroll } from "./use-chat-auto-scroll";
 
 import type { ContextRef } from "~/chat/context/entities";
+import { useIsChatPage } from "~/chat/page-context";
 import { chatFloatingControlClassNames } from "~/chat/surface";
 import type { NotizUIMessage } from "~/chat/types";
 import { useShell } from "~/contexts/shell";
@@ -36,8 +37,9 @@ export function ChatBody({
   ) => void;
 }) {
   const { chat } = useShell();
-  const isRightPanel = chat.mode === "RightPanelOpen";
-  const isFloating = chat.mode === "FloatingOpen";
+  const isPage = useIsChatPage();
+  const isRightPanel = isPage || chat.mode === "RightPanelOpen";
+  const isFloating = !isPage && chat.mode === "FloatingOpen";
   const {
     contentRef,
     isAtBottom,

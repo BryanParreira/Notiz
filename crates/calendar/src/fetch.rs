@@ -1,130 +1,104 @@
-use notiz_calendar_interface::EventFilter;
-use notiz_google_calendar::{CalendarListEntry as GoogleCalendar, Event as GoogleEvent};
-use notiz_outlook_calendar::{Calendar as OutlookCalendar, Event as OutlookEvent};
+use notiz_calendar_interface::{CalendarProviderType, EventFilter};
+use notiz_google_calendar::{
+    CalendarListEntry as GoogleCalendar, Event as GoogleEvent, EventOrderBy, GoogleCalendarClient,
+    ListEventsRequest as GoogleListEventsRequest,
+};
+use notiz_outlook_calendar::{
+    Calendar as OutlookCalendar, Event as OutlookEvent,
+    ListEventsRequest as OutlookListEventsRequest, OutlookCalendarClient,
+};
 
 use crate::error::Error;
+use crate::http::AuthedHttp;
+use crate::oauth;
 
-pub async fn list_all_connection_ids(
-    api_base_url: &str,
-    access_token: &str,
-) -> Result<Vec<(String, Vec<String>)>, Error> {
-    let client = make_client(api_base_url, access_token)?;
+const GOOGLE_API: &str = "https://www.googleapis.com";
+const GRAPH_API: &str = "https://graph.microsoft.com/v1.0";
+const PAGE_SIZE: u32 = 250;
+const MAX_PAGES: usize = 20;
 
+pub async fn list_google_calendars(connection_id: &str) -> Result<Vec<GoogleCalendar>, Error> {
+    let token = oauth::access_token(CalendarProviderType::Google, connection_id).await?;
+    let client = GoogleCalendarClient::new(AuthedHttp::new(GOOGLE_API, token));
     let response = client
-        .list_connections()
+        .list_calendars()
         .await
         .map_err(|e| Error::Api(e.to_string()))?;
-
-    let connections = response.into_inner().connections;
-    let mut map = std::collections::HashMap::<String, Vec<String>>::new();
-    for c in &connections {
-        map.entry(c.integration_id.clone())
-            .or_default()
-            .push(c.connection_id.clone());
-    }
-
-    Ok(map.into_iter().collect())
-}
-
-fn make_client(api_base_url: &str, access_token: &str) -> Result<notiz_api_client::Client, Error> {
-    let auth_value = format!("Bearer {access_token}").parse()?;
-    let mut headers = reqwest::header::HeaderMap::new();
-    headers.insert(reqwest::header::AUTHORIZATION, auth_value);
-    let http = reqwest::Client::builder()
-        .default_headers(headers)
-        .build()?;
-    Ok(notiz_api_client::Client::new_with_client(
-        api_base_url,
-        http,
-    ))
-}
-
-pub async fn list_google_calendars(
-    api_base_url: &str,
-    access_token: &str,
-    connection_id: &str,
-) -> Result<Vec<GoogleCalendar>, Error> {
-    let client = make_client(api_base_url, access_token)?;
-
-    let body = notiz_api_client::types::GoogleListCalendarsRequest {
-        connection_id: connection_id.to_string(),
-    };
-
-    let response = client
-        .google_list_calendars(&body)
-        .await
-        .map_err(|e| Error::Api(e.to_string()))?;
-
-    Ok(response.into_inner().items)
+    Ok(response.items)
 }
 
 pub async fn list_google_events(
-    api_base_url: &str,
-    access_token: &str,
     connection_id: &str,
     filter: EventFilter,
 ) -> Result<Vec<GoogleEvent>, Error> {
-    let client = make_client(api_base_url, access_token)?;
+    let token = oauth::access_token(CalendarProviderType::Google, connection_id).await?;
+    let client = GoogleCalendarClient::new(AuthedHttp::new(GOOGLE_API, token));
 
-    let body = notiz_api_client::types::GoogleListEventsRequest {
-        connection_id: connection_id.to_string(),
-        calendar_id: filter.calendar_tracking_id,
-        time_min: Some(filter.from.to_rfc3339()),
-        time_max: Some(filter.to.to_rfc3339()),
-        max_results: None,
-        page_token: None,
-        single_events: Some(true),
-        order_by: Some("startTime".to_string()),
-    };
+    let mut events = Vec::new();
+    let mut page_token: Option<String> = None;
+    for _ in 0..MAX_PAGES {
+        let response = client
+            .list_events(GoogleListEventsRequest {
+                calendar_id: filter.calendar_tracking_id.clone(),
+                time_min: Some(filter.from),
+                time_max: Some(filter.to),
+                max_results: Some(PAGE_SIZE),
+                page_token: page_token.take(),
+                single_events: Some(true),
+                order_by: Some(EventOrderBy::StartTime),
+                ..Default::default()
+            })
+            .await
+            .map_err(|e| Error::Api(e.to_string()))?;
 
-    let response = client
-        .google_list_events(&body)
-        .await
-        .map_err(|e| Error::Api(e.to_string()))?;
-
-    Ok(response.into_inner().items)
+        events.extend(response.items);
+        match response.next_page_token {
+            Some(next) => page_token = Some(next),
+            None => break,
+        }
+    }
+    Ok(events)
 }
 
-pub async fn list_outlook_calendars(
-    api_base_url: &str,
-    access_token: &str,
-    connection_id: &str,
-) -> Result<Vec<OutlookCalendar>, Error> {
-    let client = make_client(api_base_url, access_token)?;
-
-    let body = notiz_api_client::types::OutlookListCalendarsRequest {
-        connection_id: connection_id.to_string(),
-    };
-
+pub async fn list_outlook_calendars(connection_id: &str) -> Result<Vec<OutlookCalendar>, Error> {
+    let token = oauth::access_token(CalendarProviderType::Outlook, connection_id).await?;
+    let client = OutlookCalendarClient::new(AuthedHttp::new(GRAPH_API, token));
     let response = client
-        .outlook_list_calendars(&body)
+        .list_calendars()
         .await
         .map_err(|e| Error::Api(e.to_string()))?;
-
-    Ok(response.into_inner().value)
+    Ok(response.value)
 }
 
 pub async fn list_outlook_events(
-    api_base_url: &str,
-    access_token: &str,
     connection_id: &str,
     filter: EventFilter,
 ) -> Result<Vec<OutlookEvent>, Error> {
-    let client = make_client(api_base_url, access_token)?;
+    let token = oauth::access_token(CalendarProviderType::Outlook, connection_id).await?;
+    let client = OutlookCalendarClient::new(AuthedHttp::new(GRAPH_API, token));
 
-    let body = notiz_api_client::types::OutlookListEventsRequest {
-        connection_id: connection_id.to_string(),
-        calendar_id: filter.calendar_tracking_id,
-        time_min: Some(filter.from.to_rfc3339()),
-        time_max: Some(filter.to.to_rfc3339()),
-        max_results: None,
-        order_by: Some("startTime".to_string()),
-    };
+    let mut events = Vec::new();
+    let mut skip = 0u32;
+    for _ in 0..MAX_PAGES {
+        let response = client
+            .list_events(OutlookListEventsRequest {
+                calendar_id: filter.calendar_tracking_id.clone(),
+                start_date_time: Some(filter.from),
+                end_date_time: Some(filter.to),
+                top: Some(PAGE_SIZE),
+                skip: Some(skip),
+                order_by: Some("start/dateTime".to_string()),
+                ..Default::default()
+            })
+            .await
+            .map_err(|e| Error::Api(e.to_string()))?;
 
-    let response = client
-        .outlook_list_events(&body)
-        .await
-        .map_err(|e| Error::Api(e.to_string()))?;
-
-    Ok(response.into_inner().value)
+        let count = response.value.len() as u32;
+        events.extend(response.value);
+        if count < PAGE_SIZE {
+            break;
+        }
+        skip += count;
+    }
+    Ok(events)
 }

@@ -91,7 +91,7 @@ export const TitleInput = forwardRef<
               "text-muted-foreground animate-pulse",
               variant === "breadcrumb"
                 ? "text-sm leading-5"
-                : "text-xl font-semibold",
+                : "font-display text-3xl leading-tight font-normal",
             ])}
           >
             <Trans>Generating title...</Trans>
@@ -114,7 +114,7 @@ export const TitleInput = forwardRef<
               "animate-reveal-left whitespace-nowrap",
               variant === "breadcrumb"
                 ? "text-sm leading-5"
-                : "text-xl font-semibold",
+                : "font-display text-3xl leading-tight font-normal",
             ])}
           >
             {generatedTitle}
@@ -415,7 +415,7 @@ const TitleInputInner = memo(
               "placeholder:text-muted-foreground text-left",
               variant === "breadcrumb"
                 ? "h-5 appearance-none p-0 text-sm leading-5 text-neutral-700 focus:underline"
-                : "text-xl font-semibold",
+                : "font-display text-3xl leading-tight font-normal",
               variant === "breadcrumb" &&
                 (isTitleFocused
                   ? "overflow-x-auto whitespace-nowrap"
@@ -434,7 +434,7 @@ const TitleInputInner = memo(
                   "group-hover/title-input:animate-title-hover-scroll whitespace-nowrap group-hover/title-input:will-change-transform",
                   variant === "breadcrumb"
                     ? "text-sm leading-5"
-                    : "text-xl font-semibold",
+                    : "font-display text-3xl leading-tight font-normal",
                 ])}
               >
                 {title}

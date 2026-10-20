@@ -5,11 +5,7 @@ mod runtime;
 
 pub use error::Error;
 pub use events::*;
-pub use notiz_calendar::ProviderConnectionIds;
-
-pub(crate) struct PluginConfig {
-    pub api_base_url: String,
-}
+pub use notiz_calendar::{AccountInfo, ProviderConnectionIds};
 
 const PLUGIN_NAME: &str = "calendar";
 
@@ -20,8 +16,12 @@ fn make_specta_builder<R: tauri::Runtime>() -> tauri_specta::Builder<R> {
             commands::available_providers,
             commands::is_provider_enabled::<tauri::Wry>,
             commands::list_connection_ids::<tauri::Wry>,
-            commands::list_calendars::<tauri::Wry>,
-            commands::list_events::<tauri::Wry>,
+            commands::list_accounts,
+            commands::connect_account::<tauri::Wry>,
+            commands::add_ics_account,
+            commands::disconnect_account,
+            commands::list_calendars,
+            commands::list_events,
             commands::open_calendar::<tauri::Wry>,
             commands::create_event::<tauri::Wry>,
             commands::parse_meeting_link,
@@ -32,26 +32,17 @@ fn make_specta_builder<R: tauri::Runtime>() -> tauri_specta::Builder<R> {
 
 pub fn init<R: tauri::Runtime>() -> tauri::plugin::TauriPlugin<R> {
     let specta_builder = make_specta_builder();
-    let api_base_url = get_api_base_url();
 
     tauri::plugin::Builder::new(PLUGIN_NAME)
         .invoke_handler(specta_builder.invoke_handler())
         .setup(move |app, _api| {
             specta_builder.mount_events(app);
 
-            notiz_calendar::start(runtime::TauriCalendarRuntime(app.app_handle().clone()));
-
             use tauri::Manager;
-            app.manage(PluginConfig { api_base_url });
+            notiz_calendar::start(runtime::TauriCalendarRuntime(app.app_handle().clone()));
             Ok(())
         })
         .build()
-}
-
-fn get_api_base_url() -> String {
-    option_env!("VITE_API_URL")
-        .unwrap_or("http://localhost:3001")
-        .to_string()
 }
 
 #[cfg(test)]

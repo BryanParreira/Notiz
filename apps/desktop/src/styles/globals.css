@@ -1,6 +1,11 @@
 @import "./scrollbar.css" layer(base);
 @import "./scrollbar.utilities.css";
 
+@import "@fontsource-variable/inter";
+@import "@fontsource/ibm-plex-serif/400.css";
+@import "@fontsource/ibm-plex-serif/400-italic.css";
+@import "@fontsource/ibm-plex-serif/500.css";
+
 @import "tailwindcss";
 @import "./dark-theme.css";
 @import "../../../../packages/ui/src/styles/scroll-fade.css";
@@ -13,7 +18,12 @@
 
 @theme {
   --font-sans:
-    system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    "Inter Variable", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
+    sans-serif;
+  --font-display: "IBM Plex Serif", ui-serif, Georgia, Cambria, serif;
+  --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+  --radius-2xl: 1rem;
+  --radius-3xl: 1.5rem;
   --font-hand: "Bradley Hand", "Segoe Print", "Comic Sans MS", cursive;
 
   --color-border: hsl(var(--border));
@@ -42,16 +52,15 @@
 
   --animate-shimmer: shimmer 2s infinite;
   --animate-reveal-left: reveal-left 0.5s ease-out forwards;
-  --animate-title-hover-scroll: title-hover-scroll var(
-    --title-hover-scroll-duration,
-    4s
-  ) ease-in-out forwards;
+  --animate-title-hover-scroll: title-hover-scroll
+    var(--title-hover-scroll-duration, 4s) ease-in-out forwards;
   --animate-kbd-press: kbd-press 0.4s ease-out forwards;
 
   --animate-wiggle: wiggle 1s ease-in-out infinite;
 
   @keyframes wiggle {
-    0%, 100% {
+    0%,
+    100% {
       transform: rotate(0deg);
     }
     15% {
@@ -69,7 +78,8 @@
     60% {
       transform: rotate(2deg);
     }
-    70%, 100% {
+    70%,
+    100% {
       transform: rotate(0deg);
     }
   }
@@ -90,10 +100,12 @@
     }
   }
   @keyframes title-hover-scroll {
-    0%, 16% {
+    0%,
+    16% {
       transform: translateX(0);
     }
-    84%, 100% {
+    84%,
+    100% {
       transform: translateX(var(--title-hover-scroll-distance, 0px));
     }
   }
@@ -241,7 +253,9 @@
     box-shadow: none !important;
   }
 
-  [data-chat-floating-anchor]:has([data-chat-cta-trigger]:is(:hover, :focus-visible, :focus-within))
+  [data-chat-floating-anchor]:has(
+      [data-chat-cta-trigger]:is(:hover, :focus-visible, :focus-within)
+    )
     [data-transcript-scroll-chip] {
     --transcript-scroll-chip-bottom: calc(5rem + env(safe-area-inset-bottom));
   }

@@ -1,8 +1,7 @@
 import "./styles/globals.css";
 import "./styles/cursor.css";
 
-import * as Sentry from "@sentry/react";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { QueryClientProvider } from "@tanstack/react-query";
 import { createRouter, RouterProvider } from "@tanstack/react-router";
 import { StrictMode, useMemo } from "react";
 import ReactDOM from "react-dom/client";
@@ -21,7 +20,6 @@ import {
 import { Toaster } from "@notiz/ui/components/ui/toast";
 
 import { createToolRegistry } from "./contexts/tool-registry/core";
-import { env } from "./env";
 import { AppI18nProvider } from "./i18n/provider";
 import { FloatingMeetingWindowHost } from "./meeting-float/host";
 import { routeTree } from "./routeTree.gen";
@@ -45,8 +43,9 @@ import {
 import { createAITaskStore } from "./store/zustand/ai-task";
 import { listenerStore } from "./store/zustand/listener/instance";
 
+import { queryClient } from "~/shared/query-client";
+
 const toolRegistry = createToolRegistry();
-const queryClient = new QueryClient();
 
 const router = createRouter({
   routeTree,
@@ -94,18 +93,6 @@ function App() {
       </AppI18nProvider>
     </AppThemeProvider>
   );
-}
-
-if (env.VITE_SENTRY_DSN) {
-  Sentry.init({
-    dsn: env.VITE_SENTRY_DSN,
-    release: env.VITE_APP_VERSION ? `notiz@${env.VITE_APP_VERSION}` : undefined,
-    environment: import.meta.env.MODE,
-    tracePropagationTargets: [],
-    integrations: [Sentry.replayIntegration()],
-    replaysSessionSampleRate: 0.1,
-    replaysOnErrorSampleRate: 1.0,
-  });
 }
 
 function AppWithTiny() {

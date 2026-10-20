@@ -17,12 +17,16 @@ import { ParticipantsDisplay } from "./participants";
 import { useConfigValue } from "~/shared/config";
 import { useSessionEvent } from "~/store/tinybase/hooks";
 
+export type MetadataSection = "all" | "date" | "people";
+
 export function MetadataButton({
   sessionId,
   renderTrigger,
+  section = "all",
 }: {
   sessionId: string;
   renderTrigger?: (props: { open: boolean; label: string }) => ReactElement;
+  section?: MetadataSection;
 }) {
   const [open, setOpen] = useState(false);
   const sessionEvent = useSessionEvent(sessionId);
@@ -43,7 +47,7 @@ export function MetadataButton({
         className="w-85 overflow-hidden"
       >
         <AppFloatingPanel className="scrollbar-soft max-h-[80vh] min-h-0 overflow-x-hidden overflow-y-auto overscroll-contain">
-          <ContentInner sessionId={sessionId} />
+          <ContentInner sessionId={sessionId} section={section} />
         </AppFloatingPanel>
       </PopoverContent>
     </Popover>
@@ -75,7 +79,13 @@ const TriggerInner = forwardRef<
   );
 });
 
-function ContentInner({ sessionId }: { sessionId: string }) {
+function ContentInner({
+  sessionId,
+  section,
+}: {
+  sessionId: string;
+  section: MetadataSection;
+}) {
   const sessionEvent = useSessionEvent(sessionId);
 
   const eventDisplayData = sessionEvent
@@ -90,15 +100,21 @@ function ContentInner({ sessionId }: { sessionId: string }) {
       }
     : null;
 
+  const showDate = section !== "people";
+  const showPeople = section !== "date";
+
   return (
     <div className="flex flex-col gap-4 p-4">
-      {!eventDisplayData && <DateEditor sessionId={sessionId} />}
-      {eventDisplayData && (
+      {showDate && !eventDisplayData && <DateEditor sessionId={sessionId} />}
+      {showDate && eventDisplayData && (
         <EventDisplay event={eventDisplayData}>
-          <ParticipantsDisplay sessionId={sessionId} />
+          {showPeople && <ParticipantsDisplay sessionId={sessionId} />}
         </EventDisplay>
       )}
-      {!eventDisplayData && <ParticipantsDisplay sessionId={sessionId} />}
+      {showPeople && !showDate && <ParticipantsDisplay sessionId={sessionId} />}
+      {showPeople && showDate && !eventDisplayData && (
+        <ParticipantsDisplay sessionId={sessionId} />
+      )}
     </div>
   );
 }

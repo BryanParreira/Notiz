@@ -147,49 +147,47 @@ function Reasoning({ part }: { part: Extract<Part, { type: "reasoning" }> }) {
 }
 
 const chatComponents = {
-  h1: (props: React.HTMLAttributes<HTMLHeadingElement>) => {
-    return (
-      <h1 className="mt-3 mb-1 text-base font-semibold first:mt-0">
-        {props.children as React.ReactNode}
-      </h1>
-    );
-  },
-  h2: (props: React.HTMLAttributes<HTMLHeadingElement>) => {
-    return (
-      <h2 className="mt-3 mb-1 text-base font-semibold first:mt-0">
-        {props.children as React.ReactNode}
-      </h2>
-    );
-  },
-  h3: (props: React.HTMLAttributes<HTMLHeadingElement>) => {
-    return (
-      <h3 className="mt-2 mb-1 text-sm font-semibold first:mt-0">
-        {props.children as React.ReactNode}
-      </h3>
-    );
-  },
-  ul: (props: React.HTMLAttributes<HTMLUListElement>) => {
-    return (
-      <ul className="mb-1 list-disc pl-5">
-        {props.children as React.ReactNode}
-      </ul>
-    );
-  },
-  ol: (props: React.HTMLAttributes<HTMLOListElement>) => {
-    return (
-      <ol className="mb-1 list-decimal pl-5">
-        {props.children as React.ReactNode}
-      </ol>
-    );
-  },
-  li: (props: React.HTMLAttributes<HTMLLIElement>) => {
-    return <li className="mb-1">{props.children as React.ReactNode}</li>;
-  },
-  p: (props: React.HTMLAttributes<HTMLParagraphElement>) => {
-    return (
-      <p className="mb-1.5 last:mb-0">{props.children as React.ReactNode}</p>
-    );
-  },
+  h1: (props: React.HTMLAttributes<HTMLHeadingElement>) => (
+    <h1 className="font-display mt-5 mb-2 text-xl first:mt-0">
+      {props.children as React.ReactNode}
+    </h1>
+  ),
+  h2: (props: React.HTMLAttributes<HTMLHeadingElement>) => (
+    <h2 className="font-display mt-5 mb-2 text-lg first:mt-0">
+      {props.children as React.ReactNode}
+    </h2>
+  ),
+  h3: (props: React.HTMLAttributes<HTMLHeadingElement>) => (
+    <h3 className="text-foreground mt-4 mb-1.5 text-[15px] font-semibold first:mt-0">
+      {props.children as React.ReactNode}
+    </h3>
+  ),
+  ul: (props: React.HTMLAttributes<HTMLUListElement>) => (
+    <ul className="marker:text-muted-foreground mb-3 list-disc space-y-1.5 pl-5 last:mb-0">
+      {props.children as React.ReactNode}
+    </ul>
+  ),
+  ol: (props: React.HTMLAttributes<HTMLOListElement>) => (
+    <ol className="marker:text-muted-foreground mb-3 list-decimal space-y-1.5 pl-5 last:mb-0">
+      {props.children as React.ReactNode}
+    </ol>
+  ),
+  li: (props: React.HTMLAttributes<HTMLLIElement>) => (
+    <li className="pl-0.5">{props.children as React.ReactNode}</li>
+  ),
+  p: (props: React.HTMLAttributes<HTMLParagraphElement>) => (
+    <p className="mb-3 last:mb-0">{props.children as React.ReactNode}</p>
+  ),
+  strong: (props: React.HTMLAttributes<HTMLElement>) => (
+    <strong className="text-foreground font-semibold">
+      {props.children as React.ReactNode}
+    </strong>
+  ),
+  blockquote: (props: React.HTMLAttributes<HTMLQuoteElement>) => (
+    <blockquote className="border-border text-muted-foreground my-3 border-l-2 pl-4 italic">
+      {props.children as React.ReactNode}
+    </blockquote>
+  ),
 } as const;
 
 function Text({ part }: { part: Extract<Part, { type: "text" }> }) {
@@ -198,7 +196,7 @@ function Text({ part }: { part: Extract<Part, { type: "text" }> }) {
   return (
     <Streamdown
       components={chatComponents}
-      className="px-0.5 py-1"
+      className="[&_a]:text-primary px-0.5 py-1 [&_a]:underline-offset-2 hover:[&_a]:underline"
       caret="block"
       isAnimating={isAnimating}
       linkSafety={{ enabled: false }}

@@ -295,6 +295,18 @@
       "type": "string",
       "oneOf": [
         {
+          "description": "Enables the add_ics_account command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-add-ics-account",
+          "markdownDescription": "Enables the add_ics_account command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the add_ics_account command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-add-ics-account",
+          "markdownDescription": "Denies the add_ics_account command without any pre-configured scope."
+        },
+        {
           "description": "Enables the available_providers command without any pre-configured scope.",
           "type": "string",
           "const": "allow-available-providers",
@@ -305,6 +317,18 @@
           "type": "string",
           "const": "deny-available-providers",
           "markdownDescription": "Denies the available_providers command without any pre-configured scope."
+        },
+        {
+          "description": "Enables the connect_account command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-connect-account",
+          "markdownDescription": "Enables the connect_account command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the connect_account command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-connect-account",
+          "markdownDescription": "Denies the connect_account command without any pre-configured scope."
         },
         {
           "description": "Enables the create_event command without any pre-configured scope.",
@@ -319,6 +343,18 @@
           "markdownDescription": "Denies the create_event command without any pre-configured scope."
         },
         {
+          "description": "Enables the disconnect_account command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-disconnect-account",
+          "markdownDescription": "Enables the disconnect_account command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the disconnect_account command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-disconnect-account",
+          "markdownDescription": "Denies the disconnect_account command without any pre-configured scope."
+        },
+        {
           "description": "Enables the is_provider_enabled command without any pre-configured scope.",
           "type": "string",
           "const": "allow-is-provider-enabled",
@@ -329,6 +365,18 @@
           "type": "string",
           "const": "deny-is-provider-enabled",
           "markdownDescription": "Denies the is_provider_enabled command without any pre-configured scope."
+        },
+        {
+          "description": "Enables the list_accounts command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-list-accounts",
+          "markdownDescription": "Enables the list_accounts command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the list_accounts command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-list-accounts",
+          "markdownDescription": "Denies the list_accounts command without any pre-configured scope."
         },
         {
           "description": "Enables the list_calendars command without any pre-configured scope.",
@@ -391,10 +439,10 @@
           "markdownDescription": "Denies the parse_meeting_link command without any pre-configured scope."
         },
         {
-          "description": "Default permissions for the plugin\n#### This default permission set includes:\n\n- `allow-available-providers`\n- `allow-is-provider-enabled`\n- `allow-list-connection-ids`\n- `allow-list-calendars`\n- `allow-list-events`\n- `allow-open-calendar`\n- `allow-create-event`\n- `allow-parse-meeting-link`",
+          "description": "Default permissions for the plugin\n#### This default permission set includes:\n\n- `allow-available-providers`\n- `allow-is-provider-enabled`\n- `allow-list-connection-ids`\n- `allow-list-accounts`\n- `allow-connect-account`\n- `allow-add-ics-account`\n- `allow-disconnect-account`\n- `allow-list-calendars`\n- `allow-list-events`\n- `allow-open-calendar`\n- `allow-create-event`\n- `allow-parse-meeting-link`",
           "type": "string",
           "const": "default",
-          "markdownDescription": "Default permissions for the plugin\n#### This default permission set includes:\n\n- `allow-available-providers`\n- `allow-is-provider-enabled`\n- `allow-list-connection-ids`\n- `allow-list-calendars`\n- `allow-list-events`\n- `allow-open-calendar`\n- `allow-create-event`\n- `allow-parse-meeting-link`"
+          "markdownDescription": "Default permissions for the plugin\n#### This default permission set includes:\n\n- `allow-available-providers`\n- `allow-is-provider-enabled`\n- `allow-list-connection-ids`\n- `allow-list-accounts`\n- `allow-connect-account`\n- `allow-add-ics-account`\n- `allow-disconnect-account`\n- `allow-list-calendars`\n- `allow-list-events`\n- `allow-open-calendar`\n- `allow-create-event`\n- `allow-parse-meeting-link`"
         }
       ]
     }

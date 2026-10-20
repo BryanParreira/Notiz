@@ -48,37 +48,8 @@ pub async fn main() {
             None => (None, None),
         };
 
-    let sentry_client = {
-        let dsn = option_env!("SENTRY_DSN");
-
-        if let Some(dsn) = dsn {
-            let release = option_env!("APP_VERSION").map(|v| format!("notiz-desktop@{}", v).into());
-
-            let client = sentry::init((
-                dsn,
-                sentry::ClientOptions {
-                    release,
-                    traces_sample_rate: 1.0,
-                    auto_session_tracking: false,
-                    ..Default::default()
-                },
-            ));
-
-            sentry::configure_scope(|scope| {
-                scope.set_tag("service.namespace", "notiz");
-                scope.set_tag("service.name", "desktop");
-                scope.set_tag("enduser.pseudo.id", notiz_host::fingerprint());
-                scope.set_user(Some(sentry::User {
-                    id: Some(notiz_host::fingerprint()),
-                    ..Default::default()
-                }));
-            });
-
-            Some(client)
-        } else {
-            None
-        }
-    };
+    // Notiz is local-only: no crash or telemetry reporting is ever initialised.
+    let sentry_client: Option<sentry::ClientInitGuard> = None;
 
     let _guard = sentry_client
         .as_ref()
@@ -118,6 +89,7 @@ pub async fn main() {
         .plugin(tauri_plugin_bedrock::init())
         .plugin(tauri_plugin_importer::init())
         .plugin(tauri_plugin_calendar::init())
+        .plugin(tauri_plugin_mail::init())
         .plugin(tauri_plugin_todo::init())
         .plugin(tauri_plugin_tracing::init())
         .plugin(tauri_plugin_hooks::init())

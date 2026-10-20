@@ -25,6 +25,38 @@ async listConnectionIds() : Promise<Result<ProviderConnectionIds[], string>> {
     else return { status: "error", error: e  as any };
 }
 },
+async listAccounts() : Promise<Result<AccountInfo[], string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("plugin:calendar|list_accounts") };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async connectAccount(provider: CalendarProviderType) : Promise<Result<AccountInfo, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("plugin:calendar|connect_account", { provider }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async addIcsAccount(url: string, label: string | null) : Promise<Result<AccountInfo, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("plugin:calendar|add_ics_account", { url, label }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async disconnectAccount(provider: CalendarProviderType, connectionId: string) : Promise<Result<null, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("plugin:calendar|disconnect_account", { provider, connectionId }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
 async listCalendars(provider: CalendarProviderType, connectionId: string) : Promise<Result<CalendarListItem[], string>> {
     try {
     return { status: "ok", data: await TAURI_INVOKE("plugin:calendar|list_calendars", { provider, connectionId }) };
@@ -77,6 +109,7 @@ calendarChangedEvent: "plugin:calendar:calendar-changed-event"
 
 /** user-defined types **/
 
+export type AccountInfo = { provider: CalendarProviderType; connection_id: string; label: string }
 export type AttendeeRole = "chair" | "required" | "optional" | "nonparticipant"
 export type AttendeeStatus = "pending" | "accepted" | "tentative" | "declined"
 export type CalendarChangedEvent = null
@@ -122,7 +155,11 @@ recurring_event_id: string | null;
  */
 raw: string }
 export type CalendarListItem = { provider: CalendarProviderType; id: string; title: string; source: string | null; color: string | null; is_primary: boolean | null; can_edit: boolean | null; raw: string }
-export type CalendarProviderType = "apple" | "google" | "outlook"
+export type CalendarProviderType = "apple" | "google" | "outlook" | 
+/**
+ * A calendar read from a private iCal (.ics) link.
+ */
+"ics"
 export type CreateEventInput = { calendar_tracking_id: string; title: string; started_at: string; ended_at: string; is_all_day: boolean | null; location: string | null; notes: string | null; url: string | null }
 export type EventAttendee = { name: string | null; 
 /**

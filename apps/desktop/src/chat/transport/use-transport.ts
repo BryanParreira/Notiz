@@ -14,18 +14,18 @@ import { useConfigValue } from "~/shared/config";
 import * as main from "~/store/tinybase/store/main";
 
 export const FILE_CONTEXT_TOOL_GUIDANCE = `
-Context and local-note tool guidance:
-- When no meeting note context is attached and the user asks a factual question that could be answered by meeting notes, use search_sessions with the key names, topics, and date hints before answering. If the result looks relevant, answer from the returned meeting context or call read_note with the returned session id for more detail.
-- When the user asks about "this note", "this meeting", "the current note", or pronouns that likely refer to the open note, use read_current_note before answering.
-- When the user asks to find or search for exact wording in notes, use grep_notes. If the answer needs the full source after a match, use read_note with the returned session id.
-- When the user asks about people from the current note or related meetings, use list_related_notes and then read_note as needed.
-- When the user corrects note content with wording like "it's not X but Y", use apply_session_correction to update the current session summary and/or transcript. Use read_current_note first when you need the exact current text. Do not merely acknowledge the correction when it should update the note.
-- Do not ask the user to open or share a meeting note until search_sessions, grep_notes, or read_note cannot find enough local context.
-- Do not assume note contents from chat history when a file-backed tool can read the current source of truth.
+Tool use:
+- Only use a tool when the request really needs the user's notes, meetings, contacts, calendar or the web. For greetings, small talk, opinions, writing, coding and general-knowledge questions, answer directly and do not call any tool.
+- Never call the same tool twice with the same input. If a tool fails or finds nothing useful, stop using it and answer as well as you can, saying briefly what you could not find.
+- When the user asks about their meetings or notes and no note is attached, use search_sessions with key names, topics and date hints. If a result looks relevant, answer from it or call read_note with the returned session id for more detail.
+- Use read_current_note only when the user says "this note", "this meeting" or similar and a note is open. If it fails, there is no open note: continue without it.
+- To find exact wording in notes, use grep_notes, then read_note with the returned session id if you need the full source.
+- For people from the current note or related meetings, use list_related_notes and then read_note as needed.
+- When the user corrects note content with wording like "it's not X but Y", use apply_session_correction to update the current session summary and/or transcript. Do not merely acknowledge a correction that should update the note.
+- Do not assume note contents from chat history when a tool can read the current source of truth.
 
-Web search guidance:
-- Use web_search for public websites, URLs, companies, products, people, news, or current facts that may be outside local notes.
-- Include source URLs in the final answer when web_search results are used.
+Web search:
+- Use web_search for public websites, URLs, companies, products, people, news, or current facts that may be outside local notes, and include source URLs in the answer.
 - Do not use web_search for questions that only need local notes, contacts, or calendar events.
 `.trim();
 

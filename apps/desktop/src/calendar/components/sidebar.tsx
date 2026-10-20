@@ -18,7 +18,6 @@ import { AccessPermissionRow, TroubleShootingLink } from "./apple/permission";
 import { OAuthProviderContent } from "./oauth/provider-content";
 import { type CalendarProvider, PROVIDERS } from "./shared";
 
-import { useAuth } from "~/auth";
 import { useBillingAccess } from "~/auth/billing";
 import { useConnections } from "~/auth/useConnections";
 import { useNativeContextMenu } from "~/shared/hooks/useNativeContextMenu";
@@ -158,9 +157,8 @@ function ProviderAccordionItem({
   returnTo: string;
 }) {
   const { t } = useLingui();
-  const auth = useAuth();
-  const { isPaid, isPro, upgradeToPro } = useBillingAccess();
-  const { data: connections, isPending, isError } = useConnections(isPaid);
+  const { isPro, upgradeToPro } = useBillingAccess();
+  const { data: connections, isPending, isError } = useConnections();
   const providerConnections =
     connections?.filter(
       (connection) => connection.integration_id === provider.nangoIntegrationId,
@@ -168,12 +166,7 @@ function ProviderAccordionItem({
 
   const requiresPro = !!provider.nangoIntegrationId && !isPro;
 
-  const canAddAccount =
-    !!provider.nangoIntegrationId &&
-    !!auth.session &&
-    isPaid &&
-    !isPending &&
-    !isError;
+  const canAddAccount = !!provider.nangoIntegrationId && !isPending && !isError;
   const shouldConnectOnClick =
     canAddAccount && providerConnections.length === 0;
 

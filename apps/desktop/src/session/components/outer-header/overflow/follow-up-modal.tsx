@@ -2,9 +2,13 @@ import { Trans, useLingui } from "@lingui/react/macro";
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 
+import { commands as openerCommands } from "@notiz/plugin-opener2";
 import { cn } from "@notiz/utils";
 
 import { useFollowUpDraft } from "~/session/insights/follow-up";
+import { buildFollowUpMailto } from "~/session/insights/follow-up-mailto";
+import { useParticipantEmails } from "~/session/insights/participant-emails";
+import * as main from "~/store/tinybase/store/main";
 
 export function FollowUpModal({
   sessionId,
@@ -19,6 +23,18 @@ export function FollowUpModal({
   const { draft, isGenerating, error, canGenerate, generate } =
     useFollowUpDraft(sessionId);
   const [copied, setCopied] = useState(false);
+  const recipients = useParticipantEmails(sessionId);
+  const title = main.UI.useCell("sessions", sessionId, "title", main.STORE_ID);
+
+  const handleOpenMail = async () => {
+    if (!draft) return;
+    const url = buildFollowUpMailto({
+      recipients,
+      subject: title ? `Follow-up: ${title}` : "Follow-up",
+      body: draft,
+    });
+    await openerCommands.openUrl(url, null);
+  };
 
   useEffect(() => {
     if (open && !draft && !isGenerating) {
@@ -86,6 +102,16 @@ export function FollowUpModal({
             )}
           </div>
 
+          <button
+            onClick={handleOpenMail}
+            disabled={!draft}
+            className="border-primary bg-primary text-primary-foreground hover:bg-primary/90 flex h-10 items-center justify-center rounded-full border-2 text-sm font-medium transition-all disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            {recipients.length > 0
+              ? t`Open in mail app (${recipients.length})`
+              : t`Open in mail app`}
+          </button>
+
           <div className="flex gap-2">
             <button
               onClick={() => generate()}
@@ -97,7 +123,7 @@ export function FollowUpModal({
             <button
               onClick={handleCopy}
               disabled={!draft}
-              className="border-primary bg-primary text-primary-foreground hover:bg-primary/90 flex h-10 flex-1 items-center justify-center rounded-full border-2 text-sm font-medium shadow-[0_4px_14px_rgba(87,83,78,0.4)] transition-all disabled:cursor-not-allowed disabled:opacity-50"
+              className="border-border/80 hover:bg-accent flex h-10 flex-1 items-center justify-center rounded-full border text-sm font-medium transition-all disabled:cursor-not-allowed disabled:opacity-50"
             >
               {copied ? t`Copied!` : t`Copy to clipboard`}
             </button>

@@ -12,6 +12,7 @@ import { CalendarSection } from "./calendar";
 import {
   getInitialStep,
   getNextStep,
+  getStepList,
   getPrevStep,
   getStepStatus,
 } from "./config";
@@ -66,6 +67,27 @@ export function StandaloneOnboardingScreen({
   );
 }
 
+function StepDots({ steps, current }: { steps: string[]; current: string }) {
+  const currentIndex = steps.indexOf(current);
+
+  return (
+    <div className="flex items-center gap-1.5" aria-hidden="true">
+      {steps.map((step, index) => (
+        <motion.span
+          key={step}
+          layout
+          animate={{ width: index === currentIndex ? 20 : 6 }}
+          transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
+          className={cn([
+            "h-1.5 rounded-full",
+            index <= currentIndex ? "bg-primary" : "bg-border",
+          ])}
+        />
+      ))}
+    </div>
+  );
+}
+
 function OnboardingScreenContent({
   onFinish,
   headerClassName,
@@ -76,7 +98,7 @@ function OnboardingScreenContent({
   headerDragRegion?: boolean;
 }) {
   const queryClient = useQueryClient();
-  const [isMuted, setIsMuted] = useState(false);
+  const [isMuted, setIsMuted] = useState(true);
   const [currentStep, setCurrentStep] = useState(getInitialStep);
   const onboardingVideoRef = useRef<HTMLVideoElement>(null);
   const currentPlatform = platform();
@@ -93,19 +115,23 @@ function OnboardingScreenContent({
 
   useEffect(() => {}, [currentPlatform, currentStep]);
 
+  // Music is opt-in: a first launch should be quiet.
   useEffect(() => {
+    if (isMuted) {
+      sfxCommands.stop("BGM").catch(console.error);
+      return;
+    }
     sfxCommands
       .play("BGM")
       .then(() => sfxCommands.setVolume("BGM", 0.2))
       .catch(console.error);
+  }, [isMuted]);
+
+  useEffect(() => {
     return () => {
       sfxCommands.stop("BGM").catch(console.error);
     };
   }, []);
-
-  useEffect(() => {
-    sfxCommands.setVolume("BGM", isMuted ? 0 : 0.2).catch(console.error);
-  }, [isMuted]);
 
   useEffect(() => {
     if (onboardingVideoRef.current) {
@@ -177,9 +203,12 @@ function OnboardingScreenContent({
           headerClassName,
         ])}
       >
-        <h1 className="font-hand text-foreground text-4xl leading-none font-semibold tracking-normal">
-          <Trans>Welcome to Notiz</Trans>
-        </h1>
+        <div className="flex flex-col gap-4">
+          <h1 className="font-display text-foreground text-4xl leading-none tracking-normal">
+            <Trans>Welcome to Notiz</Trans>
+          </h1>
+          <StepDots steps={getStepList()} current={currentStep} />
+        </div>
       </div>
 
       <div className="scroll-fade-y relative z-10 flex-1 overflow-y-auto">
@@ -202,10 +231,11 @@ function OnboardingScreenContent({
           </OnboardingSection>
 
           <OnboardingSection
-            title={<Trans>Connect calendar</Trans>}
+            title={<Trans>Connect calendar (optional)</Trans>}
             description={
               <Trans>
-                Notiz will sync your calendar to get meeting reminders
+                Get meeting reminders from your calendar. Accounts stay on this
+                device, and you can skip this and add one later in Calendar.
               </Trans>
             }
             completedTitle={<Trans>Calendar connected</Trans>}

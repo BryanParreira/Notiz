@@ -405,6 +405,8 @@ export type TabInput =
   | { type: "organizations"; id: string }
   | { type: "folders"; id: string | null }
   | { type: "empty" }
+  | { type: "inbox" }
+  | { type: "chat" }
   | {
       type: "extension";
       extensionId: string;

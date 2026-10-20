@@ -1,6 +1,10 @@
+mod accounts;
 mod convert;
 mod error;
 mod fetch;
+mod http;
+mod ics;
+mod oauth;
 pub mod runtime;
 
 pub use error::Error;
@@ -37,17 +41,28 @@ pub fn available_providers() -> Vec<CalendarProviderType> {
         CalendarProviderType::Apple,
         CalendarProviderType::Google,
         CalendarProviderType::Outlook,
+        CalendarProviderType::Ics,
     ];
 
     #[cfg(not(target_os = "macos"))]
-    let providers = vec![CalendarProviderType::Google, CalendarProviderType::Outlook];
+    let providers = vec![
+        CalendarProviderType::Google,
+        CalendarProviderType::Outlook,
+        CalendarProviderType::Ics,
+    ];
 
     providers
 }
 
+#[derive(serde::Serialize, serde::Deserialize, Clone, Debug)]
+#[cfg_attr(feature = "specta", derive(specta::Type))]
+pub struct AccountInfo {
+    pub provider: CalendarProviderType,
+    pub connection_id: String,
+    pub label: String,
+}
+
 pub async fn list_connection_ids(
-    api_base_url: &str,
-    access_token: Option<&str>,
     apple_authorized: bool,
 ) -> Result<Vec<ProviderConnectionIds>, Error> {
     use std::collections::HashMap;
@@ -66,27 +81,24 @@ pub async fn list_connection_ids(
     #[cfg(not(target_os = "macos"))]
     let _ = apple_authorized;
 
-    if let Some(token) = access_token.filter(|t| !t.is_empty()) {
-        match fetch::list_all_connection_ids(api_base_url, token).await {
-            Ok(all) => {
-                for provider in [CalendarProviderType::Google, CalendarProviderType::Outlook] {
-                    // empty vec = provider is available but has no connections (vs absent = unavailable)
-                    map.entry(provider).or_default();
-                }
-                for (integration_id, connection_ids) in all {
-                    let provider = match integration_id.as_str() {
-                        "google-calendar" => CalendarProviderType::Google,
-                        "outlook" => CalendarProviderType::Outlook,
-                        _ => continue,
-                    };
-                    map.insert(provider, connection_ids);
-                }
+    for provider in [
+        CalendarProviderType::Google,
+        CalendarProviderType::Outlook,
+        CalendarProviderType::Ics,
+    ] {
+        map.entry(provider).or_default();
+    }
+
+    match accounts::load() {
+        Ok(stored) => {
+            for account in stored {
+                map.entry(account.provider)
+                    .or_default()
+                    .push(account.connection_id);
             }
-            Err(e) => {
-                tracing::warn!(
-                    "failed to fetch remote connection ids: {e}; continuing with local providers only"
-                );
-            }
+        }
+        Err(e) => {
+            tracing::warn!("failed to read stored calendar accounts: {e}");
         }
     }
 
@@ -100,20 +112,50 @@ pub async fn list_connection_ids(
 }
 
 pub async fn is_provider_enabled(
-    api_base_url: &str,
-    access_token: Option<&str>,
     apple_authorized: bool,
     provider: CalendarProviderType,
 ) -> Result<bool, Error> {
-    let all = list_connection_ids(api_base_url, access_token, apple_authorized).await?;
+    let all = list_connection_ids(apple_authorized).await?;
     Ok(all
         .iter()
         .any(|p| p.provider == provider && !p.connection_ids.is_empty()))
 }
 
+pub fn list_accounts() -> Result<Vec<AccountInfo>, Error> {
+    Ok(accounts::load()?
+        .into_iter()
+        .map(|a| AccountInfo {
+            provider: a.provider,
+            connection_id: a.connection_id,
+            label: a.label,
+        })
+        .collect())
+}
+
+/// Runs the browser sign-in for `provider`. `open_url` is handed the
+/// authorization URL and must open it in the user's browser.
+pub async fn connect_account(
+    provider: CalendarProviderType,
+    open_url: impl FnOnce(&str) -> Result<(), String>,
+) -> Result<AccountInfo, Error> {
+    let pending = oauth::begin(provider).await?;
+    open_url(&pending.auth_url).map_err(Error::OAuth)?;
+    let account = pending.finish().await?;
+    Ok(AccountInfo {
+        provider: account.provider,
+        connection_id: account.connection_id,
+        label: account.label,
+    })
+}
+
+pub async fn disconnect_account(
+    provider: CalendarProviderType,
+    connection_id: &str,
+) -> Result<(), Error> {
+    oauth::remove_account(provider, connection_id).await
+}
+
 pub async fn list_calendars(
-    api_base_url: &str,
-    access_token: &str,
     provider: CalendarProviderType,
     connection_id: &str,
 ) -> Result<Vec<CalendarListItem>, Error> {
@@ -123,21 +165,18 @@ pub async fn list_calendars(
             Ok(convert::convert_apple_calendars(calendars))
         }
         CalendarProviderType::Google => {
-            let calendars =
-                fetch::list_google_calendars(api_base_url, access_token, connection_id).await?;
+            let calendars = fetch::list_google_calendars(connection_id).await?;
             Ok(convert::convert_google_calendars(calendars))
         }
         CalendarProviderType::Outlook => {
-            let calendars =
-                fetch::list_outlook_calendars(api_base_url, access_token, connection_id).await?;
+            let calendars = fetch::list_outlook_calendars(connection_id).await?;
             Ok(convert::convert_outlook_calendars(calendars))
         }
+        CalendarProviderType::Ics => ics_calendar(connection_id),
     }
 }
 
 pub async fn list_events(
-    api_base_url: &str,
-    access_token: &str,
     provider: CalendarProviderType,
     connection_id: &str,
     filter: EventFilter,
@@ -149,19 +188,91 @@ pub async fn list_events(
         }
         CalendarProviderType::Google => {
             let calendar_id = filter.calendar_tracking_id.clone();
-            let events =
-                fetch::list_google_events(api_base_url, access_token, connection_id, filter)
-                    .await?;
+            let events = fetch::list_google_events(connection_id, filter).await?;
             Ok(convert::convert_google_events(events, &calendar_id))
         }
         CalendarProviderType::Outlook => {
             let calendar_id = filter.calendar_tracking_id.clone();
-            let events =
-                fetch::list_outlook_events(api_base_url, access_token, connection_id, filter)
-                    .await?;
+            let events = fetch::list_outlook_events(connection_id, filter).await?;
             Ok(convert::convert_outlook_events(events, &calendar_id))
         }
+        CalendarProviderType::Ics => {
+            let account = accounts::load()?
+                .into_iter()
+                .find(|a| a.provider == provider && a.connection_id == connection_id)
+                .ok_or(Error::NotAuthenticated)?;
+            let url = account.url.ok_or(Error::NotAuthenticated)?;
+            let text = ics::fetch(&url).await?;
+            Ok(ics::parse_events(
+                &text,
+                &filter.calendar_tracking_id,
+                filter.from,
+                filter.to,
+            ))
+        }
     }
+}
+
+fn ics_calendar(connection_id: &str) -> Result<Vec<CalendarListItem>, Error> {
+    let account = accounts::load()?
+        .into_iter()
+        .find(|a| a.provider == CalendarProviderType::Ics && a.connection_id == connection_id)
+        .ok_or(Error::NotAuthenticated)?;
+
+    Ok(vec![CalendarListItem {
+        provider: CalendarProviderType::Ics,
+        id: account.connection_id,
+        title: account.label,
+        source: Some("Calendar link".to_string()),
+        color: None,
+        is_primary: Some(false),
+        can_edit: Some(false),
+        raw: String::new(),
+    }])
+}
+
+/// Adds a calendar from a private iCal link. The link is fetched once to make
+/// sure it really is a calendar before anything is stored.
+pub async fn add_ics_account(url: String, label: Option<String>) -> Result<AccountInfo, Error> {
+    let url = ics::normalize_url(&url)?;
+    let text = ics::fetch(&url).await?;
+    if !ics::looks_like_calendar(&text) {
+        return Err(Error::Api(
+            "that link did not return a calendar. Use the private iCal (.ics) link.".into(),
+        ));
+    }
+
+    let label = label
+        .map(|l| l.trim().to_string())
+        .filter(|l| !l.is_empty())
+        .or_else(|| ics::calendar_name(&text))
+        .unwrap_or_else(|| {
+            url::Url::parse(&url)
+                .ok()
+                .and_then(|u| u.host_str().map(str::to_string))
+                .unwrap_or_else(|| "Calendar".to_string())
+        });
+
+    let account = accounts::StoredAccount {
+        provider: CalendarProviderType::Ics,
+        connection_id: uuid::Uuid::new_v4().to_string(),
+        label,
+        access_token: String::new(),
+        refresh_token: String::new(),
+        expires_at: 0,
+        url: Some(url),
+    };
+
+    let _guard = accounts::LOCK.lock().await;
+    let mut stored = accounts::load()?;
+    let info = AccountInfo {
+        provider: account.provider,
+        connection_id: account.connection_id.clone(),
+        label: account.label.clone(),
+    };
+    stored.push(account);
+    accounts::save(&stored)?;
+    Ok(info)
 }
 
 pub fn open_calendar(provider: CalendarProviderType) -> Result<(), Error> {

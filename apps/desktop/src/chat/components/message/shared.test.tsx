@@ -45,15 +45,15 @@ describe("MessageBubble", () => {
     expect(bubble.className).not.toContain("text-foreground");
   });
 
-  it("keeps dark text on light-blue user bubbles", () => {
+  it("uses the neutral secondary surface for user bubbles", () => {
     const { container } = render(
       <MessageBubble variant="user">Hello</MessageBubble>,
     );
 
     const bubble = container.firstChild as HTMLElement;
 
-    expect(bubble.className).toContain("bg-blue-100");
-    expect(bubble.className).toContain("text-neutral-800");
-    expect(bubble.className).not.toContain("text-foreground");
+    expect(bubble.className).toContain("bg-secondary");
+    expect(bubble.className).toContain("text-foreground");
+    expect(bubble.className).not.toContain("bg-blue-100");
   });
 });

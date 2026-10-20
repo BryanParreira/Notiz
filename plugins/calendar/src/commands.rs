@@ -1,8 +1,6 @@
 use notiz_calendar_interface::{
     CalendarEvent, CalendarListItem, CalendarProviderType, CreateEventInput, EventFilter,
 };
-use tauri::Manager;
-use tauri_plugin_auth::AuthPluginExt;
 use tauri_plugin_permissions::PermissionsPluginExt;
 
 use crate::error::Error;
@@ -19,10 +17,8 @@ pub async fn is_provider_enabled<R: tauri::Runtime>(
     app: tauri::AppHandle<R>,
     provider: CalendarProviderType,
 ) -> Result<bool, Error> {
-    let config = app.state::<crate::PluginConfig>();
-    let token = access_token(&app);
     let apple = is_apple_authorized(&app).await?;
-    notiz_calendar::is_provider_enabled(&config.api_base_url, token.as_deref(), apple, provider)
+    notiz_calendar::is_provider_enabled(apple, provider)
         .await
         .map_err(Into::into)
 }
@@ -32,53 +28,78 @@ pub async fn is_provider_enabled<R: tauri::Runtime>(
 pub async fn list_connection_ids<R: tauri::Runtime>(
     app: tauri::AppHandle<R>,
 ) -> Result<Vec<notiz_calendar::ProviderConnectionIds>, Error> {
-    let config = app.state::<crate::PluginConfig>();
-    let token = access_token(&app);
     let apple = is_apple_authorized(&app).await?;
-    notiz_calendar::list_connection_ids(&config.api_base_url, token.as_deref(), apple)
+    notiz_calendar::list_connection_ids(apple)
         .await
         .map_err(Into::into)
 }
 
 #[tauri::command]
 #[specta::specta]
-pub async fn list_calendars<R: tauri::Runtime>(
+pub fn list_accounts() -> Result<Vec<notiz_calendar::AccountInfo>, Error> {
+    notiz_calendar::list_accounts().map_err(Into::into)
+}
+
+#[tauri::command]
+#[specta::specta]
+pub async fn connect_account<R: tauri::Runtime>(
     app: tauri::AppHandle<R>,
+    provider: CalendarProviderType,
+) -> Result<notiz_calendar::AccountInfo, Error> {
+    use tauri_plugin_opener::OpenerExt;
+
+    notiz_calendar::connect_account(provider, |url| {
+        app.opener()
+            .open_url(url, None::<&str>)
+            .map_err(|e| e.to_string())
+    })
+    .await
+    .map_err(Into::into)
+}
+
+#[tauri::command]
+#[specta::specta]
+pub async fn add_ics_account(
+    url: String,
+    label: Option<String>,
+) -> Result<notiz_calendar::AccountInfo, Error> {
+    notiz_calendar::add_ics_account(url, label)
+        .await
+        .map_err(Into::into)
+}
+
+#[tauri::command]
+#[specta::specta]
+pub async fn disconnect_account(
+    provider: CalendarProviderType,
+    connection_id: String,
+) -> Result<(), Error> {
+    notiz_calendar::disconnect_account(provider, &connection_id)
+        .await
+        .map_err(Into::into)
+}
+
+#[tauri::command]
+#[specta::specta]
+pub async fn list_calendars(
     provider: CalendarProviderType,
     connection_id: String,
 ) -> Result<Vec<CalendarListItem>, Error> {
-    let config = app.state::<crate::PluginConfig>();
-    let token = match provider {
-        CalendarProviderType::Apple => access_token(&app).unwrap_or_default(),
-        _ => require_access_token(&app)?,
-    };
-    notiz_calendar::list_calendars(&config.api_base_url, &token, provider, &connection_id)
+    notiz_calendar::list_calendars(provider, &connection_id)
         .await
         .map_err(Into::into)
 }
 
 #[tauri::command]
 #[specta::specta]
-pub async fn list_events<R: tauri::Runtime>(
-    app: tauri::AppHandle<R>,
+pub async fn list_events(
     provider: CalendarProviderType,
     connection_id: String,
     filter: EventFilter,
 ) -> Result<Vec<CalendarEvent>, Error> {
-    let config = app.state::<crate::PluginConfig>();
-    let token = match provider {
-        CalendarProviderType::Apple => access_token(&app).unwrap_or_default(),
-        _ => require_access_token(&app)?,
-    };
-    notiz_calendar::list_events(
-        &config.api_base_url,
-        &token,
-        provider,
-        &connection_id,
-        filter,
-    )
-    .await
-    .map_err(Into::into)
+    notiz_calendar::list_events(provider, &connection_id, filter)
+        .await
+        .map_err(Into::into)
 }
 
 #[tauri::command]
@@ -104,18 +125,6 @@ pub fn create_event<R: tauri::Runtime>(
 #[specta::specta]
 pub fn parse_meeting_link(text: String) -> Option<String> {
     notiz_calendar::parse_meeting_link(&text)
-}
-
-fn access_token<R: tauri::Runtime>(app: &tauri::AppHandle<R>) -> Option<String> {
-    app.access_token().ok().flatten().filter(|t| !t.is_empty())
-}
-
-fn require_access_token<R: tauri::Runtime>(app: &tauri::AppHandle<R>) -> Result<String, Error> {
-    let token = app.access_token().map_err(|e| Error::Auth(e.to_string()))?;
-    match token {
-        Some(t) if !t.is_empty() => Ok(t),
-        _ => Err(notiz_calendar::Error::NotAuthenticated.into()),
-    }
 }
 
 async fn is_apple_authorized<R: tauri::Runtime>(app: &tauri::AppHandle<R>) -> Result<bool, Error> {

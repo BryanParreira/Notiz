@@ -143,7 +143,7 @@ impl WindowImpl for AppWindow {
                     // the sidebar with nowhere to put the content pane.
                     .min_inner_size(700.0, 500.0);
                 let window = builder.build()?;
-                window.set_size(LogicalSize::new(910.0, 600.0))?;
+                window.set_size(LogicalSize::new(1200.0, 780.0))?;
                 window
             }
             Self::Composer => {

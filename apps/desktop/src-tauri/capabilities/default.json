@@ -21,6 +21,7 @@
     "core:window:allow-is-maximized",
     "core:window:allow-toggle-maximize",
     "calendar:default",
+    "mail:default",
     "audio-priority:default",
     "auth:default",
     "db:default",
@@ -87,13 +88,7 @@
           "url": "http://localhost:*/**"
         },
         {
-          "url": "http://*.*.*.*:*/**"
-        },
-        {
-          "url": "https://**"
-        },
-        {
-          "url": "http://**"
+          "url": "http://127.0.0.1:*/**"
         }
       ]
     }

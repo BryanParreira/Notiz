@@ -15,6 +15,10 @@ function getOnboardingSteps(): OnboardingStep[] {
   return platform() === "macos" ? STEPS_MACOS : STEPS_OTHER;
 }
 
+export function getStepList(): OnboardingStep[] {
+  return getOnboardingSteps();
+}
+
 export function getInitialStep(): OnboardingStep {
   return getOnboardingSteps()[0];
 }

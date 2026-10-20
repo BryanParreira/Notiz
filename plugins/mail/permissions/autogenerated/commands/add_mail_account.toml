@@ -1,0 +1,13 @@
+# Automatically generated - DO NOT EDIT!
+
+"$schema" = "../../schemas/schema.json"
+
+[[permission]]
+identifier = "allow-add-mail-account"
+description = "Enables the add_mail_account command without any pre-configured scope."
+commands.allow = ["add_mail_account"]
+
+[[permission]]
+identifier = "deny-add-mail-account"
+description = "Denies the add_mail_account command without any pre-configured scope."
+commands.deny = ["add_mail_account"]

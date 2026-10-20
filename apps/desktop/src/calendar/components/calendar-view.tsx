@@ -225,7 +225,7 @@ export function CalendarView() {
         ])}
       >
         <div className="flex items-center gap-2">
-          <h2 className="text-foreground text-sm font-semibold">
+          <h2 className="font-display text-foreground text-xl">
             {isMonthView
               ? format(currentMonth, "MMMM yyyy")
               : format(compactVisibleStart, "MMMM yyyy")}

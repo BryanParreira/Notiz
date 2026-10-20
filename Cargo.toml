@@ -70,6 +70,7 @@ notiz-audio-utils = { path = "crates/audio-utils", package = "audio-utils" }
 notiz-buffer = { path = "crates/buffer", package = "buffer" }
 notiz-bundle = { path = "crates/bundle", package = "bundle" }
 notiz-calendar = { path = "crates/calendar", package = "calendar" }
+notiz-mail = { path = "crates/mail" }
 notiz-calendar-interface = { path = "crates/calendar-interface", package = "calendar-interface" }
 notiz-chatwoot = { path = "crates/chatwoot", package = "chatwoot" }
 notiz-claude = { path = "crates/claude", package = "claude" }
@@ -220,6 +221,7 @@ tauri-plugin-audio-priority = { path = "plugins/audio-priority" }
 tauri-plugin-auth = { path = "plugins/auth" }
 tauri-plugin-bedrock = { path = "plugins/bedrock" }
 tauri-plugin-calendar = { path = "plugins/calendar" }
+tauri-plugin-mail = { path = "plugins/mail" }
 tauri-plugin-db = { path = "plugins/db" }
 tauri-plugin-deeplink2 = { path = "plugins/deeplink2" }
 tauri-plugin-detect = { path = "plugins/detect" }

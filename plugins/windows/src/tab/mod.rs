@@ -42,6 +42,10 @@ common_derives! {
         Folders { id: Option<String> },
         #[serde(rename = "empty")]
         Empty,
+        #[serde(rename = "inbox")]
+        Inbox,
+        #[serde(rename = "chat")]
+        Chat,
         #[serde(rename = "extension")]
         Extension {
             #[serde(rename = "extensionId")]

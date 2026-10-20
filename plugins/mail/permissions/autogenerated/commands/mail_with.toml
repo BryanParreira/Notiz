@@ -1,0 +1,13 @@
+# Automatically generated - DO NOT EDIT!
+
+"$schema" = "../../schemas/schema.json"
+
+[[permission]]
+identifier = "allow-mail-with"
+description = "Enables the mail_with command without any pre-configured scope."
+commands.allow = ["mail_with"]
+
+[[permission]]
+identifier = "deny-mail-with"
+description = "Denies the mail_with command without any pre-configured scope."
+commands.deny = ["mail_with"]

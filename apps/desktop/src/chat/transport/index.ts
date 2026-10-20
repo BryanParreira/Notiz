@@ -28,6 +28,41 @@ import {
   type ToolOutputPart,
 } from "./helpers";
 
+type StepLike = {
+  content?: Array<{
+    type: string;
+    toolName?: string;
+    input?: unknown;
+  }>;
+};
+
+export function shouldForceAnswer(
+  steps: readonly StepLike[],
+  stepNumber: number,
+): boolean {
+  if (stepNumber >= MAX_TOOL_STEPS - 1) {
+    return true;
+  }
+
+  const seen = new Set<string>();
+  for (const step of steps) {
+    for (const part of step.content ?? []) {
+      if (part.type === "tool-error") {
+        return true;
+      }
+      if (part.type === "tool-call") {
+        const key = `${part.toolName}:${JSON.stringify(part.input ?? null)}`;
+        if (seen.has(key)) {
+          return true;
+        }
+        seen.add(key);
+      }
+    }
+  }
+
+  return false;
+}
+
 export type ResolvedChatContext =
   | { kind: "session"; context: SessionContext }
   | { kind: "text"; text: string };
@@ -196,11 +231,20 @@ export class CustomChatTransport implements ChatTransport<NotizUIMessage> {
       instructions: this.systemPrompt,
       tools,
       stopWhen: stepCountIs(MAX_TOOL_STEPS),
-      prepareStep: async ({ messages }) => {
-        if (messages.length > MESSAGE_WINDOW_THRESHOLD) {
-          return { messages: messages.slice(-MESSAGE_WINDOW_SIZE) };
+      prepareStep: async ({ messages, stepNumber, steps }) => {
+        const windowed =
+          messages.length > MESSAGE_WINDOW_THRESHOLD
+            ? { messages: messages.slice(-MESSAGE_WINDOW_SIZE) }
+            : {};
+
+        // Small local models can get stuck calling a failing tool again and
+        // again and never answer. Stop offering tools once a step has failed,
+        // a call has repeated, or only the last step is left, so the model has
+        // to write its reply.
+        if (shouldForceAnswer(steps, stepNumber)) {
+          return { ...windowed, toolChoice: "none" as const };
         }
-        return {};
+        return windowed;
       },
     });
 
@@ -249,7 +293,7 @@ export class CustomChatTransport implements ChatTransport<NotizUIMessage> {
       messages: await convertToModelMessages(messagesWithContext),
       abortSignal: options.abortSignal,
       experimental_transform: smoothStream({
-        chunking: "line",
+        chunking: "word",
         delayInMs: null,
       }),
     });

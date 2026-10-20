@@ -7,6 +7,10 @@ Default permissions for the plugin
 - `allow-available-providers`
 - `allow-is-provider-enabled`
 - `allow-list-connection-ids`
+- `allow-list-accounts`
+- `allow-connect-account`
+- `allow-add-ics-account`
+- `allow-disconnect-account`
 - `allow-list-calendars`
 - `allow-list-events`
 - `allow-open-calendar`
@@ -21,6 +25,32 @@ Default permissions for the plugin
 <th>Description</th>
 </tr>
 
+
+<tr>
+<td>
+
+`calendar:allow-add-ics-account`
+
+</td>
+<td>
+
+Enables the add_ics_account command without any pre-configured scope.
+
+</td>
+</tr>
+
+<tr>
+<td>
+
+`calendar:deny-add-ics-account`
+
+</td>
+<td>
+
+Denies the add_ics_account command without any pre-configured scope.
+
+</td>
+</tr>
 
 <tr>
 <td>
@@ -44,6 +74,32 @@ Enables the available_providers command without any pre-configured scope.
 <td>
 
 Denies the available_providers command without any pre-configured scope.
+
+</td>
+</tr>
+
+<tr>
+<td>
+
+`calendar:allow-connect-account`
+
+</td>
+<td>
+
+Enables the connect_account command without any pre-configured scope.
+
+</td>
+</tr>
+
+<tr>
+<td>
+
+`calendar:deny-connect-account`
+
+</td>
+<td>
+
+Denies the connect_account command without any pre-configured scope.
 
 </td>
 </tr>
@@ -77,6 +133,32 @@ Denies the create_event command without any pre-configured scope.
 <tr>
 <td>
 
+`calendar:allow-disconnect-account`
+
+</td>
+<td>
+
+Enables the disconnect_account command without any pre-configured scope.
+
+</td>
+</tr>
+
+<tr>
+<td>
+
+`calendar:deny-disconnect-account`
+
+</td>
+<td>
+
+Denies the disconnect_account command without any pre-configured scope.
+
+</td>
+</tr>
+
+<tr>
+<td>
+
 `calendar:allow-is-provider-enabled`
 
 </td>
@@ -96,6 +178,32 @@ Enables the is_provider_enabled command without any pre-configured scope.
 <td>
 
 Denies the is_provider_enabled command without any pre-configured scope.
+
+</td>
+</tr>
+
+<tr>
+<td>
+
+`calendar:allow-list-accounts`
+
+</td>
+<td>
+
+Enables the list_accounts command without any pre-configured scope.
+
+</td>
+</tr>
+
+<tr>
+<td>
+
+`calendar:deny-list-accounts`
+
+</td>
+<td>
+
+Denies the list_accounts command without any pre-configured scope.
 
 </td>
 </tr>

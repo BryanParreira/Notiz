@@ -211,7 +211,7 @@ describe("ClassicMainBody", () => {
     );
     expect(screen.getByTestId("panel-group").dataset.dir).toBe("ltr");
     expect(screen.getByTestId("panel-group").dataset.autoSaveId).toBe(
-      "classic-main-sidebar",
+      "classic-main-sidebar-v2",
     );
     expect(screen.getByTestId("classic-main-sidebar")).toBeTruthy();
     expect(screen.getByTestId("resize-handle").dataset.className).toContain(
@@ -225,12 +225,12 @@ describe("ClassicMainBody", () => {
     expect(panels).toHaveLength(2);
     expect(panels[0]?.dataset.panelId).toBe("classic-main-sidebar-left");
     expect(panels[0]?.dataset.order).toBe("1");
-    expect(panels[0]?.dataset.defaultSize).toBe("12.5");
-    expect(panels[0]?.dataset.minSize).toBe("11.25");
-    expect(panels[0]?.dataset.maxSize).toBe("30");
+    expect(Number(panels[0]?.dataset.defaultSize)).toBeCloseTo(13.75);
+    expect(Number(panels[0]?.dataset.minSize)).toBeCloseTo(11.875);
+    expect(Number(panels[0]?.dataset.maxSize)).toBeCloseTo(17.5);
     expect(panels[0]?.dataset.flexGrow).toBe("var(--left-sidebar-panel-size)");
-    expect(panels[0]?.dataset.minWidth).toBe("180");
-    expect(panels[0]?.dataset.maxWidth).toBe("480");
+    expect(panels[0]?.dataset.minWidth).toBe("190");
+    expect(panels[0]?.dataset.maxWidth).toBe("280");
     expect(panels[0]?.dataset.transition).toContain("flex-grow");
     expect(panels[1]?.dataset.panelId).toBe("classic-main-content");
     expect(panels[1]?.dataset.order).toBe("2");
@@ -245,13 +245,13 @@ describe("ClassicMainBody", () => {
     expect(sidebarContent?.className).toContain("translate-x-0");
     expect(sidebarContent?.getAttribute("aria-hidden")).toBe("false");
     expect(sidebarChrome?.style.width).toBe("var(--left-sidebar-panel-width)");
-    expect(sidebarChrome?.style.minWidth).toBe("180px");
-    expect(sidebarChrome?.style.maxWidth).toBe("480px");
+    expect(sidebarChrome?.style.minWidth).toBe("190px");
+    expect(sidebarChrome?.style.maxWidth).toBe("280px");
     expect(sidebarChrome?.className).not.toContain("w-[200px]");
 
     const bodyRoot = screen.getByTestId("panel-group").parentElement;
     expect(bodyRoot?.getAttribute("style")).toContain(
-      "--left-sidebar-panel-size: 12.5",
+      "--left-sidebar-panel-size: 13.75",
     );
 
     act(() => {

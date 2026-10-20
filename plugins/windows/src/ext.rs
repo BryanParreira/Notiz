@@ -283,9 +283,22 @@ impl AppWindow {
     where
         Self: WindowImpl,
     {
+        use tauri::Manager;
         use tauri_plugin_window_state::{StateFlags, WindowExt};
 
-        let _ = window.restore_state(StateFlags::SIZE);
+        // Restoring with no saved entry lets the plugin's in-memory cache (which
+        // holds the window's pre-resize default) overwrite the default size set
+        // in `build_window`, so only restore a size the user actually saved.
+        let has_saved_state = app
+            .path()
+            .app_config_dir()
+            .ok()
+            .and_then(|dir| std::fs::read_to_string(dir.join(".window-state.json")).ok())
+            .is_some_and(|raw| raw.contains(&format!("\"{}\"", window.label())));
+
+        if has_saved_state {
+            let _ = window.restore_state(StateFlags::SIZE);
+        }
 
         self.position_new_window(app, window)?;
         window.show()?;
