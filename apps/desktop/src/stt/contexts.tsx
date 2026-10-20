@@ -1009,11 +1009,25 @@ const useHandleDetectEvents = (store: ListenerStore) => {
                 return;
               }
 
+              const firstAppName = displayApps[0]
+                ? getNotificationAppName(displayApps[0]).trim()
+                : "";
+              const detectedTitle =
+                nearbyEvents.length === 1
+                  ? nearbyEvents[0]!.title
+                  : firstAppName
+                    ? `${firstAppName} call detected`
+                    : "Meeting detected";
+              const detectedMessage =
+                nearbyEvents.length === 1
+                  ? "Meeting in progress. Take notes?"
+                  : "Take notes for this meeting?";
+
               void notificationCommands.showNotification({
                 key: payload.key,
-                title: "Are you in a meeting?",
-                message: "",
-                timeout: { secs: 15, nanos: 0 },
+                title: detectedTitle,
+                message: detectedMessage,
+                timeout: { secs: 20, nanos: 0 },
                 source: {
                   type: "mic_detected",
                   app_names: displayApps.map((app) =>
@@ -1025,7 +1039,7 @@ const useHandleDetectEvents = (store: ListenerStore) => {
                 start_time: null,
                 participants: null,
                 event_details: null,
-                action_label: null,
+                action_label: "Take notes",
                 action_variant: null,
                 options,
                 footer,
