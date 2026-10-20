@@ -46,6 +46,17 @@ jobs:
           apple-certificate-password: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
           keychain-password: ${{ secrets.KEYCHAIN_PASSWORD }}
 
+      - name: Verify Apple notarization credentials
+        run: |
+          xcrun notarytool history \
+            --apple-id "$APPLE_ID" \
+            --password "$APPLE_PASSWORD" \
+            --team-id "$APPLE_TEAM_ID" > /dev/null
+        env:
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_PASSWORD: ${{ secrets.APPLE_PASSWORD }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+
       - name: Stage bundled llama-server
         run: ./apps/desktop/src-tauri/scripts/fetch-llama-server.sh
 
