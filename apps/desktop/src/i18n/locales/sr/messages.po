@@ -17,6 +17,12 @@ msgstr ""
 msgid "(default)"
 msgstr ""
 
+#: src/inbox/index.tsx:295
+#: src/inbox/index.tsx:400
+#: src/session/components/note-input/brief-emails.tsx:68
+msgid "(no subject)"
+msgstr ""
+
 #. placeholder {0}: issue.user?.login
 #: src/task/resource-view.tsx:115
 msgid "{0} opened on"
@@ -74,13 +80,33 @@ msgid "Add \"{0}\""
 msgstr ""
 
 #. placeholder {0}: provider.displayName
-#: src/calendar/components/sidebar.tsx:225
-#: src/calendar/components/sidebar.tsx:307
+#: src/calendar/components/sidebar.tsx:218
+#: src/calendar/components/sidebar.tsx:300
 msgid "Add {0} account"
 msgstr ""
 
-#: src/session/components/outer-header/overflow/follow-up-modal.tsx:84
+#: src/settings/calendar/index.tsx:152
+msgid "Add a calendar"
+msgstr ""
+
+#: src/settings/calendar/index.tsx:68
+msgid "Add a calendar with its private link. Notiz fetches it directly from your calendar provider on this device and keeps the link in your Keychain. It is read-only, with no sign-in and no Notiz server. Apple Calendar on this Mac works without any link."
+msgstr ""
+
+#: src/session/components/outer-header/overflow/follow-up-modal.tsx:100
 msgid "Add a summary to this note first."
+msgstr ""
+
+#: src/settings/email/index.tsx:133
+msgid "Add an account"
+msgstr ""
+
+#: src/settings/calendar/index.tsx:250
+msgid "Add calendar"
+msgstr ""
+
+#: src/onboarding/calendar.tsx:418
+msgid "Add Google, Outlook or iCloud with a calendar link"
 msgstr ""
 
 #: src/settings/general/spoken-languages.tsx:177
@@ -132,6 +158,11 @@ msgstr ""
 msgid "AI-generated summary of all interactions and notes with this contact will appear here. This will synthesize key discussion points, action items, and relationship context across all meetings and notes."
 msgstr ""
 
+#: src/folders/index.tsx:30
+#: src/sidebar/folders.tsx:53
+msgid "All notes"
+msgstr ""
+
 #: src/shared/open-note-dialog.tsx:282
 msgid "All Notes"
 msgstr ""
@@ -152,7 +183,7 @@ msgstr ""
 msgid "Allow system audio access"
 msgstr ""
 
-#: src/session/components/outer-header/overflow/follow-up-modal.tsx:65
+#: src/session/components/outer-header/overflow/follow-up-modal.tsx:81
 msgid "An AI-drafted follow-up based on this note."
 msgstr ""
 
@@ -162,7 +193,7 @@ msgid "API Key"
 msgstr ""
 
 #: src/settings/general/index.tsx:149
-#: src/sidebar/settings.tsx:61
+#: src/sidebar/settings.tsx:62
 msgid "App"
 msgstr "Апп"
 
@@ -182,16 +213,19 @@ msgstr ""
 msgid "Applying..."
 msgstr ""
 
-#: src/chat/components/input/index.tsx:69
+#: src/chat/components/input/index.tsx:72
 msgid "Ask & search about anything, or be creative!"
 msgstr ""
 
-#: src/chat/components/input/index.tsx:68
-#: src/shared/chat-cta.tsx:18
+#: src/chat/components/input/index.tsx:71
+#: src/chat/page.tsx:149
+#: src/main/home.tsx:223
+#: src/shared/chat-cta.tsx:19
 msgid "Ask anything"
 msgstr ""
 
-#: src/shared/chat-cta.tsx:32
+#: src/main/home.tsx:224
+#: src/shared/chat-cta.tsx:33
 msgid "Ask Notiz anything"
 msgstr ""
 
@@ -235,15 +269,24 @@ msgstr ""
 msgid "Browser handoff not working? Paste the callback link instead"
 msgstr ""
 
-#: src/calendar/components/sidebar.tsx:328
+#: src/calendar/components/sidebar.tsx:321
 #: src/settings/general/permissions.tsx:191
 #: src/sidebar/calendar.tsx:10
-#: src/sidebar/settings.tsx:95
+#: src/sidebar/nav.tsx:80
 msgid "Calendar"
 msgstr ""
 
-#: src/onboarding/index.tsx:212
+#: src/settings/calendar/index.tsx:229
+msgid "Calendar added."
+msgstr ""
+
+#: src/onboarding/index.tsx:241
 msgid "Calendar connected"
+msgstr ""
+
+#: src/settings/calendar/index.tsx:64
+#: src/sidebar/settings.tsx:97
+msgid "Calendars"
 msgstr ""
 
 #: src/settings/ai/stt/select.tsx:693
@@ -267,12 +310,25 @@ msgstr ""
 msgid "Change content location"
 msgstr ""
 
+#: src/sidebar/nav.tsx:65
+msgid "Chat"
+msgstr ""
+
 #: src/chat/components/toolbar-controls.tsx:168
 msgid "Chat history"
 msgstr ""
 
 #: src/settings/general/storage/index.tsx:271
 msgid "Checking folder..."
+msgstr ""
+
+#: src/inbox/index.tsx:213
+msgid "Checking your inbox…"
+msgstr ""
+
+#: src/settings/calendar/index.tsx:248
+#: src/settings/email/index.tsx:235
+msgid "Checking…"
 msgstr ""
 
 #: src/session/components/outer-header/overflow/export-modal.tsx:477
@@ -322,6 +378,10 @@ msgstr ""
 msgid "Closed"
 msgstr ""
 
+#: src/main/home.tsx:105
+msgid "Coming up"
+msgstr ""
+
 #: src/task/resource-view.tsx:125
 #: src/task/resource-view.tsx:196
 msgid "comment"
@@ -367,6 +427,10 @@ msgstr ""
 msgid "Confirm"
 msgstr ""
 
+#: src/settings/email/index.tsx:235
+msgid "Connect"
+msgstr ""
+
 #. placeholder {0}: config.displayName
 #. placeholder {0}: integration.displayName
 #: src/instruction/index.tsx:185
@@ -375,19 +439,31 @@ msgstr ""
 msgid "Connect {0}"
 msgstr ""
 
+#: src/inbox/index.tsx:191
+msgid "Connect an email account to read your mail next to your notes. It is optional and read-only."
+msgstr ""
+
 #: src/onboarding/index.tsx:206
-msgid "Connect calendar"
+#~ msgid "Connect calendar"
+#~ msgstr ""
+
+#: src/onboarding/index.tsx:234
+msgid "Connect calendar (optional)"
+msgstr ""
+
+#: src/inbox/index.tsx:203
+msgid "Connect email"
 msgstr ""
 
 #: src/settings/todo/github.tsx:128
 msgid "Connect GitHub for private repos."
 msgstr ""
 
-#: src/onboarding/calendar.tsx:418
+#: src/onboarding/calendar.tsx:398
 msgid "Connect Google Calendar"
 msgstr ""
 
-#: src/onboarding/calendar.tsx:366
+#: src/onboarding/calendar.tsx:346
 msgid "Connect Outlook"
 msgstr ""
 
@@ -403,7 +479,7 @@ msgstr ""
 msgid "Content"
 msgstr ""
 
-#: src/onboarding/calendar.tsx:452
+#: src/onboarding/calendar.tsx:455
 msgid "Continue"
 msgstr ""
 
@@ -415,7 +491,7 @@ msgstr ""
 msgid "Copied as Markdown"
 msgstr ""
 
-#: src/session/components/outer-header/overflow/follow-up-modal.tsx:102
+#: src/session/components/outer-header/overflow/follow-up-modal.tsx:128
 msgid "Copied!"
 msgstr ""
 
@@ -427,7 +503,7 @@ msgstr ""
 msgid "Copy message"
 msgstr ""
 
-#: src/session/components/outer-header/overflow/follow-up-modal.tsx:102
+#: src/session/components/outer-header/overflow/follow-up-modal.tsx:128
 msgid "Copy to clipboard"
 msgstr ""
 
@@ -439,7 +515,7 @@ msgstr ""
 msgid "Could not copy. Try again."
 msgstr ""
 
-#: src/session/components/outer-header/overflow/follow-up-modal.tsx:74
+#: src/session/components/outer-header/overflow/follow-up-modal.tsx:90
 msgid "Could not draft a follow-up. Try again."
 msgstr ""
 
@@ -460,7 +536,7 @@ msgstr ""
 msgid "Dark"
 msgstr ""
 
-#: src/settings/general/index.tsx:291
+#: src/settings/general/index.tsx:307
 msgid "Data"
 msgstr "Подаци"
 
@@ -468,17 +544,17 @@ msgstr "Подаци"
 msgid "Date and time are required"
 msgstr ""
 
-#: src/session/components/outer-header/overflow/delete.tsx:93
+#: src/session/components/outer-header/overflow/delete.tsx:92
 #: src/templates/sections-editor.tsx:280
 #: src/templates/template-form.tsx:285
 msgid "Delete"
 msgstr ""
 
-#: src/sidebar/timeline/item.tsx:445
+#: src/sidebar/timeline/item.tsx:443
 msgid "Delete All Recurring Events"
 msgstr ""
 
-#: src/sidebar/timeline/item.tsx:438
+#: src/sidebar/timeline/item.tsx:436
 msgid "Delete Event"
 msgstr ""
 
@@ -486,7 +562,7 @@ msgstr ""
 msgid "Delete model"
 msgstr ""
 
-#: src/sidebar/timeline/item.tsx:652
+#: src/sidebar/timeline/item.tsx:650
 msgid "Delete Note"
 msgstr ""
 
@@ -498,7 +574,7 @@ msgstr ""
 msgid "Delete Selected ({sessionCount})"
 msgstr ""
 
-#: src/sidebar/timeline/item.tsx:438
+#: src/sidebar/timeline/item.tsx:436
 msgid "Delete This Event"
 msgstr ""
 
@@ -515,7 +591,7 @@ msgid "Detection delay"
 msgstr ""
 
 #: src/settings/dictation/index.tsx:67
-#: src/sidebar/settings.tsx:88
+#: src/sidebar/settings.tsx:90
 msgid "Dictation"
 msgstr ""
 
@@ -552,12 +628,12 @@ msgstr ""
 msgid "Download model"
 msgstr ""
 
-#: src/session/components/outer-header/overflow/follow-up-modal.tsx:62
+#: src/session/components/outer-header/overflow/follow-up-modal.tsx:78
 #: src/session/components/outer-header/overflow/index.tsx:129
 msgid "Draft follow-up"
 msgstr ""
 
-#: src/session/components/outer-header/overflow/follow-up-modal.tsx:71
+#: src/session/components/outer-header/overflow/follow-up-modal.tsx:87
 msgid "Drafting..."
 msgstr ""
 
@@ -577,6 +653,8 @@ msgid "Edit date"
 msgstr ""
 
 #: src/contacts/details.tsx:453
+#: src/settings/email/index.tsx:45
+#: src/sidebar/settings.tsx:65
 msgid "Email"
 msgstr ""
 
@@ -621,6 +699,10 @@ msgstr ""
 msgid "Event notifications"
 msgstr ""
 
+#: src/folders/index.tsx:36
+msgid "Every note, stored only on this device."
+msgstr ""
+
 #: src/settings/general/notification.tsx:289
 msgid "Exclude apps from detection"
 msgstr ""
@@ -663,7 +745,7 @@ msgstr ""
 msgid "Extracting action items..."
 msgstr ""
 
-#: src/onboarding/calendar.tsx:397
+#: src/onboarding/calendar.tsx:377
 msgid "Failed to load Google Calendar"
 msgstr ""
 
@@ -675,7 +757,7 @@ msgstr ""
 msgid "Failed to load issue"
 msgstr ""
 
-#: src/onboarding/calendar.tsx:346
+#: src/onboarding/calendar.tsx:326
 msgid "Failed to load Outlook Calendar"
 msgstr ""
 
@@ -725,6 +807,10 @@ msgstr ""
 msgid "Folder is not empty. Uncheck Move to use it as-is, or pick a dedicated empty folder (for example \"meetings\") for a full migration."
 msgstr ""
 
+#: src/sidebar/folders.tsx:38
+msgid "Folders"
+msgstr ""
+
 #: src/settings/general/notification.tsx:409
 msgid "For enabled notifications"
 msgstr ""
@@ -733,16 +819,20 @@ msgstr ""
 msgid "Forever"
 msgstr ""
 
-#: src/session/components/note-input/brief.tsx:117
+#: src/session/components/note-input/brief.tsx:120
 msgid "From past meetings"
 msgstr ""
 
-#: src/sidebar/settings.tsx:59
+#: src/sidebar/settings.tsx:60
 msgid "General"
 msgstr ""
 
 #: src/session/components/title-input.tsx:97
 msgid "Generating title..."
+msgstr ""
+
+#: src/onboarding/index.tsx:236
+msgid "Get meeting reminders from your calendar. Accounts stay on this device, and you can skip this and add one later in Calendar."
 msgstr ""
 
 #: src/settings/general/notification.tsx:216
@@ -757,7 +847,7 @@ msgstr ""
 msgid "Go home"
 msgstr ""
 
-#: src/onboarding/shared.tsx:111
+#: src/onboarding/shared.tsx:99
 msgid "Go to next section"
 msgstr ""
 
@@ -765,7 +855,7 @@ msgstr ""
 msgid "Go to previous section"
 msgstr ""
 
-#: src/chat/components/body/index.tsx:104
+#: src/chat/components/body/index.tsx:106
 msgid "Go to recent"
 msgstr ""
 
@@ -782,6 +872,14 @@ msgstr ""
 msgid "Help Notiz listen to you"
 msgstr ""
 
+#: src/chat/page.tsx:147
+msgid "Hi {firstName}, ask anything"
+msgstr ""
+
+#: src/onboarding/calendar.tsx:416
+msgid "Hide calendar link"
+msgstr ""
+
 #: src/sidebar/timeline/index.tsx:463
 msgid "Hide Deleted Events"
 msgstr ""
@@ -792,6 +890,10 @@ msgstr ""
 
 #: src/settings/dictation/index.tsx:83
 msgid "Hold to record. Release to paste."
+msgstr ""
+
+#: src/sidebar/nav.tsx:59
+msgid "Home"
 msgstr ""
 
 #: src/settings/dictation/index.tsx:80
@@ -806,7 +908,15 @@ msgstr ""
 msgid "Human"
 msgstr ""
 
-#: src/sidebar/settings.tsx:62
+#: src/inbox/index.tsx:377
+msgid "Images"
+msgstr ""
+
+#: src/inbox/index.tsx:377
+msgid "Images off"
+msgstr ""
+
+#: src/sidebar/settings.tsx:63
 msgid "Import"
 msgstr ""
 
@@ -824,6 +934,11 @@ msgstr ""
 
 #: src/sidebar/timeline/upcoming-meeting.ts:124
 msgid "In {totalSeconds} seconds"
+msgstr ""
+
+#: src/inbox/index.tsx:161
+#: src/sidebar/nav.tsx:74
+msgid "Inbox"
 msgstr ""
 
 #: src/session/components/outer-header/overflow/export-modal.tsx:511
@@ -847,7 +962,7 @@ msgid "Insights"
 msgstr ""
 
 #: src/settings/ai/llm/index.tsx:13
-#: src/sidebar/settings.tsx:70
+#: src/sidebar/settings.tsx:72
 msgid "Intelligence"
 msgstr ""
 
@@ -867,7 +982,7 @@ msgstr ""
 msgid "Keep recordings until manually deleted"
 msgstr ""
 
-#: src/settings/general/index.tsx:242
+#: src/settings/general/index.tsx:234
 msgid "Language & Region"
 msgstr "Језик и регион"
 
@@ -875,7 +990,7 @@ msgstr "Језик и регион"
 msgid "Language for summaries, chats, and AI-generated responses"
 msgstr "Језик за резимее, ћаскање и одговоре генерисане вештачком интелигенцијом"
 
-#: src/session/components/note-input/brief.tsx:85
+#: src/session/components/note-input/brief.tsx:86
 msgid "Last met"
 msgstr ""
 
@@ -922,6 +1037,10 @@ msgstr ""
 
 #: src/session/components/note-input/search/bar.tsx:225
 msgid "Match whole word"
+msgstr ""
+
+#: src/folders/notes-list.tsx:153
+msgid "Me"
 msgstr ""
 
 #: src/sidebar/timeline/index.tsx:687
@@ -1015,9 +1134,15 @@ msgstr ""
 msgid "New chat"
 msgstr ""
 
-#: src/main/empty.tsx:41
-msgid "New Note"
+#: src/folders/notes-list.tsx:150
+#: src/main/home.tsx:77
+#: src/main/home.tsx:184
+msgid "New note"
 msgstr ""
+
+#: src/main/empty.tsx:41
+#~ msgid "New Note"
+#~ msgstr ""
 
 #: src/contacts/shared.tsx:106
 msgid "Newest"
@@ -1055,8 +1180,12 @@ msgstr ""
 msgid "No description provided."
 msgstr ""
 
-#: src/session/components/outer-header/overflow/follow-up-modal.tsx:83
+#: src/session/components/outer-header/overflow/follow-up-modal.tsx:99
 msgid "No draft yet."
+msgstr ""
+
+#: src/main/home.tsx:134
+msgid "No events today"
 msgstr ""
 
 #: src/sidebar/timeline/index.tsx:952
@@ -1082,6 +1211,10 @@ msgstr ""
 
 #: src/shared/open-note-dialog.tsx:240
 msgid "No notes found."
+msgstr ""
+
+#: src/folders/index.tsx:51
+msgid "No notes yet."
 msgstr ""
 
 #: src/session/components/note-input/transcript/renderer/speaker-assign.tsx:560
@@ -1117,10 +1250,34 @@ msgstr ""
 msgid "Notes"
 msgstr ""
 
-#: src/settings/general/index.tsx:301
-#: src/sidebar/settings.tsx:63
+#: src/inbox/index.tsx:215
+msgid "Nothing in your inbox."
+msgstr ""
+
+#: src/settings/general/index.tsx:317
+#: src/sidebar/settings.tsx:64
 msgid "Notifications"
 msgstr "Обавештења"
+
+#: src/settings/general/account.tsx:12
+msgid "Notiz"
+msgstr ""
+
+#: src/onboarding/permissions.tsx:153
+msgid "Notiz can hear others"
+msgstr ""
+
+#: src/onboarding/permissions.tsx:141
+msgid "Notiz can hear your voice"
+msgstr ""
+
+#: src/onboarding/index.tsx:220
+msgid "Notiz needs access to your microphone and system audio to record and transcribe your meetings"
+msgstr ""
+
+#: src/onboarding/index.tsx:208
+#~ msgid "Notiz will sync your calendar to get meeting reminders"
+#~ msgstr ""
 
 #: src/sidebar/timeline/index.tsx:863
 msgid "Now"
@@ -1135,6 +1292,8 @@ msgid "Only public repositories are supported."
 msgstr ""
 
 #: src/calendar/components/apple/permission.tsx:156
+#: src/settings/calendar/index.tsx:192
+#: src/settings/email/index.tsx:208
 #: src/settings/general/permissions.tsx:100
 #: src/task/resource-view.tsx:280
 msgid "Open"
@@ -1148,6 +1307,7 @@ msgstr ""
 msgid "Open {0} settings"
 msgstr ""
 
+#: src/settings/calendar/index.tsx:235
 #: src/sidebar/timeline/index.tsx:640
 #: src/sidebar/timeline/index.tsx:644
 msgid "Open calendar"
@@ -1161,17 +1321,30 @@ msgstr ""
 msgid "Open floating panel"
 msgstr ""
 
-#: src/sidebar/timeline/item.tsx:432
+#: src/session/components/outer-header/overflow/follow-up-modal.tsx:112
+msgid "Open in mail app"
+msgstr ""
+
+#. placeholder {0}: recipients.length
+#: src/session/components/outer-header/overflow/follow-up-modal.tsx:111
+msgid "Open in mail app ({0})"
+msgstr ""
+
+#: src/sidebar/timeline/item.tsx:430
 msgid "Open in New Tab"
 msgstr ""
 
 #: src/session/components/outer-header/overflow/index.tsx:178
-#: src/sidebar/timeline/item.tsx:641
+#: src/sidebar/timeline/item.tsx:639
 msgid "Open in New Window"
 msgstr ""
 
 #: src/chat/components/toolbar-controls.tsx:97
 msgid "Open in right panel"
+msgstr ""
+
+#: src/onboarding/final.tsx:54
+msgid "Open Notiz"
 msgstr ""
 
 #: src/task/resource-view.tsx:107
@@ -1186,12 +1359,12 @@ msgstr ""
 msgid "Open settings"
 msgstr ""
 
-#: src/onboarding/final.tsx:54
-msgid "Open Notiz"
-msgstr ""
-
 #: src/settings/dictation/index.tsx:92
 msgid "Option"
+msgstr ""
+
+#: src/settings/email/index.tsx:49
+msgid "Optional and read-only. Notiz talks straight to your mail provider from this device, keeps the password in your Keychain, and only reads message headers to show context for your meetings. It never sends, deletes or marks mail as read."
 msgstr ""
 
 #: src/calendar/components/apple/permission.tsx:154
@@ -1239,17 +1412,17 @@ msgstr ""
 msgid "permission panel."
 msgstr ""
 
-#: src/settings/general/index.tsx:310
-#: src/sidebar/settings.tsx:83
+#: src/settings/general/index.tsx:326
+#: src/sidebar/settings.tsx:85
 msgid "Permissions"
 msgstr ""
 
-#: src/onboarding/index.tsx:190
+#: src/onboarding/index.tsx:218
 msgid "Permissions granted"
 msgstr ""
 
 #: src/settings/personalization/index.tsx:27
-#: src/sidebar/settings.tsx:73
+#: src/sidebar/settings.tsx:75
 msgid "Personalization"
 msgstr ""
 
@@ -1265,12 +1438,24 @@ msgstr ""
 msgid "Previous match"
 msgstr ""
 
-#: src/onboarding/index.tsx:234
+#: src/inbox/index.tsx:165
+msgid "Read-only mail from your own account. Nothing leaves this device."
+msgstr ""
+
+#: src/onboarding/index.tsx:263
 msgid "Ready to go"
 msgstr ""
 
 #: src/shared/open-note-dialog.tsx:251
 msgid "Recent"
+msgstr ""
+
+#: src/session/components/note-input/brief-emails.tsx:47
+msgid "Recent emails"
+msgstr ""
+
+#: src/chat/page.tsx:197
+msgid "Recents"
 msgstr ""
 
 #: src/calendar/components/oauth/status.tsx:16
@@ -1286,7 +1471,7 @@ msgstr ""
 msgid "Refresh calendars"
 msgstr ""
 
-#: src/session/components/outer-header/overflow/follow-up-modal.tsx:95
+#: src/session/components/outer-header/overflow/follow-up-modal.tsx:121
 msgid "Regenerate"
 msgstr ""
 
@@ -1348,6 +1533,14 @@ msgstr ""
 msgid "Replace with..."
 msgstr ""
 
+#: src/settings/general/index.tsx:298
+msgid "Replay"
+msgstr ""
+
+#: src/inbox/index.tsx:386
+msgid "Reply"
+msgstr ""
+
 #: src/calendar/components/apple/permission.tsx:149
 msgid "Request"
 msgstr ""
@@ -1402,6 +1595,10 @@ msgstr ""
 #: src/chat/components/message/error.tsx:57
 #: src/session/components/note-input/enhanced/enhance-error.tsx:57
 msgid "Retry"
+msgstr ""
+
+#: src/settings/general/index.tsx:290
+msgid "Run the first-time setup again."
 msgstr ""
 
 #: src/settings/general/account.tsx:15
@@ -1522,11 +1719,15 @@ msgstr ""
 msgid "Select..."
 msgstr ""
 
+#: src/main/home.tsx:229
+msgid "Send"
+msgstr ""
+
 #: src/contacts/organization-details.tsx:134
 msgid "Send email"
 msgstr ""
 
-#: src/chat/components/input/index.tsx:134
+#: src/chat/components/input/index.tsx:148
 msgid "Send message"
 msgstr ""
 
@@ -1542,8 +1743,12 @@ msgstr ""
 msgid "Set as default"
 msgstr ""
 
-#: src/main/empty.tsx:52
-#: src/sidebar/settings.tsx:101
+#: src/chat/page.tsx:155
+msgid "Set up a language model in Settings to start chatting. It runs on this device."
+msgstr ""
+
+#: src/sidebar/nav.tsx:160
+#: src/sidebar/settings.tsx:103
 msgid "Settings"
 msgstr ""
 
@@ -1551,7 +1756,7 @@ msgstr ""
 msgid "Short recording, so the summary is brief. The transcript has everything that was said."
 msgstr ""
 
-#: src/sidebar/timeline/item.tsx:420
+#: src/sidebar/timeline/item.tsx:418
 msgid "Show All Recurring Events"
 msgstr ""
 
@@ -1559,16 +1764,16 @@ msgstr ""
 msgid "Show Deleted Events"
 msgstr ""
 
-#: src/sidebar/timeline/item.tsx:426
+#: src/sidebar/timeline/item.tsx:424
 msgid "Show Event"
 msgstr ""
 
 #: src/settings/ai/stt/select.tsx:750
-#: src/sidebar/timeline/item.tsx:646
+#: src/sidebar/timeline/item.tsx:644
 msgid "Show in Finder"
 msgstr ""
 
-#: src/sidebar/timeline/item.tsx:415
+#: src/sidebar/timeline/item.tsx:413
 msgid "Show This Event"
 msgstr ""
 
@@ -1586,7 +1791,11 @@ msgid "Sign in to your account"
 msgstr ""
 
 #: src/onboarding/shared.tsx:105
-msgid "Skip"
+#~ msgid "Skip"
+#~ msgstr ""
+
+#: src/onboarding/shared.tsx:134
+msgid "Skip for now"
 msgstr ""
 
 #: src/contacts/details.tsx:430
@@ -1614,10 +1823,10 @@ msgid "Start recording"
 msgstr ""
 
 #: src/main/empty.tsx:46
-msgid "Start Recording"
-msgstr ""
+#~ msgid "Start Recording"
+#~ msgstr ""
 
-#: src/onboarding/index.tsx:189
+#: src/onboarding/index.tsx:217
 msgid "Start with permissions"
 msgstr ""
 
@@ -1626,20 +1835,20 @@ msgid "Stop"
 msgstr ""
 
 #: src/session/components/outer-header/index.tsx:342
-#: src/sidebar/timeline/item.tsx:270
+#: src/sidebar/timeline/item.tsx:268
 msgid "Stop listening"
 msgstr ""
 
-#: src/chat/components/input/index.tsx:127
+#: src/chat/components/input/index.tsx:141
 msgid "Stop response"
 msgstr ""
 
-#: src/onboarding/index.tsx:221
+#: src/onboarding/index.tsx:250
 #: src/settings/general/storage/index.tsx:103
 msgid "Storage"
 msgstr ""
 
-#: src/onboarding/index.tsx:225
+#: src/onboarding/index.tsx:254
 msgid "Storage configured"
 msgstr ""
 
@@ -1713,6 +1922,22 @@ msgstr ""
 msgid "Thinking..."
 msgstr ""
 
+#: src/folders/index.tsx:46
+msgid "This folder is empty. Right-click any note and choose \"Move to\" to add it here."
+msgstr ""
+
+#: src/inbox/index.tsx:461
+msgid "This message has no readable text."
+msgstr ""
+
+#: src/inbox/index.tsx:453
+msgid "This message is long, so only the beginning is shown."
+msgstr ""
+
+#: src/inbox/index.tsx:442
+msgid "This message is long, so some content may be missing."
+msgstr ""
+
 #: src/settings/todo/index.tsx:28
 msgid "Ticket"
 msgstr ""
@@ -1730,7 +1955,7 @@ msgid "Transcript"
 msgstr ""
 
 #: src/settings/ai/stt/index.tsx:17
-#: src/sidebar/settings.tsx:69
+#: src/sidebar/settings.tsx:71
 msgid "Transcription"
 msgstr ""
 
@@ -1758,11 +1983,15 @@ msgstr ""
 #: src/shared/open-note-dialog.tsx:107
 #: src/shared/ui/resource-list/preview-header.tsx:73
 #: src/sidebar/timeline/item.tsx:224
-#: src/sidebar/timeline/item.tsx:338
-#: src/sidebar/timeline/item.tsx:593
+#: src/sidebar/timeline/item.tsx:336
+#: src/sidebar/timeline/item.tsx:591
 #: src/templates/details.tsx:122
 #: src/templates/sections-editor.tsx:293
 msgid "Untitled"
+msgstr ""
+
+#: src/chat/page.tsx:226
+msgid "Untitled chat"
 msgstr ""
 
 #: src/contacts/details.tsx:348
@@ -1777,12 +2006,12 @@ msgstr ""
 msgid "Upgrade to connect"
 msgstr ""
 
-#: src/calendar/components/sidebar.tsx:300
+#: src/calendar/components/sidebar.tsx:293
 msgid "Upgrade to Pro"
 msgstr ""
 
 #. placeholder {0}: provider.displayName
-#: src/calendar/components/sidebar.tsx:298
+#: src/calendar/components/sidebar.tsx:291
 msgid "Upgrade to Pro for {0}"
 msgstr ""
 
@@ -1800,26 +2029,6 @@ msgstr ""
 msgid "Upload transcript"
 msgstr ""
 
-#: src/settings/general/account.tsx:12
-msgid "Notiz"
-msgstr ""
-
-#: src/onboarding/permissions.tsx:153
-msgid "Notiz can hear others"
-msgstr ""
-
-#: src/onboarding/permissions.tsx:141
-msgid "Notiz can hear your voice"
-msgstr ""
-
-#: src/onboarding/index.tsx:192
-msgid "Notiz needs access to your microphone and system audio to record and transcribe your meetings"
-msgstr ""
-
-#: src/onboarding/index.tsx:208
-msgid "Notiz will sync your calendar to get meeting reminders"
-msgstr ""
-
 #: src/contacts/organization-details.tsx:153
 msgid "View LinkedIn profile"
 msgstr ""
@@ -1832,15 +2041,19 @@ msgstr ""
 msgid "Week starts on"
 msgstr ""
 
-#: src/onboarding/index.tsx:182
+#: src/onboarding/index.tsx:208
 msgid "Welcome to Notiz"
+msgstr ""
+
+#: src/settings/general/index.tsx:287
+msgid "Welcome tour"
 msgstr ""
 
 #: src/changelog/index.tsx:165
 msgid "What's new in {version}?"
 msgstr ""
 
-#: src/onboarding/index.tsx:223
+#: src/onboarding/index.tsx:252
 msgid "Where your notes and recordings are stored"
 msgstr ""
 
@@ -1876,6 +2089,10 @@ msgstr ""
 
 #: src/session/components/note-input/enhanced/config-error.tsx:52
 msgid "You need to sign in to use Notiz's language model"
+msgstr ""
+
+#: src/main/home.tsx:175
+msgid "Your notes live only on this device. Start your first one."
 msgstr ""
 
 #: src/session/components/note-input/enhanced/config-error.tsx:57

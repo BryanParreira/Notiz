@@ -1,5 +1,6 @@
 import { Trans } from "@lingui/react/macro";
 import { useForm } from "@tanstack/react-form";
+import { useNavigate } from "@tanstack/react-router";
 import { disable, enable } from "@tauri-apps/plugin-autostart";
 
 import { commands as trayCommands } from "@notiz/plugin-tray";
@@ -270,8 +271,32 @@ export function SettingsApp() {
               />
             )}
           </form.Field>
+          <ReplayWelcomeTour />
         </div>
       </div>
+    </div>
+  );
+}
+
+function ReplayWelcomeTour() {
+  const navigate = useNavigate();
+  return (
+    <div className="flex items-center justify-between gap-4">
+      <div className="flex-1">
+        <h3 className="mb-1 text-sm font-medium">
+          <Trans>Welcome tour</Trans>
+        </h3>
+        <p className="text-muted-foreground text-xs">
+          <Trans>Run the first-time setup again.</Trans>
+        </p>
+      </div>
+      <button
+        type="button"
+        onClick={() => void navigate({ to: "/app/onboarding" })}
+        className="border-border hover:bg-muted rounded-full border px-3 py-1.5 text-sm transition-colors"
+      >
+        <Trans>Replay</Trans>
+      </button>
     </div>
   );
 }

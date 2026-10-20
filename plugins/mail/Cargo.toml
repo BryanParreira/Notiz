@@ -9,10 +9,10 @@ description = ""
 
 [dependencies]
 notiz-mail = { workspace = true, features = ["specta"] }
-tauri = { workspace = true, features = ["test"] }
-tauri-specta = { workspace = true, features = ["derive", "typescript"] }
 serde = { workspace = true, features = ["derive"] }
 specta = { workspace = true }
+tauri = { workspace = true, features = ["test"] }
+tauri-specta = { workspace = true, features = ["derive", "typescript"] }
 thiserror = { workspace = true }
 
 [build-dependencies]

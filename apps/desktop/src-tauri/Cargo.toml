@@ -1,6 +1,6 @@
 [package]
 name = "desktop"
-version = "1.1.0"
+version = "1.1.1"
 authors = ["you"]
 edition = "2024"
 description = "Notiz Desktop App"
@@ -29,7 +29,6 @@ tauri-plugin-auth = { workspace = true }
 tauri-plugin-autostart = { workspace = true }
 tauri-plugin-bedrock = { workspace = true }
 tauri-plugin-calendar = { workspace = true }
-tauri-plugin-mail = { workspace = true }
 tauri-plugin-clipboard-manager = { workspace = true }
 tauri-plugin-db = { workspace = true }
 tauri-plugin-deep-link = { workspace = true }
@@ -50,6 +49,7 @@ tauri-plugin-importer = { workspace = true }
 tauri-plugin-js = { workspace = true }
 tauri-plugin-local-llm = { workspace = true }
 tauri-plugin-local-stt = { workspace = true }
+tauri-plugin-mail = { workspace = true }
 tauri-plugin-mcp = { workspace = true }
 tauri-plugin-messenger = { workspace = true }
 tauri-plugin-misc = { workspace = true }

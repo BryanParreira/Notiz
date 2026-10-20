@@ -52,8 +52,10 @@
 
   --animate-shimmer: shimmer 2s infinite;
   --animate-reveal-left: reveal-left 0.5s ease-out forwards;
-  --animate-title-hover-scroll: title-hover-scroll
-    var(--title-hover-scroll-duration, 4s) ease-in-out forwards;
+  --animate-title-hover-scroll: title-hover-scroll var(
+    --title-hover-scroll-duration,
+    4s
+  ) ease-in-out forwards;
   --animate-kbd-press: kbd-press 0.4s ease-out forwards;
 
   --animate-wiggle: wiggle 1s ease-in-out infinite;
@@ -253,9 +255,7 @@
     box-shadow: none !important;
   }
 
-  [data-chat-floating-anchor]:has(
-      [data-chat-cta-trigger]:is(:hover, :focus-visible, :focus-within)
-    )
+  [data-chat-floating-anchor]:has([data-chat-cta-trigger]:is(:hover, :focus-visible, :focus-within))
     [data-transcript-scroll-chip] {
     --transcript-scroll-chip-bottom: calc(5rem + env(safe-area-inset-bottom));
   }

@@ -9,18 +9,18 @@ specta = ["dep:specta"]
 [dependencies]
 notiz-apple-calendar = { workspace = true, features = ["specta"] }
 notiz-calendar-interface = { workspace = true }
-notiz-http = { workspace = true }
 notiz-google-calendar = { workspace = true, features = ["specta"] }
+notiz-http = { workspace = true }
 notiz-outlook-calendar = { workspace = true, features = ["specta"] }
 
 base64 = { workspace = true }
 chrono = { workspace = true, features = ["serde"] }
 chrono-tz = { workspace = true }
 ical = "0.11"
-rrule = "0.13"
 keyring = { version = "3", default-features = false, features = ["apple-native", "windows-native", "sync-secret-service", "crypto-rust"] }
 regex = { workspace = true }
 reqwest = { workspace = true, features = ["json"] }
+rrule = "0.13"
 serde = { workspace = true, features = ["derive"] }
 serde_json = { workspace = true }
 sha2 = { workspace = true }

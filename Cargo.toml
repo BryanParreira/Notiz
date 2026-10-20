@@ -70,7 +70,6 @@ notiz-audio-utils = { path = "crates/audio-utils", package = "audio-utils" }
 notiz-buffer = { path = "crates/buffer", package = "buffer" }
 notiz-bundle = { path = "crates/bundle", package = "bundle" }
 notiz-calendar = { path = "crates/calendar", package = "calendar" }
-notiz-mail = { path = "crates/mail" }
 notiz-calendar-interface = { path = "crates/calendar-interface", package = "calendar-interface" }
 notiz-chatwoot = { path = "crates/chatwoot", package = "chatwoot" }
 notiz-claude = { path = "crates/claude", package = "claude" }
@@ -130,6 +129,7 @@ notiz-local-stt-core = { path = "crates/local-stt-core", package = "local-stt-co
 notiz-local-stt-server = { path = "crates/local-stt-server", package = "local-stt-server" }
 notiz-loops = { path = "crates/loops", package = "loops" }
 notiz-mac = { path = "crates/mac", package = "mac" }
+notiz-mail = { path = "crates/mail" }
 notiz-mcp = { path = "crates/mcp", package = "mcp" }
 notiz-mobile-bridge = { path = "crates/mobile-bridge", package = "mobile-bridge" }
 notiz-model-downloader = { path = "crates/model-downloader", package = "model-downloader" }
@@ -221,7 +221,6 @@ tauri-plugin-audio-priority = { path = "plugins/audio-priority" }
 tauri-plugin-auth = { path = "plugins/auth" }
 tauri-plugin-bedrock = { path = "plugins/bedrock" }
 tauri-plugin-calendar = { path = "plugins/calendar" }
-tauri-plugin-mail = { path = "plugins/mail" }
 tauri-plugin-db = { path = "plugins/db" }
 tauri-plugin-deeplink2 = { path = "plugins/deeplink2" }
 tauri-plugin-detect = { path = "plugins/detect" }
@@ -238,6 +237,7 @@ tauri-plugin-importer = { path = "plugins/importer" }
 tauri-plugin-js = { path = "plugins/js" }
 tauri-plugin-local-llm = { path = "plugins/local-llm" }
 tauri-plugin-local-stt = { path = "plugins/local-stt" }
+tauri-plugin-mail = { path = "plugins/mail" }
 tauri-plugin-mcp = { path = "plugins/mcp" }
 tauri-plugin-messenger = { path = "plugins/messenger" }
 tauri-plugin-misc = { path = "plugins/misc" }

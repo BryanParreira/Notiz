@@ -40,17 +40,38 @@ fn entry() -> Result<keyring::Entry, Error> {
     keyring::Entry::new(SERVICE, ENTRY).map_err(|e| Error::Keychain(e.to_string()))
 }
 
+// Each Keychain read can show a macOS permission prompt, so read it once per
+// launch and keep the accounts in memory (writes keep the copy current).
+static CACHE: std::sync::Mutex<Option<Vec<StoredAccount>>> = std::sync::Mutex::new(None);
+
+fn cached() -> Option<Vec<StoredAccount>> {
+    CACHE.lock().unwrap_or_else(|e| e.into_inner()).clone()
+}
+
+fn remember(accounts: &[StoredAccount]) {
+    *CACHE.lock().unwrap_or_else(|e| e.into_inner()) = Some(accounts.to_vec());
+}
+
 pub(crate) fn load() -> Result<Vec<StoredAccount>, Error> {
-    match entry()?.get_password() {
-        Ok(raw) => serde_json::from_str(&raw).map_err(|e| Error::Keychain(e.to_string())),
-        Err(keyring::Error::NoEntry) => Ok(Vec::new()),
-        Err(e) => Err(Error::Keychain(e.to_string())),
+    if let Some(accounts) = cached() {
+        return Ok(accounts);
     }
+
+    let accounts = match entry()?.get_password() {
+        Ok(raw) => serde_json::from_str(&raw).map_err(|e| Error::Keychain(e.to_string()))?,
+        Err(keyring::Error::NoEntry) => Vec::new(),
+        Err(e) => return Err(Error::Keychain(e.to_string())),
+    };
+
+    remember(&accounts);
+    Ok(accounts)
 }
 
 pub(crate) fn save(accounts: &[StoredAccount]) -> Result<(), Error> {
     let raw = serde_json::to_string(accounts).map_err(|e| Error::Keychain(e.to_string()))?;
     entry()?
         .set_password(&raw)
-        .map_err(|e| Error::Keychain(e.to_string()))
+        .map_err(|e| Error::Keychain(e.to_string()))?;
+    remember(accounts);
+    Ok(())
 }

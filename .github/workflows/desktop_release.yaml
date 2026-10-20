@@ -38,6 +38,15 @@ jobs:
       - name: Build UI
         run: pnpm -F @notiz/ui build
 
+      - name: Check translations are up to date
+        run: |
+          pnpm -F @notiz/desktop i18n:extract
+          pnpm -F @notiz/desktop i18n:compile
+          git diff --exit-code --stat -- apps/desktop/src/i18n/locales || {
+            echo "::error::Translation catalogs are out of date. Run 'pnpm -F @notiz/desktop i18n:extract && pnpm -F @notiz/desktop i18n:compile' and commit the result."
+            exit 1
+          }
+
       - name: Import Apple certificate
         uses: ./.github/actions/apple_cert
         id: apple-cert
