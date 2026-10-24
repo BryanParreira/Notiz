@@ -13,7 +13,7 @@ import {
   ReplyIcon,
   XIcon,
 } from "lucide-react";
-import { Fragment, useEffect, useMemo, useState } from "react";
+import { Fragment, useEffect, useMemo, useRef, useState } from "react";
 
 import { commands as mailCommands } from "@notiz/plugin-mail";
 import { commands as openerCommands } from "@notiz/plugin-opener2";
@@ -135,6 +135,7 @@ export function TabContentInbox() {
   } = useInboxMessages(accountIds);
   const openNew = useTabs((state) => state.openNew);
 
+  const listRef = useRef<HTMLDivElement>(null);
   const [selectedKey, setSelectedKey] = useState<string | null>(null);
   const [readKeys, setReadKeys] = useState<Set<string>>(() => new Set());
 
@@ -155,6 +156,22 @@ export function TabContentInbox() {
     setSelectedKey(message.key);
     setReadKeys((prev) => new Set(prev).add(message.key));
   };
+
+  // Keep the selected row in view by scrolling only the list; scrollIntoView
+  // can also move ancestor containers and shift the whole layout.
+  useEffect(() => {
+    const list = listRef.current;
+    const row = list?.querySelector<HTMLElement>('[aria-current="true"]');
+    if (!list || !row) return;
+
+    const listBox = list.getBoundingClientRect();
+    const rowBox = row.getBoundingClientRect();
+    if (rowBox.top < listBox.top) {
+      list.scrollTop -= listBox.top - rowBox.top + 8;
+    } else if (rowBox.bottom > listBox.bottom) {
+      list.scrollTop += rowBox.bottom - listBox.bottom + 8;
+    }
+  }, [selectedKey]);
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -228,7 +245,10 @@ export function TabContentInbox() {
             )}
           </header>
 
-          <div className="scroll-fade-y min-h-0 flex-1 overflow-y-auto px-5 pb-24">
+          <div
+            ref={listRef}
+            className="scroll-fade-y min-h-0 flex-1 overflow-y-auto px-5 pb-24"
+          >
             {accounts.length === 0 ? (
               <section className="border-border mx-3 flex flex-col items-center gap-3 rounded-2xl border border-dashed px-6 py-14 text-center">
                 <MailIcon className="text-muted-foreground size-6" />
@@ -328,9 +348,6 @@ function MessageRow({
         )
       }
       aria-current={selected ? "true" : undefined}
-      ref={(el) => {
-        if (selected) el?.scrollIntoView({ block: "nearest" });
-      }}
       className={cn([
         "flex w-full items-center gap-3.5 rounded-xl px-3 py-2.5 text-left transition-colors",
         selected ? "bg-accent" : "hover:bg-accent/60",

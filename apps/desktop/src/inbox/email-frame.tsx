@@ -32,8 +32,12 @@ export function sanitizeEmailHtml(html: string): string {
       "meta",
       "link",
       "base",
+      "title",
     ],
     FORBID_ATTR: ["ping", "formaction"],
+    // Most newsletters keep their CSS in <head>, which the sanitizer drops
+    // unless the body is forced to hold it; without it they render unstyled.
+    FORCE_BODY: true,
   });
 }
 

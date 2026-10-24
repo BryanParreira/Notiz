@@ -26,4 +26,21 @@ describe("email html", () => {
     expect(off).not.toContain("img-src data: https:");
     expect(on).toContain("default-src 'none'");
   });
+
+  it("keeps styles from the document head so newsletters keep their layout", () => {
+    const html =
+      '<html><head><style>.hero{width:100%;background:#eee}</style></head><body><div class="hero">Hello</div></body></html>';
+
+    expect(sanitizeEmailHtml(html)).toContain(".hero{width:100%");
+  });
+
+  it("does not turn the document title into visible text", () => {
+    const html =
+      '<html><head><title>Customize fraud protection</title><style>.p{display:none}</style></head><body><div class="p">preheader</div><p>Body</p></body></html>';
+    const clean = sanitizeEmailHtml(html);
+
+    expect(clean).not.toContain("Customize fraud protection");
+    expect(clean).toContain(".p{display:none}");
+    expect(clean).toContain("<p>Body</p>");
+  });
 });
