@@ -1,6 +1,6 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
-import { shouldForceAnswer } from "./index";
+import { CustomChatTransport, shouldForceAnswer } from "./index";
 import { appendFileContextToolGuidance } from "./use-transport";
 
 describe("chat transport prompt guidance", () => {
@@ -58,5 +58,40 @@ describe("shouldForceAnswer", () => {
 
   it("forces an answer on the last allowed step", () => {
     expect(shouldForceAnswer([], 3)).toBe(true);
+  });
+});
+
+describe("context loading", () => {
+  it("answers without context when loading a note fails", async () => {
+    vi.spyOn(console, "error").mockImplementation(() => {});
+    const transport = new CustomChatTransport(
+      {} as never,
+      {},
+      undefined,
+      async () => {
+        throw new Error("fs unavailable");
+      },
+    );
+
+    const block = await (
+      transport as unknown as {
+        renderContextBlock: (
+          refs: unknown[],
+          cache: Map<string, string | null>,
+        ) => Promise<string | null>;
+      }
+    ).renderContextBlock(
+      [
+        {
+          kind: "session",
+          key: "session:1",
+          source: "tool",
+          sessionId: "1",
+        },
+      ],
+      new Map(),
+    );
+
+    expect(block).toBeNull();
   });
 });

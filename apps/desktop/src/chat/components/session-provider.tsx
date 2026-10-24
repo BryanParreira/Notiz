@@ -127,6 +127,24 @@ export function ChatSession({
     store,
   );
 
+  // The Chat must outlive transport changes (model, tools or prompt updating
+  // mid-reply); rebuilding it would drop the message that is streaming.
+  const transportRef = useRef(transport);
+  transportRef.current = transport;
+  const stableTransport = useMemo<ChatTransport<NotizUIMessage>>(
+    () => ({
+      sendMessages: (options) =>
+        (transportRef.current ?? unavailableChatTransport).sendMessages(
+          options,
+        ),
+      reconnectToStream: (options) =>
+        (transportRef.current ?? unavailableChatTransport).reconnectToStream(
+          options,
+        ),
+    }),
+    [],
+  );
+
   const persistedVisibleMessages = useMemo(
     () =>
       store && chatGroupId ? getVisibleChatMessages(store, chatGroupId) : [],
@@ -141,7 +159,7 @@ export function ChatSession({
           store && chatGroupId
             ? getVisibleChatMessages(store, chatGroupId)
             : [],
-        transport: transport ?? unavailableChatTransport,
+        transport: stableTransport,
         onFinish: ({ message, messages, isAbort }) => {
           const currentStore = latestStoreRef.current;
           const currentUserId = latestUserIdRef.current;
@@ -208,7 +226,7 @@ export function ChatSession({
           );
         },
       }),
-    [sessionId, store, transport],
+    [sessionId, store, stableTransport],
   );
 
   const {

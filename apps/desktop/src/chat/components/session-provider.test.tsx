@@ -256,10 +256,10 @@ describe("ChatSession", () => {
     expect(mocks.chatRegenerate).toHaveBeenCalledTimes(1);
   });
 
-  it("recreates the sdk chat when transport becomes ready", () => {
-    const initialTransport = {};
-    const readyTransport = {};
-    mocks.transport = initialTransport;
+  it("keeps the sdk chat and sends through the latest transport", async () => {
+    const initialSend = vi.fn();
+    const readySend = vi.fn().mockResolvedValue("stream");
+    mocks.transport = { sendMessages: initialSend };
 
     const { rerender } = render(
       <ChatSession chatGroupId="group-1" sessionId="session-1">
@@ -267,19 +267,36 @@ describe("ChatSession", () => {
       </ChatSession>,
     );
 
-    mocks.transport = readyTransport;
+    mocks.transport = { sendMessages: readySend };
     rerender(
       <ChatSession chatGroupId="group-1" sessionId="session-1">
         {() => null}
       </ChatSession>,
     );
 
-    expect(mocks.chatInits).toHaveLength(2);
-    expect((mocks.chatInits[0] as { transport: unknown }).transport).toBe(
-      initialTransport,
+    expect(mocks.chatInits).toHaveLength(1);
+    const { transport } = mocks.chatInits[0] as {
+      transport: { sendMessages: (options: unknown) => Promise<unknown> };
+    };
+    await expect(transport.sendMessages({})).resolves.toBe("stream");
+    expect(initialSend).not.toHaveBeenCalled();
+    expect(readySend).toHaveBeenCalledTimes(1);
+  });
+
+  it("fails sends cleanly while no transport is ready", async () => {
+    mocks.transport = null;
+
+    render(
+      <ChatSession chatGroupId="group-1" sessionId="session-1">
+        {() => null}
+      </ChatSession>,
     );
-    expect((mocks.chatInits[1] as { transport: unknown }).transport).toBe(
-      readyTransport,
+
+    const { transport } = mocks.chatInits[0] as {
+      transport: { sendMessages: (options: unknown) => Promise<unknown> };
+    };
+    await expect(transport.sendMessages({})).rejects.toThrow(
+      "Chat model is not ready",
     );
   });
 

@@ -77,7 +77,21 @@ export class CustomChatTransport implements ChatTransport<NotizUIMessage> {
     ) => Promise<ResolvedChatContext | null>,
   ) {}
 
+  // Notes are only extra context. If loading them fails, answer without them
+  // rather than failing the whole message.
   private async renderContextBlock(
+    contextRefs: ContextRef[],
+    cache: Map<string, string | null>,
+  ): Promise<string | null> {
+    try {
+      return await this.buildContextBlock(contextRefs, cache);
+    } catch (error) {
+      console.error("[chat] failed to load context", error);
+      return null;
+    }
+  }
+
+  private async buildContextBlock(
     contextRefs: ContextRef[],
     cache: Map<string, string | null>,
   ): Promise<string | null> {
