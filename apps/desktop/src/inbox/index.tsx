@@ -1,5 +1,9 @@
 import { Trans } from "@lingui/react/macro";
-import { useQuery } from "@tanstack/react-query";
+import {
+  keepPreviousData,
+  useQuery,
+  useQueryClient,
+} from "@tanstack/react-query";
 import { format, isToday, isYesterday, parseISO } from "date-fns";
 import {
   ImageIcon,
@@ -42,6 +46,7 @@ function useInboxMessages(accountIds: string[]) {
     enabled: accountIds.length > 0,
     staleTime: TWO_MINUTES_MS,
     retry: false,
+    placeholderData: keepPreviousData,
     queryFn: async (): Promise<InboxMessage[]> => {
       const results = await Promise.all(
         accountIds.map((id) => mailCommands.recentMail(id, RECENT_LIMIT)),
@@ -72,6 +77,19 @@ function useInboxMessages(accountIds: string[]) {
         .sort((a, b) => (b.date?.getTime() ?? 0) - (a.date?.getTime() ?? 0));
     },
   });
+}
+
+function mailBodyQuery(accountId: string, uid: number) {
+  return {
+    queryKey: ["mail-body", accountId, uid],
+    staleTime: Infinity,
+    retry: false,
+    queryFn: async () => {
+      const result = await mailCommands.readMail(accountId, uid);
+      if (result.status === "error") throw new Error(result.error);
+      return result.data;
+    },
+  };
 }
 
 const IMAGES_KEY = "notiz-mail-load-images";
@@ -140,11 +158,38 @@ export function TabContentInbox() {
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") setSelectedKey(null);
+      const target = e.target as HTMLElement | null;
+      if (
+        target?.closest("input, textarea, select, [contenteditable='true']") ||
+        e.metaKey ||
+        e.ctrlKey ||
+        e.altKey
+      ) {
+        return;
+      }
+
+      if (e.key === "Escape") {
+        setSelectedKey(null);
+        return;
+      }
+
+      const step =
+        e.key === "ArrowDown" || e.key === "j"
+          ? 1
+          : e.key === "ArrowUp" || e.key === "k"
+            ? -1
+            : 0;
+      if (step === 0 || messages.length === 0) return;
+
+      e.preventDefault();
+      const current = messages.findIndex((m) => m.key === selectedKey);
+      const next =
+        messages[Math.min(Math.max(current + step, 0), messages.length - 1)];
+      if (next) select(next);
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, []);
+  });
 
   return (
     <StandardTabWrapper>
@@ -204,9 +249,18 @@ export function TabContentInbox() {
                 </button>
               </section>
             ) : error ? (
-              <p className="text-destructive px-3 text-sm">
-                {error instanceof Error ? error.message : String(error)}
-              </p>
+              <div className="flex flex-col items-start gap-3 px-3">
+                <p className="text-destructive text-sm">
+                  {error instanceof Error ? error.message : String(error)}
+                </p>
+                <button
+                  type="button"
+                  onClick={() => void refetch()}
+                  className="text-muted-foreground hover:bg-accent hover:text-foreground rounded-full px-3 py-1.5 text-sm transition-colors"
+                >
+                  <Trans>Try again</Trans>
+                </button>
+              </div>
             ) : groups.length === 0 ? (
               <p className="text-muted-foreground px-3 py-8 text-sm">
                 {isFetching ? (
@@ -262,12 +316,21 @@ function MessageRow({
   onSelect: () => void;
 }) {
   const sender = message.fromName || message.fromEmail;
+  const queryClient = useQueryClient();
 
   return (
     <button
       type="button"
       onClick={onSelect}
+      onPointerEnter={() =>
+        void queryClient.prefetchQuery(
+          mailBodyQuery(message.accountId, message.uid),
+        )
+      }
       aria-current={selected ? "true" : undefined}
+      ref={(el) => {
+        if (selected) el?.scrollIntoView({ block: "nearest" });
+      }}
       className={cn([
         "flex w-full items-center gap-3.5 rounded-xl px-3 py-2.5 text-left transition-colors",
         selected ? "bg-accent" : "hover:bg-accent/60",
@@ -322,19 +385,9 @@ function MessagePreview({
   message: InboxMessage;
   onClose: () => void;
 }) {
-  const { data, isPending, error } = useQuery({
-    queryKey: ["mail-body", message.accountId, message.uid],
-    staleTime: Infinity,
-    retry: false,
-    queryFn: async () => {
-      const result = await mailCommands.readMail(
-        message.accountId,
-        message.uid,
-      );
-      if (result.status === "error") throw new Error(result.error);
-      return result.data;
-    },
-  });
+  const { data, isPending, error, refetch } = useQuery(
+    mailBodyQuery(message.accountId, message.uid),
+  );
 
   const sender = message.fromName || message.fromEmail;
   const [loadImages, toggleImages] = useLoadImages();
@@ -431,9 +484,18 @@ function MessagePreview({
             ))}
           </div>
         ) : error ? (
-          <p className="text-destructive text-sm">
-            {error instanceof Error ? error.message : String(error)}
-          </p>
+          <div className="flex flex-col items-start gap-3">
+            <p className="text-destructive text-sm">
+              {error instanceof Error ? error.message : String(error)}
+            </p>
+            <button
+              type="button"
+              onClick={() => void refetch()}
+              className="text-muted-foreground hover:bg-accent hover:text-foreground rounded-full px-3 py-1.5 text-sm transition-colors"
+            >
+              <Trans>Try again</Trans>
+            </button>
+          </div>
         ) : data.html ? (
           <>
             <EmailFrame html={data.html} loadImages={loadImages} />
