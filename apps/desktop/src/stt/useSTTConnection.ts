@@ -34,7 +34,7 @@ export const useSTTConnection = () => {
     queryKey: ["stt-default-local-model-downloaded"],
     queryFn: () => localSttCommands.isModelDownloaded(defaultLocalModel),
     refetchInterval: (query) =>
-      query.state.data?.status === "ok" && query.state.data.data ? false : 2000,
+      query.state.data?.status === "ok" && query.state.data.data ? false : 5000,
     select: (result) => result.status === "ok" && result.data,
   }).data;
   const setSttProvider = settings.UI.useSetValueCallback(

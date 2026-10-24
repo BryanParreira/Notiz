@@ -13,7 +13,14 @@ export function usePermission(type: Permission) {
   const status = useQuery({
     queryKey: [`${type}Permission`],
     queryFn: () => permissionsCommands.checkPermission(type),
-    refetchInterval: 1000,
+    // Only watch while a permission is still missing (the user may be granting
+    // it in System Settings). Once granted it is re-checked on window focus,
+    // not by a native call every second.
+    refetchInterval: (query) =>
+      query.state.data?.status === "ok" &&
+      query.state.data.data === "authorized"
+        ? false
+        : 2000,
     select: (result): PermissionStatus => {
       if (result.status === "error") {
         return "denied";

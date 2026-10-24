@@ -33,7 +33,11 @@ export const localSttQueries = {
     }),
   isDownloaded: (model: LocalModel) =>
     queryOptions({
-      refetchInterval: 1000,
+      // Stop once the model is present; a finished download invalidates this.
+      refetchInterval: (query) =>
+        query.state.data?.status === "ok" && query.state.data.data === true
+          ? false
+          : 3000,
       queryKey: localSttKeys.modelDownloaded(model),
       queryFn: () => localSttCommands.isModelDownloaded(model),
       select: (result) => {
@@ -45,7 +49,11 @@ export const localSttQueries = {
     }),
   isDownloading: (model: LocalModel) =>
     queryOptions({
-      refetchInterval: 1000,
+      // Fast while a download is running, slow while idle.
+      refetchInterval: (query) =>
+        query.state.data?.status === "ok" && query.state.data.data === true
+          ? 1000
+          : 5000,
       queryKey: localSttKeys.modelDownloading(model),
       queryFn: () => localSttCommands.isModelDownloading(model),
       select: (result) => {
