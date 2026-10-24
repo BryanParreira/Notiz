@@ -110,8 +110,10 @@ export function SettingsCalendar() {
 
 export function AddCalendarLinkForm({
   onAdded,
+  compact = false,
 }: {
   onAdded?: () => void | Promise<unknown>;
+  compact?: boolean;
 }) {
   const queryClient = useQueryClient();
   const openNew = useTabs((state) => state.openNew);
@@ -227,13 +229,15 @@ export function AddCalendarLinkForm({
       {add.isSuccess && !add.isPending && (
         <p className="text-muted-foreground flex items-center gap-3 text-sm">
           <Trans>Calendar added.</Trans>
-          <button
-            type="button"
-            onClick={() => openNew({ type: "calendar" })}
-            className="text-primary underline"
-          >
-            <Trans>Open calendar</Trans>
-          </button>
+          {!compact && (
+            <button
+              type="button"
+              onClick={() => openNew({ type: "calendar" })}
+              className="text-primary underline"
+            >
+              <Trans>Open calendar</Trans>
+            </button>
+          )}
         </p>
       )}
 
