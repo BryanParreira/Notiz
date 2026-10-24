@@ -116,7 +116,9 @@ pub async fn remove_account(id: &str) -> Result<(), Error> {
     let _guard = store::LOCK.lock().await;
     let mut accounts = store::load()?;
     accounts.retain(|a| a.id != id);
-    store::save(&accounts)
+    store::save(&accounts)?;
+    client::forget(id);
+    Ok(())
 }
 
 /// Newest messages in the inbox. The mailbox is opened read-only and message

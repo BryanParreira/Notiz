@@ -1,5 +1,8 @@
-use std::time::Duration;
+use std::collections::HashMap;
+use std::sync::{LazyLock, Mutex};
+use std::time::{Duration, Instant};
 
+use imap::extensions::idle::SetReadTimeout;
 use imap::types::Flag;
 
 use crate::error::Error;
@@ -7,6 +10,11 @@ use crate::store::StoredAccount;
 use crate::{MailBody, MailMessage};
 
 const NETWORK_TIMEOUT: Duration = Duration::from_secs(25);
+// Shorter than NETWORK_TIMEOUT so a stalled socket errors out and frees its
+// blocking thread instead of waiting on the server forever.
+const READ_TIMEOUT: Duration = Duration::from_secs(20);
+// Servers and NATs drop quiet connections, so only reuse a recent one.
+const POOL_IDLE_MAX: Duration = Duration::from_secs(120);
 const MAX_LIMIT: usize = 100;
 const MAX_FETCH_BYTES: usize = 6_000_000;
 const MAX_HTML_BYTES: usize = 2_500_000;
@@ -21,9 +29,73 @@ fn connect(account: &StoredAccount) -> Result<Session, Error> {
         .connect()
         .map_err(|e| Error::Imap(e.to_string()))?;
 
+    // The builder has no timeout option, so re-wrap its stream to set one. The
+    // greeting was already consumed by the builder.
+    let mut stream = client
+        .into_inner()
+        .map_err(|e| Error::Imap(e.to_string()))?;
+    stream
+        .set_read_timeout(Some(READ_TIMEOUT))
+        .map_err(|e| Error::Imap(e.to_string()))?;
+    let mut client = imap::Client::new(stream);
+    client.greeting_read = true;
+
     client
         .login(&account.username, &account.password)
         .map_err(|(e, _)| Error::Login(e.to_string()))
+}
+
+struct Pooled {
+    session: Session,
+    idle_since: Instant,
+}
+
+static POOL: LazyLock<Mutex<HashMap<String, Pooled>>> =
+    LazyLock::new(|| Mutex::new(HashMap::new()));
+
+fn take_pooled(account_id: &str) -> Option<Session> {
+    let pooled = POOL
+        .lock()
+        .unwrap_or_else(|e| e.into_inner())
+        .remove(account_id)?;
+    let mut session = pooled.session;
+
+    if pooled.idle_since.elapsed() > POOL_IDLE_MAX || session.noop().is_err() {
+        let _ = session.logout();
+        return None;
+    }
+    Some(session)
+}
+
+// Called from async code, so just drop the session (closing the socket)
+// rather than doing a blocking LOGOUT.
+pub(crate) fn forget(account_id: &str) {
+    POOL.lock()
+        .unwrap_or_else(|e| e.into_inner())
+        .remove(account_id);
+}
+
+// Reuses an idle session when one is healthy, so opening a message does not pay
+// for a new TLS handshake and login. A session that hit an error is dropped.
+fn with_session<T>(
+    account: &StoredAccount,
+    job: impl FnOnce(&mut Session) -> Result<T, Error>,
+) -> Result<T, Error> {
+    let mut session = match take_pooled(&account.id) {
+        Some(session) => session,
+        None => connect(account)?,
+    };
+
+    let result = job(&mut session)?;
+
+    POOL.lock().unwrap_or_else(|e| e.into_inner()).insert(
+        account.id.clone(),
+        Pooled {
+            session,
+            idle_since: Instant::now(),
+        },
+    );
+    Ok(result)
 }
 
 async fn run_blocking<T: Send + 'static>(
@@ -87,97 +159,105 @@ pub(crate) async fn search(
     let limit = limit.clamp(1, MAX_LIMIT);
 
     run_blocking(move || {
-        let mut session = connect(&account)?;
-        session
-            .examine("INBOX")
-            .map_err(|e| Error::Imap(e.to_string()))?;
+        with_session(&account, |session| {
+            let mailbox = session
+                .examine("INBOX")
+                .map_err(|e| Error::Imap(e.to_string()))?;
 
-        let query = addresses
-            .as_deref()
-            .map(build_query)
-            .unwrap_or_else(|| "ALL".to_string());
+            const ITEMS: &str = "(UID FLAGS INTERNALDATE BODY.PEEK[HEADER.FIELDS (FROM SUBJECT)])";
 
-        let mut uids: Vec<u32> = session
-            .uid_search(&query)
-            .map_err(|e| Error::Imap(e.to_string()))?
-            .into_iter()
-            .collect();
-        uids.sort_unstable_by(|a, b| b.cmp(a));
-        uids.truncate(limit);
+            let fetched = match addresses.as_deref() {
+                // Unfiltered: the newest messages are the highest sequence numbers,
+                // so skip the SEARCH that would return every UID in a large mailbox.
+                None => {
+                    if mailbox.exists == 0 {
+                        return Ok(Vec::new());
+                    }
+                    let first = mailbox.exists.saturating_sub(limit as u32 - 1).max(1);
+                    session
+                        .fetch(format!("{first}:*"), ITEMS)
+                        .map_err(|e| Error::Imap(e.to_string()))?
+                }
+                Some(addresses) => {
+                    let mut uids: Vec<u32> = session
+                        .uid_search(build_query(addresses))
+                        .map_err(|e| Error::Imap(e.to_string()))?
+                        .into_iter()
+                        .collect();
+                    uids.sort_unstable_by(|a, b| b.cmp(a));
+                    uids.truncate(limit);
 
-        if uids.is_empty() {
-            let _ = session.logout();
-            return Ok(Vec::new());
-        }
+                    if uids.is_empty() {
+                        return Ok(Vec::new());
+                    }
 
-        let set = uids
-            .iter()
-            .map(u32::to_string)
-            .collect::<Vec<_>>()
-            .join(",");
-        let fetched = session
-            .uid_fetch(
-                &set,
-                "(UID FLAGS INTERNALDATE BODY.PEEK[HEADER.FIELDS (FROM SUBJECT)])",
-            )
-            .map_err(|e| Error::Imap(e.to_string()))?;
+                    let set = uids
+                        .iter()
+                        .map(u32::to_string)
+                        .collect::<Vec<_>>()
+                        .join(",");
+                    session
+                        .uid_fetch(&set, ITEMS)
+                        .map_err(|e| Error::Imap(e.to_string()))?
+                }
+            };
 
-        let mut messages: Vec<MailMessage> = fetched
-            .iter()
-            .filter_map(|fetch| {
-                let uid = fetch.uid?;
-                let (subject, from_name, from_email) =
-                    parse_headers(fetch.header().unwrap_or_default());
+            let mut messages: Vec<MailMessage> = fetched
+                .iter()
+                .filter_map(|fetch| {
+                    let uid = fetch.uid?;
+                    let (subject, from_name, from_email) =
+                        parse_headers(fetch.header().unwrap_or_default());
 
-                Some(MailMessage {
-                    uid,
-                    subject,
-                    from_name,
-                    from_email,
-                    date: fetch
-                        .internal_date()
-                        .map(|d| d.to_rfc3339())
-                        .unwrap_or_default(),
-                    seen: fetch.flags().iter().any(|f| matches!(f, Flag::Seen)),
+                    Some(MailMessage {
+                        uid,
+                        subject,
+                        from_name,
+                        from_email,
+                        date: fetch
+                            .internal_date()
+                            .map(|d| d.to_rfc3339())
+                            .unwrap_or_default(),
+                        seen: fetch.flags().iter().any(|f| matches!(f, Flag::Seen)),
+                    })
                 })
-            })
-            .collect();
+                .collect();
 
-        messages.sort_unstable_by(|a, b| b.uid.cmp(&a.uid));
-        let _ = session.logout();
-        Ok(messages)
+            messages.sort_unstable_by(|a, b| b.uid.cmp(&a.uid));
+            Ok(messages)
+        })
     })
     .await
 }
 
 pub(crate) async fn read_message(account: StoredAccount, uid: u32) -> Result<MailBody, Error> {
     run_blocking(move || {
-        let mut session = connect(&account)?;
-        session
-            .examine("INBOX")
-            .map_err(|e| Error::Imap(e.to_string()))?;
+        with_session(&account, |session| {
+            session
+                .examine("INBOX")
+                .map_err(|e| Error::Imap(e.to_string()))?;
 
-        let query = format!("(UID INTERNALDATE BODY.PEEK[]<0.{MAX_FETCH_BYTES}>)");
-        let fetched = session
-            .uid_fetch(uid.to_string(), query)
-            .map_err(|e| Error::Imap(e.to_string()))?;
+            let query = format!("(UID INTERNALDATE BODY.PEEK[]<0.{MAX_FETCH_BYTES}>)");
+            let fetched = session
+                .uid_fetch(uid.to_string(), query)
+                .map_err(|e| Error::Imap(e.to_string()))?;
 
-        let fetch = fetched
-            .iter()
-            .next()
-            .ok_or_else(|| Error::Imap("message not found".to_string()))?;
-        let raw = fetch.body().or_else(|| fetch.text()).unwrap_or_default();
+            let fetch = fetched
+                .iter()
+                .next()
+                .ok_or_else(|| Error::Imap("message not found".to_string()))?;
+            let raw = fetch.body().or_else(|| fetch.text()).unwrap_or_default();
 
-        let mut body = parse_message(raw);
-        body.uid = uid;
-        if body.date.is_empty() {
-            body.date = fetch
-                .internal_date()
-                .map(|d| d.to_rfc3339())
-                .unwrap_or_default();
-        }
-        let _ = session.logout();
-        Ok(body)
+            let mut body = parse_message(raw);
+            body.uid = uid;
+            if body.date.is_empty() {
+                body.date = fetch
+                    .internal_date()
+                    .map(|d| d.to_rfc3339())
+                    .unwrap_or_default();
+            }
+            Ok(body)
+        })
     })
     .await
 }
