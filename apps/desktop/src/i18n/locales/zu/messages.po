@@ -17,8 +17,8 @@ msgstr ""
 msgid "(default)"
 msgstr ""
 
-#: src/inbox/index.tsx:358
-#: src/inbox/index.tsx:453
+#: src/inbox/index.tsx:375
+#: src/inbox/index.tsx:470
 #: src/session/components/note-input/brief-emails.tsx:68
 msgid "(no subject)"
 msgstr ""
@@ -79,13 +79,12 @@ msgstr ""
 msgid "Add \"{0}\""
 msgstr ""
 
-#. placeholder {0}: provider.displayName
 #: src/calendar/components/sidebar.tsx:218
 #: src/calendar/components/sidebar.tsx:300
-msgid "Add {0} account"
-msgstr ""
+#~ msgid "Add {0} account"
+#~ msgstr ""
 
-#: src/settings/calendar/index.tsx:152
+#: src/settings/calendar/index.tsx:154
 msgid "Add a calendar"
 msgstr ""
 
@@ -101,7 +100,7 @@ msgstr ""
 msgid "Add an account"
 msgstr ""
 
-#: src/settings/calendar/index.tsx:250
+#: src/settings/calendar/index.tsx:254
 msgid "Add calendar"
 msgstr ""
 
@@ -167,8 +166,13 @@ msgstr ""
 msgid "All Notes"
 msgstr ""
 
+#: src/calendar/components/sidebar.tsx:134
 #: src/onboarding/permissions.tsx:46
 msgid "Allow access"
+msgstr ""
+
+#: src/calendar/components/sidebar.tsx:119
+msgid "Allow access to show the calendars on this Mac next to your notes. Nothing leaves this device."
 msgstr ""
 
 #: src/onboarding/permissions.tsx:142
@@ -201,6 +205,10 @@ msgstr "Uhlelo lokusebenza"
 msgid "Appearance"
 msgstr ""
 
+#: src/calendar/components/sidebar.tsx:89
+msgid "Apple Calendar"
+msgstr ""
+
 #: src/settings/general/storage/index.tsx:395
 msgid "Apply and Restart"
 msgstr ""
@@ -213,11 +221,11 @@ msgstr ""
 msgid "Applying..."
 msgstr ""
 
-#: src/chat/components/input/index.tsx:72
+#: src/chat/components/input/index.tsx:73
 msgid "Ask & search about anything, or be creative!"
 msgstr ""
 
-#: src/chat/components/input/index.tsx:71
+#: src/chat/components/input/index.tsx:72
 #: src/chat/page.tsx:149
 #: src/main/home.tsx:223
 #: src/shared/chat-cta.tsx:19
@@ -269,19 +277,26 @@ msgstr ""
 msgid "Browser handoff not working? Paste the callback link instead"
 msgstr ""
 
-#: src/calendar/components/sidebar.tsx:321
 #: src/settings/general/permissions.tsx:191
 #: src/sidebar/calendar.tsx:10
 #: src/sidebar/nav.tsx:80
 msgid "Calendar"
 msgstr ""
 
-#: src/settings/calendar/index.tsx:229
+#: src/calendar/components/sidebar.tsx:114
+msgid "Calendar access is turned off. Turn it on in System Settings to see your events here."
+msgstr ""
+
+#: src/settings/calendar/index.tsx:231
 msgid "Calendar added."
 msgstr ""
 
 #: src/onboarding/index.tsx:241
 msgid "Calendar connected"
+msgstr ""
+
+#: src/calendar/components/sidebar.tsx:60
+msgid "Calendar links"
 msgstr ""
 
 #: src/settings/calendar/index.tsx:64
@@ -330,11 +345,11 @@ msgstr ""
 msgid "Checking folder..."
 msgstr ""
 
-#: src/inbox/index.tsx:267
+#: src/inbox/index.tsx:287
 msgid "Checking your inbox…"
 msgstr ""
 
-#: src/settings/calendar/index.tsx:248
+#: src/settings/calendar/index.tsx:252
 #: src/settings/email/index.tsx:235
 #: src/settings/general/index.tsx:335
 msgid "Checking…"
@@ -448,7 +463,7 @@ msgstr ""
 msgid "Connect {0}"
 msgstr ""
 
-#: src/inbox/index.tsx:236
+#: src/inbox/index.tsx:256
 msgid "Connect an email account to read your mail next to your notes. It is optional and read-only."
 msgstr ""
 
@@ -460,7 +475,7 @@ msgstr ""
 msgid "Connect calendar (optional)"
 msgstr ""
 
-#: src/inbox/index.tsx:248
+#: src/inbox/index.tsx:268
 msgid "Connect email"
 msgstr ""
 
@@ -478,6 +493,10 @@ msgstr ""
 
 #: src/instruction/index.tsx:186
 msgid "Connect your integration"
+msgstr ""
+
+#: src/calendar/components/sidebar.tsx:94
+msgid "Connected"
 msgstr ""
 
 #: src/sidebar/contacts.tsx:304
@@ -508,7 +527,7 @@ msgstr ""
 msgid "Copy as Markdown"
 msgstr ""
 
-#: src/chat/components/message/normal.tsx:83
+#: src/chat/components/message/normal.tsx:84
 msgid "Copy message"
 msgstr ""
 
@@ -918,11 +937,11 @@ msgstr ""
 msgid "Human"
 msgstr ""
 
-#: src/inbox/index.tsx:430
+#: src/inbox/index.tsx:447
 msgid "Images"
 msgstr ""
 
-#: src/inbox/index.tsx:430
+#: src/inbox/index.tsx:447
 msgid "Images off"
 msgstr ""
 
@@ -946,7 +965,7 @@ msgstr ""
 msgid "In {totalSeconds} seconds"
 msgstr ""
 
-#: src/inbox/index.tsx:206
+#: src/inbox/index.tsx:223
 #: src/sidebar/nav.tsx:74
 msgid "Inbox"
 msgstr ""
@@ -1260,7 +1279,7 @@ msgstr ""
 msgid "Notes"
 msgstr ""
 
-#: src/inbox/index.tsx:269
+#: src/inbox/index.tsx:289
 msgid "Nothing in your inbox."
 msgstr ""
 
@@ -1307,7 +1326,7 @@ msgid "Only public repositories are supported."
 msgstr ""
 
 #: src/calendar/components/apple/permission.tsx:156
-#: src/settings/calendar/index.tsx:192
+#: src/settings/calendar/index.tsx:194
 #: src/settings/email/index.tsx:208
 #: src/settings/general/permissions.tsx:100
 #: src/task/resource-view.tsx:280
@@ -1322,7 +1341,7 @@ msgstr ""
 msgid "Open {0} settings"
 msgstr ""
 
-#: src/settings/calendar/index.tsx:235
+#: src/settings/calendar/index.tsx:238
 #: src/sidebar/timeline/index.tsx:640
 #: src/sidebar/timeline/index.tsx:644
 msgid "Open calendar"
@@ -1372,6 +1391,10 @@ msgstr ""
 
 #: src/onboarding/permissions.tsx:45
 msgid "Open settings"
+msgstr ""
+
+#: src/calendar/components/sidebar.tsx:132
+msgid "Open System Settings"
 msgstr ""
 
 #: src/settings/dictation/index.tsx:92
@@ -1453,7 +1476,7 @@ msgstr ""
 msgid "Previous match"
 msgstr ""
 
-#: src/inbox/index.tsx:210
+#: src/inbox/index.tsx:227
 msgid "Read-only mail from your own account. Nothing leaves this device."
 msgstr ""
 
@@ -1499,7 +1522,7 @@ msgstr ""
 msgid "Regenerate insights"
 msgstr ""
 
-#: src/chat/components/message/normal.tsx:91
+#: src/chat/components/message/normal.tsx:92
 msgid "Regenerate message"
 msgstr ""
 
@@ -1552,7 +1575,7 @@ msgstr ""
 msgid "Replay"
 msgstr ""
 
-#: src/inbox/index.tsx:439
+#: src/inbox/index.tsx:456
 msgid "Reply"
 msgstr ""
 
@@ -1746,7 +1769,7 @@ msgstr ""
 msgid "Send email"
 msgstr ""
 
-#: src/chat/components/input/index.tsx:148
+#: src/chat/components/input/index.tsx:149
 msgid "Send message"
 msgstr ""
 
@@ -1858,7 +1881,7 @@ msgstr ""
 msgid "Stop listening"
 msgstr ""
 
-#: src/chat/components/input/index.tsx:141
+#: src/chat/components/input/index.tsx:142
 msgid "Stop response"
 msgstr ""
 
@@ -1945,15 +1968,15 @@ msgstr ""
 msgid "This folder is empty. Right-click any note and choose \"Move to\" to add it here."
 msgstr ""
 
-#: src/inbox/index.tsx:523
+#: src/inbox/index.tsx:540
 msgid "This message has no readable text."
 msgstr ""
 
-#: src/inbox/index.tsx:515
+#: src/inbox/index.tsx:532
 msgid "This message is long, so only the beginning is shown."
 msgstr ""
 
-#: src/inbox/index.tsx:504
+#: src/inbox/index.tsx:521
 msgid "This message is long, so some content may be missing."
 msgstr ""
 
@@ -1978,8 +2001,8 @@ msgstr ""
 msgid "Transcription"
 msgstr ""
 
-#: src/inbox/index.tsx:261
-#: src/inbox/index.tsx:496
+#: src/inbox/index.tsx:281
+#: src/inbox/index.tsx:513
 msgid "Try again"
 msgstr ""
 
@@ -2035,13 +2058,12 @@ msgid "Upgrade to connect"
 msgstr ""
 
 #: src/calendar/components/sidebar.tsx:293
-msgid "Upgrade to Pro"
-msgstr ""
+#~ msgid "Upgrade to Pro"
+#~ msgstr ""
 
-#. placeholder {0}: provider.displayName
 #: src/calendar/components/sidebar.tsx:291
-msgid "Upgrade to Pro for {0}"
-msgstr ""
+#~ msgid "Upgrade to Pro for {0}"
+#~ msgstr ""
 
 #: src/settings/ai/stt/select.tsx:646
 msgid "Upgrade to use"
