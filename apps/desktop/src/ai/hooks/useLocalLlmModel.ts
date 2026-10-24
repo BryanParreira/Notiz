@@ -22,19 +22,13 @@ export const localLlmKeys = {
     [...localLlmKeys.model(model), "downloaded"] as const,
   downloading: (model: GgufLlmModel) =>
     [...localLlmKeys.model(model), "downloading"] as const,
-  serverUrl: () => [...localLlmKeys.all, "server-url"] as const,
 };
 
 export const localLlmQueries = {
   isDownloaded: (model: GgufLlmModel) =>
     queryOptions({
-      // This check runs app-wide, so stop once the model is present instead of
-      // stat-ing a multi-gigabyte file every second for the life of the app.
-      // Download completion invalidates this query, so no update is missed.
-      refetchInterval: (query) =>
-        query.state.data?.status === "ok" && query.state.data.data === true
-          ? false
-          : 1000,
+      // Checked app-wide, so don't poll: nothing downloads in the background
+      // any more, and a finished download invalidates this query.
       queryKey: localLlmKeys.downloaded(model),
       queryFn: () => localLlmCommands.isModelDownloaded(model),
       select: (result) => {
@@ -55,33 +49,6 @@ export const localLlmQueries = {
         }
         return result.data;
       },
-    }),
-  serverUrl: () =>
-    queryOptions({
-      queryKey: localLlmKeys.serverUrl(),
-      queryFn: () => localLlmCommands.serverUrl(),
-      select: (result) => {
-        if (result.status === "error") {
-          throw new Error(result.error);
-        }
-        return result.data;
-      },
-      // The server can start on its own in the background (app-startup
-      // auto-start), not just in response to this app's own `ensureStarted`
-      // call — poll so the UI actually notices once it's up. Cheap local
-      // command (in-memory check), fine to poll indefinitely rather than
-      // relying on `query.state.data` truthiness to stop early — that's
-      // the pre-`select` raw Result object, always truthy, so a
-      // stop-when-truthy condition here would (and did) kill polling after
-      // the very first fetch regardless of the actual URL.
-      // Poll quickly while waiting for the server, then back off once its URL
-      // is known; a crash is still noticed within ten seconds. The check reads
-      // the raw Result's `data`, not its truthiness, for the reason above.
-      refetchInterval: (query) =>
-        query.state.data?.status === "ok" && query.state.data.data
-          ? 10_000
-          : 2000,
-      staleTime: Infinity,
     }),
 };
 
@@ -174,47 +141,5 @@ export function useLocalLlmModelDownload(
     showProgress,
     handleDownload,
     handleCancel,
-  };
-}
-
-export function useLocalLlmServer(
-  model: GgufLlmModel = DEFAULT_LOCAL_LLM_MODEL,
-) {
-  const queryClient = useQueryClient();
-  const [isStarting, setIsStarting] = useState(false);
-  const [startError, setStartError] = useState<string | null>(null);
-
-  const serverUrl = useQuery(localLlmQueries.serverUrl());
-
-  const ensureStarted = useCallback(async () => {
-    if (serverUrl.data) {
-      return serverUrl.data;
-    }
-    if (isStarting) {
-      return null;
-    }
-
-    setIsStarting(true);
-    setStartError(null);
-    try {
-      const result = await localLlmCommands.startServer(model);
-      if (result.status === "error") {
-        setStartError(result.error);
-        return null;
-      }
-      await queryClient.invalidateQueries({
-        queryKey: localLlmKeys.serverUrl(),
-      });
-      return result.data;
-    } finally {
-      setIsStarting(false);
-    }
-  }, [isStarting, model, queryClient, serverUrl.data]);
-
-  return {
-    url: serverUrl.data ?? null,
-    isStarting,
-    startError,
-    ensureStarted,
   };
 }

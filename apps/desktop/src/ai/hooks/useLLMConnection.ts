@@ -10,15 +10,16 @@ import { extractReasoningMiddleware, wrapLanguageModel } from "ai";
 import { useEffect, useMemo, useRef } from "react";
 
 import type { NotizTask } from "@notiz/api-client";
+import { commands as localLlmCommands } from "@notiz/plugin-local-llm";
 import type { AIProviderStorage } from "@notiz/store";
 
 import { createAuthFetch } from "../auth-fetch";
-import { createTracedFetch, tracedFetch } from "../traced-fetch";
 import {
-  DEFAULT_LOCAL_LLM_MODEL,
-  localLlmQueries,
-  useLocalLlmServer,
-} from "./useLocalLlmModel";
+  createLocalLlmFetch,
+  LOCAL_LLM_PLACEHOLDER_ORIGIN,
+} from "../local-llm-fetch";
+import { createTracedFetch, tracedFetch } from "../traced-fetch";
+import { DEFAULT_LOCAL_LLM_MODEL, localLlmQueries } from "./useLocalLlmModel";
 
 import { useAuth } from "~/auth";
 import { useBillingAccess } from "~/auth/billing";
@@ -96,17 +97,9 @@ export const useLLMConnection = (): LLMConnectionResult => {
     settings.STORE_ID,
   ) as AIProviderStorage | undefined;
 
-  const localLlmServer = useLocalLlmServer();
-  useEffect(() => {
-    if (current_llm_provider === "notiz_local") {
-      void localLlmServer.ensureStarted();
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [current_llm_provider, localLlmServer.url]);
-
-  // First-run only: once the background-prefetched local model finishes
-  // downloading, auto-select it — but only if the user hasn't configured
-  // *any* provider yet. Never overrides an existing choice.
+  // Once the local model has been downloaded from Settings, auto-select it,
+  // but only if the user hasn't configured *any* provider yet. Never
+  // overrides an existing choice.
   const isLocalModelDownloaded = useQuery(
     localLlmQueries.isDownloaded(DEFAULT_LOCAL_LLM_MODEL),
   ).data;
@@ -142,7 +135,7 @@ export const useLLMConnection = (): LLMConnectionResult => {
         providerConfig,
         session: auth?.session,
         isPaid: billing.isPaid,
-        localServerUrl: localLlmServer.url,
+        isLocalModelDownloaded: isLocalModelDownloaded ?? false,
       }),
     [
       auth,
@@ -150,7 +143,7 @@ export const useLLMConnection = (): LLMConnectionResult => {
       current_llm_model,
       current_llm_provider,
       providerConfig,
-      localLlmServer.url,
+      isLocalModelDownloaded,
     ],
   );
 };
@@ -166,7 +159,7 @@ const resolveLLMConnection = (params: {
   providerConfig: AIProviderStorage | undefined;
   session: { access_token: string } | null | undefined;
   isPaid: boolean;
-  localServerUrl: string | null;
+  isLocalModelDownloaded: boolean;
 }): LLMConnectionResult => {
   const {
     providerId: rawProviderId,
@@ -174,7 +167,7 @@ const resolveLLMConnection = (params: {
     providerConfig,
     session,
     isPaid,
-    localServerUrl,
+    isLocalModelDownloaded,
   } = params;
 
   if (!rawProviderId) {
@@ -207,19 +200,22 @@ const resolveLLMConnection = (params: {
   }
 
   if (providerId === "notiz_local") {
-    if (!localServerUrl) {
+    if (!isLocalModelDownloaded) {
       return {
         conn: null,
-        status: {
-          status: "pending",
-          reason: "local_server_starting",
-          providerId: "notiz_local",
-        },
+        status: { status: "pending", reason: "missing_model", providerId },
       };
     }
 
+    // The server starts on the first request (see local-llm-fetch), so there is
+    // no port yet; the fetch swaps this placeholder for the real one.
     return {
-      conn: { providerId, modelId, baseUrl: localServerUrl, apiKey: "" },
+      conn: {
+        providerId,
+        modelId,
+        baseUrl: `${LOCAL_LLM_PLACEHOLDER_ORIGIN}/v1`,
+        apiKey: "",
+      },
       status: { status: "success", providerId, isHosted: false },
     };
   }
@@ -298,6 +294,16 @@ const wrapWithThinkingMiddleware = (
   });
 };
 
+const localLlmFetch = createLocalLlmFetch({
+  start: async () => {
+    const result = await localLlmCommands.startServer(DEFAULT_LOCAL_LLM_MODEL);
+    if (result.status === "error") throw new Error(String(result.error));
+    return result.data;
+  },
+  stop: () => localLlmCommands.stopServer(),
+  send: tauriFetch,
+});
+
 const createLanguageModel = (
   conn: LLMConnectionInfo,
   task?: NotizTask,
@@ -373,7 +379,7 @@ const createLanguageModel = (
 
     case "notiz_local": {
       const provider = createOpenAICompatible({
-        fetch: tauriFetch,
+        fetch: localLlmFetch,
         name: conn.providerId,
         baseURL: conn.baseUrl,
       });

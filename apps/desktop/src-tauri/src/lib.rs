@@ -220,40 +220,11 @@ pub async fn main() {
             }
 
             {
-                // Prefetch the default local AI models in the background so
-                // they're already there by the time a user picks the local
-                // provider in Settings — no manual "Download" click needed.
-                // Idempotent (both check is-downloaded first) and silent —
-                // failures (e.g. offline on first launch) are logged, not
-                // surfaced, since this is a convenience prefetch, not a
-                // blocking requirement.
-                use tauri_plugin_local_llm::LocalLlmPluginExt;
+                // Prefetch the default speech-to-text models in the background.
+                // The local LLM is not prefetched: it is a multi-gigabyte
+                // download, so it is opt-in from Settings. Idempotent and
+                // silent — failures (e.g. offline) are logged, not surfaced.
                 use tauri_plugin_local_stt::LocalSttPluginExt;
-
-                let llm_app_handle = app_handle.clone();
-                tauri::async_runtime::spawn(async move {
-                    // Qwen2p5_3bQ4's download URL 404s (see
-                    // useLocalLlmModel.ts's DEFAULT_LOCAL_LLM_MODEL comment)
-                    // — keep this prefetch in sync with that default.
-                    let model = tauri_plugin_local_llm::SupportedModel::Llama3p2_3bQ4;
-
-                    // Download only — do NOT auto-start the server here.
-                    // Starting loads the model into RAM for the lifetime of
-                    // the process, and this prefetch runs on every launch
-                    // regardless of whether the user has picked the local
-                    // provider. The frontend starts the server on demand
-                    // (see useLLMConnection's `current_llm_provider ===
-                    // "notiz_local"` effect) and stops it again when the
-                    // user switches away (see settings.ts
-                    // `syncLocalLlmServer`).
-                    if let Err(e) = llm_app_handle
-                        .local_llm()
-                        .ensure_model_downloaded(model)
-                        .await
-                    {
-                        tracing::warn!("local LLM model prefetch failed: {e}");
-                    }
-                });
 
                 let stt_app_handle = app_handle.clone();
                 tauri::async_runtime::spawn(async move {
