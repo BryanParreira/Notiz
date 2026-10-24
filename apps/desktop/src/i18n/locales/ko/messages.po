@@ -17,8 +17,8 @@ msgstr ""
 msgid "(default)"
 msgstr ""
 
-#: src/inbox/index.tsx:295
-#: src/inbox/index.tsx:400
+#: src/inbox/index.tsx:358
+#: src/inbox/index.tsx:453
 #: src/session/components/note-input/brief-emails.tsx:68
 msgid "(no subject)"
 msgstr ""
@@ -330,7 +330,7 @@ msgstr ""
 msgid "Checking folder..."
 msgstr ""
 
-#: src/inbox/index.tsx:213
+#: src/inbox/index.tsx:267
 msgid "Checking your inbox…"
 msgstr ""
 
@@ -448,7 +448,7 @@ msgstr ""
 msgid "Connect {0}"
 msgstr ""
 
-#: src/inbox/index.tsx:191
+#: src/inbox/index.tsx:236
 msgid "Connect an email account to read your mail next to your notes. It is optional and read-only."
 msgstr ""
 
@@ -460,7 +460,7 @@ msgstr ""
 msgid "Connect calendar (optional)"
 msgstr ""
 
-#: src/inbox/index.tsx:203
+#: src/inbox/index.tsx:248
 msgid "Connect email"
 msgstr ""
 
@@ -918,11 +918,11 @@ msgstr ""
 msgid "Human"
 msgstr ""
 
-#: src/inbox/index.tsx:377
+#: src/inbox/index.tsx:430
 msgid "Images"
 msgstr ""
 
-#: src/inbox/index.tsx:377
+#: src/inbox/index.tsx:430
 msgid "Images off"
 msgstr ""
 
@@ -946,7 +946,7 @@ msgstr ""
 msgid "In {totalSeconds} seconds"
 msgstr ""
 
-#: src/inbox/index.tsx:161
+#: src/inbox/index.tsx:206
 #: src/sidebar/nav.tsx:74
 msgid "Inbox"
 msgstr ""
@@ -1260,7 +1260,7 @@ msgstr ""
 msgid "Notes"
 msgstr ""
 
-#: src/inbox/index.tsx:215
+#: src/inbox/index.tsx:269
 msgid "Nothing in your inbox."
 msgstr ""
 
@@ -1453,7 +1453,7 @@ msgstr ""
 msgid "Previous match"
 msgstr ""
 
-#: src/inbox/index.tsx:165
+#: src/inbox/index.tsx:210
 msgid "Read-only mail from your own account. Nothing leaves this device."
 msgstr ""
 
@@ -1552,7 +1552,7 @@ msgstr ""
 msgid "Replay"
 msgstr ""
 
-#: src/inbox/index.tsx:386
+#: src/inbox/index.tsx:439
 msgid "Reply"
 msgstr ""
 
@@ -1945,15 +1945,15 @@ msgstr ""
 msgid "This folder is empty. Right-click any note and choose \"Move to\" to add it here."
 msgstr ""
 
-#: src/inbox/index.tsx:461
+#: src/inbox/index.tsx:523
 msgid "This message has no readable text."
 msgstr ""
 
-#: src/inbox/index.tsx:453
+#: src/inbox/index.tsx:515
 msgid "This message is long, so only the beginning is shown."
 msgstr ""
 
-#: src/inbox/index.tsx:442
+#: src/inbox/index.tsx:504
 msgid "This message is long, so some content may be missing."
 msgstr ""
 
@@ -1976,6 +1976,11 @@ msgstr ""
 #: src/settings/ai/stt/index.tsx:17
 #: src/sidebar/settings.tsx:71
 msgid "Transcription"
+msgstr ""
+
+#: src/inbox/index.tsx:261
+#: src/inbox/index.tsx:496
+msgid "Try again"
 msgstr ""
 
 #: src/session/components/note-input/transcript/renderer/speaker-assign.tsx:341
