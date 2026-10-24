@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 
+import { isSmallTalk } from "./helpers";
 import { CustomChatTransport, shouldForceAnswer } from "./index";
 import { appendFileContextToolGuidance } from "./use-transport";
 
@@ -93,5 +94,30 @@ describe("context loading", () => {
     );
 
     expect(block).toBeNull();
+  });
+});
+
+describe("isSmallTalk", () => {
+  it("treats greetings as small talk so they get no tools", () => {
+    for (const text of [
+      "hello",
+      "Hello!",
+      "hey there",
+      "thanks",
+      "good morning",
+      "how are you?",
+    ]) {
+      expect(isSmallTalk(text)).toBe(true);
+    }
+  });
+
+  it("keeps tools for real questions", () => {
+    for (const text of [
+      "hello, what did we decide in yesterday's meeting?",
+      "summarize my last note",
+      "",
+    ]) {
+      expect(isSmallTalk(text)).toBe(false);
+    }
   });
 });

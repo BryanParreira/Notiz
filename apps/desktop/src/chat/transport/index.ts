@@ -21,6 +21,7 @@ import {
   getSessionIdsFromSearchOutput,
   hasContextText,
   isRecord,
+  isSmallTalk,
   isToolOutputPart,
   MAX_TOOL_STEPS,
   MESSAGE_WINDOW_SIZE,
@@ -240,6 +241,12 @@ export class CustomChatTransport implements ChatTransport<NotizUIMessage> {
       }
     }
 
+    const lastUserText =
+      options.messages[lastUserMessageIndex]?.parts
+        .flatMap((part) => (part.type === "text" ? [part.text] : []))
+        .join(" ") ?? "";
+    const smallTalk = isSmallTalk(lastUserText);
+
     const agent = new ToolLoopAgent({
       model: this.model,
       instructions: this.systemPrompt,
@@ -255,7 +262,7 @@ export class CustomChatTransport implements ChatTransport<NotizUIMessage> {
         // again and never answer. Stop offering tools once a step has failed,
         // a call has repeated, or only the last step is left, so the model has
         // to write its reply.
-        if (shouldForceAnswer(steps, stepNumber)) {
+        if (smallTalk || shouldForceAnswer(steps, stepNumber)) {
           return { ...windowed, toolChoice: "none" as const };
         }
         return windowed;

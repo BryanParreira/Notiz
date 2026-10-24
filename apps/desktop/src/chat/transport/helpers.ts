@@ -44,3 +44,13 @@ export function hasContextText(output: unknown): boolean {
   const contextText = output[CONTEXT_TEXT_FIELD];
   return typeof contextText === "string" && contextText.length > 0;
 }
+
+const SMALL_TALK =
+  /^(hi|hello|hey|hiya|yo|sup|thanks|thank you|thx|ok|okay|cool|great|nice|good (morning|afternoon|evening|night)|how are you|how's it going|what's up|whats up)\b[\s\p{P}\p{S}]*(there|again|friend)?[\s\p{P}\p{S}]*$/iu;
+
+// Small local models grab a tool for "hello" and then fail or print the raw
+// call. Greetings never need the user's notes, so they get no tools at all.
+export function isSmallTalk(text: string): boolean {
+  const trimmed = text.trim();
+  return trimmed.length > 0 && trimmed.length <= 40 && SMALL_TALK.test(trimmed);
+}

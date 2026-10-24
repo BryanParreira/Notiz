@@ -2,6 +2,7 @@ import "./chat-input.css";
 
 import { useLingui } from "@lingui/react/macro";
 import { ArrowUpIcon, SquareIcon } from "lucide-react";
+import { motion } from "motion/react";
 import { useMemo, useRef } from "react";
 
 import { ChatEditor, type ChatEditorHandle } from "@notiz/editor/chat";
@@ -183,7 +184,11 @@ function Container({
   isPage: boolean;
 }) {
   return (
-    <div
+    // Glides to its new spot when the page leaves the empty layout, instead of
+    // jumping from the middle to the bottom on the first message.
+    <motion.div
+      layout="position"
+      transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
       className={cn([
         "relative min-w-0 shrink-0",
         isPage ? "pt-2 pb-5" : isRightPanel ? "px-3 pb-4" : "px-1 pb-1",
@@ -214,7 +219,7 @@ function Container({
       >
         {children}
       </div>
-    </div>
+    </motion.div>
   );
 }
 
