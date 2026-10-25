@@ -304,6 +304,9 @@ const localLlmFetch = createLocalLlmFetch({
   send: tauriFetch,
 });
 
+// Called when chat opens, so the built-in model is loading while the user types.
+export const warmUpLocalModel = () => localLlmFetch.warm();
+
 const createLanguageModel = (
   conn: LLMConnectionInfo,
   task?: NotizTask,

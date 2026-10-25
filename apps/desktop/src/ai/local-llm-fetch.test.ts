@@ -73,4 +73,25 @@ describe("createLocalLlmFetch", () => {
     await vi.advanceTimersByTimeAsync(1001);
     expect(stop).toHaveBeenCalledTimes(1);
   });
+
+  it("warms the model ahead of a request and still unloads it when unused", async () => {
+    const { start, stop, localFetch } = setup();
+
+    localFetch.warm();
+    await vi.advanceTimersByTimeAsync(0);
+    expect(start).toHaveBeenCalledTimes(1);
+
+    await vi.advanceTimersByTimeAsync(999);
+    expect(stop).not.toHaveBeenCalled();
+    await vi.advanceTimersByTimeAsync(2);
+    expect(stop).toHaveBeenCalledTimes(1);
+  });
+
+  it("ignores a failed warm-up", async () => {
+    const { start, localFetch } = setup();
+    start.mockRejectedValueOnce(new Error("Model not downloaded"));
+
+    expect(() => localFetch.warm()).not.toThrow();
+    await vi.advanceTimersByTimeAsync(0);
+  });
 });

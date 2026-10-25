@@ -15,7 +15,7 @@ export function createLocalLlmFetch({
   stop: () => Promise<unknown>;
   send: typeof fetch;
   idleMs?: number;
-}): typeof fetch {
+}): typeof fetch & { warm: () => void } {
   let inFlight = 0;
   let timer: ReturnType<typeof setTimeout> | null = null;
 
@@ -32,7 +32,10 @@ export function createLocalLlmFetch({
     armIdleStop();
   };
 
-  return async (input, init) => {
+  const localFetch = async (
+    input: Parameters<typeof fetch>[0],
+    init?: RequestInit,
+  ) => {
     inFlight += 1;
     if (timer) {
       clearTimeout(timer);
@@ -53,6 +56,16 @@ export function createLocalLlmFetch({
       throw error;
     }
   };
+
+  // Starts the model ahead of the first request (for example when chat opens)
+  // and still lets it unload if nobody ends up using it.
+  const warm = () => {
+    void start()
+      .then(armIdleStop)
+      .catch(() => {});
+  };
+
+  return Object.assign(localFetch as typeof fetch, { warm });
 }
 
 // A reply streams for a while after the headers arrive, so the model counts as
