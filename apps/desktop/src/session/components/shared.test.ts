@@ -69,6 +69,9 @@ vi.mock("~/store/tinybase/store/main", () => ({
     },
     useStore: () => ({
       addRowListener: vi.fn(() => "listener-1"),
+      addCellListener: vi.fn(() => "listener-2"),
+      getRow: vi.fn(() => ({})),
+      forEachRow: vi.fn(),
       delListener: vi.fn(),
     }),
   },

@@ -17,6 +17,10 @@ import { deterministicGenerationSettings } from "~/ai/model-settings";
 import { extractPlainText } from "~/search/contexts/engine/utils";
 import { getSessionEvent } from "~/session/utils";
 import { createSourceHash } from "~/shared/hash";
+import {
+  ignoreCurrentNoteText,
+  useStoreChangeVersion,
+} from "~/shared/hooks/useStoreChangeVersion";
 import { showTransientToast } from "~/sidebar/toast/transient";
 import * as main from "~/store/tinybase/store/main";
 
@@ -72,31 +76,18 @@ export function usePastSessionNotes(
   );
   const activeMutationCount = useIsMutating({ mutationKey });
   const store = main.UI.useStore(main.STORE_ID);
-  const sessionsTable = main.UI.useTable(
-    enabled ? "sessions" : ("__disabled_past_notes_sessions" as "sessions"),
-    main.STORE_ID,
-  );
-  const participantsTable = main.UI.useTable(
-    enabled
-      ? "mapping_session_participant"
-      : ("__disabled_past_notes_participants" as "mapping_session_participant"),
-    main.STORE_ID,
-  );
-  const humansTable = main.UI.useTable(
-    enabled ? "humans" : ("__disabled_past_notes_humans" as "humans"),
-    main.STORE_ID,
-  );
-  const enhancedNotesTable = main.UI.useTable(
-    enabled
-      ? "enhanced_notes"
-      : ("__disabled_past_notes_enhanced" as "enhanced_notes"),
-    main.STORE_ID,
-  );
-  const keyFactsTable = main.UI.useTable(
-    enabled
-      ? "session_key_facts"
-      : ("__disabled_past_notes_key_facts" as "session_key_facts"),
-    main.STORE_ID,
+  // Rebuilt from the store when something relevant changes. Listening to the
+  // whole tables would redo the work for every keystroke in the current note.
+  const changes = useStoreChangeVersion(
+    store,
+    [
+      "sessions",
+      "mapping_session_participant",
+      "humans",
+      "enhanced_notes",
+      "session_key_facts",
+    ],
+    { enabled, ignore: ignoreCurrentNoteText(sessionId) },
   );
   const userId = main.UI.useValue("user_id", main.STORE_ID);
   const model = useLanguageModel("enhance");
@@ -111,17 +102,7 @@ export function usePastSessionNotes(
       sessionId,
       typeof userId === "string" ? userId : null,
     );
-  }, [
-    store,
-    enabled,
-    sessionId,
-    userId,
-    sessionsTable,
-    participantsTable,
-    humansTable,
-    enhancedNotesTable,
-    keyFactsTable,
-  ]);
+  }, [store, enabled, sessionId, userId, changes]);
 
   const mutation = useMutation({
     mutationKey,
@@ -217,12 +198,11 @@ export type LastMeeting = {
 
 export function useLastMeetings(sessionId: string): LastMeeting[] {
   const store = main.UI.useStore(main.STORE_ID);
-  const sessionsTable = main.UI.useTable("sessions", main.STORE_ID);
-  const participantsTable = main.UI.useTable(
-    "mapping_session_participant",
-    main.STORE_ID,
+  const changes = useStoreChangeVersion(
+    store,
+    ["sessions", "mapping_session_participant", "humans"],
+    { ignore: ignoreCurrentNoteText(sessionId) },
   );
-  const humansTable = main.UI.useTable("humans", main.STORE_ID);
   const userId = main.UI.useValue("user_id", main.STORE_ID);
 
   return useMemo(
@@ -234,7 +214,7 @@ export function useLastMeetings(sessionId: string): LastMeeting[] {
             typeof userId === "string" ? userId : null,
           )
         : [],
-    [store, sessionId, userId, sessionsTable, participantsTable, humansTable],
+    [store, sessionId, userId, changes],
   );
 }
 
@@ -307,21 +287,21 @@ export function buildLastMeetings(
 }
 
 export function useCanShowInsights(sessionId: string): boolean {
-  const useTable =
-    (main.UI.useTable as typeof main.UI.useTable | undefined) ??
-    ((() => undefined) as unknown as typeof main.UI.useTable);
   const useValue =
     (main.UI.useValue as typeof main.UI.useValue | undefined) ??
     ((() => undefined) as unknown as typeof main.UI.useValue);
   const store = main.UI.useStore(main.STORE_ID);
-  const sessionsTable = useTable("sessions", main.STORE_ID);
-  const participantsTable = useTable(
-    "mapping_session_participant",
-    main.STORE_ID,
+  const changes = useStoreChangeVersion(
+    store,
+    [
+      "sessions",
+      "mapping_session_participant",
+      "humans",
+      "enhanced_notes",
+      "session_key_facts",
+    ],
+    { ignore: ignoreCurrentNoteText(sessionId) },
   );
-  const humansTable = useTable("humans", main.STORE_ID);
-  const enhancedNotesTable = useTable("enhanced_notes", main.STORE_ID);
-  const keyFactsTable = useTable("session_key_facts", main.STORE_ID);
   const userId = useValue("user_id", main.STORE_ID);
 
   return useMemo(() => {
@@ -336,16 +316,7 @@ export function useCanShowInsights(sessionId: string): boolean {
         typeof userId === "string" ? userId : null,
       ).notes.length > 0
     );
-  }, [
-    store,
-    sessionId,
-    userId,
-    sessionsTable,
-    participantsTable,
-    humansTable,
-    enhancedNotesTable,
-    keyFactsTable,
-  ]);
+  }, [store, sessionId, userId, changes]);
 }
 
 export function buildPastSessionNotes(
@@ -362,10 +333,12 @@ export function buildPastSessionNotes(
     return { notes: [], missing: [], requests: [] };
   }
 
+  const index = buildSessionIndex(store);
   const currentParticipantIds = getSessionParticipantIds(
     store,
     sessionId,
     userId,
+    index,
   );
   const currentEvent = getSessionEvent(currentSession);
   const currentSeriesId = getRecurrenceSeriesId(currentEvent);
@@ -405,6 +378,7 @@ export function buildPastSessionNotes(
       store,
       candidateSessionId,
       userId,
+      index,
     );
     if (
       !isRelatedPastSession({
@@ -419,7 +393,7 @@ export function buildPastSessionNotes(
       return;
     }
 
-    const source = getSessionKeyFactsSource(store, candidateSessionId);
+    const source = getSessionKeyFactsSource(store, candidateSessionId, index);
     if (!source) {
       return;
     }
@@ -598,23 +572,64 @@ function getSavedKeyFacts(
   return row.content.trim();
 }
 
+type Row = Record<string, any>;
+
+// Each table is read once and grouped by note. Looking up one note's rows used to
+// scan the whole table, and that happened for every candidate note, so a rebuild
+// took time proportional to the square of the library.
+type SessionIndex = {
+  participants: Map<string, Row[]>;
+  enhancedNotes: Map<string, Row[]>;
+};
+
+function groupBySession(store: MainStore, tableId: string) {
+  const grouped = new Map<string, Row[]>();
+
+  store.forEachRow(tableId as "sessions", (rowId, _forEachCell) => {
+    const row = store.getRow(tableId as "sessions", rowId) as Row;
+    const sessionId = row.session_id;
+    if (typeof sessionId !== "string" || !sessionId) {
+      return;
+    }
+
+    const rows = grouped.get(sessionId);
+    if (rows) rows.push(row);
+    else grouped.set(sessionId, [row]);
+  });
+
+  return grouped;
+}
+
+function buildSessionIndex(store: MainStore): SessionIndex {
+  return {
+    participants: groupBySession(store, "mapping_session_participant"),
+    enhancedNotes: groupBySession(store, "enhanced_notes"),
+  };
+}
+
 function getSessionKeyFactsSource(
   store: MainStore,
   sessionId: string,
+  index?: SessionIndex,
 ): string | null {
   const summaries: Array<{ content: string; position: number }> = [];
 
-  store.forEachRow("enhanced_notes", (noteId, _forEachCell) => {
-    const note = store.getRow("enhanced_notes", noteId);
-    if (note.session_id !== sessionId || !note.content?.trim()) {
-      return;
+  const notes: Row[] =
+    index?.enhancedNotes.get(sessionId) ??
+    (index
+      ? []
+      : [...(groupBySession(store, "enhanced_notes").get(sessionId) ?? [])]);
+
+  for (const note of notes) {
+    if (!note.content?.trim()) {
+      continue;
     }
 
     summaries.push({
       content: note.content,
       position: typeof note.position === "number" ? note.position : 0,
     });
-  });
+  }
 
   summaries.sort((a, b) => a.position - b.position);
   const summaryText = cleanSourceText(
@@ -648,17 +663,23 @@ function getSessionParticipantIds(
   store: MainStore,
   sessionId: string,
   userId: string | null,
+  index?: SessionIndex,
 ): Set<string> {
   const participantIds = new Set<string>();
 
-  store.forEachRow("mapping_session_participant", (mappingId, _forEachCell) => {
-    const mapping = store.getRow("mapping_session_participant", mappingId);
-    if (
-      mapping.session_id !== sessionId ||
-      mapping.source === "excluded" ||
-      !mapping.human_id
-    ) {
-      return;
+  const mappings: Row[] =
+    index?.participants.get(sessionId) ??
+    (index
+      ? []
+      : [
+          ...(groupBySession(store, "mapping_session_participant").get(
+            sessionId,
+          ) ?? []),
+        ]);
+
+  for (const mapping of mappings) {
+    if (mapping.source === "excluded" || !mapping.human_id) {
+      continue;
     }
 
     const ownerUserId =
@@ -671,7 +692,7 @@ function getSessionParticipantIds(
     if (!isCurrentUser) {
       participantIds.add(mapping.human_id);
     }
-  });
+  }
 
   return participantIds;
 }

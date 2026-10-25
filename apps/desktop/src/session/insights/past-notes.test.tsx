@@ -244,5 +244,7 @@ function makeStore(
     transaction: (callback: () => void) => {
       callback();
     },
+    addCellListener: () => "listener",
+    delListener: () => {},
   } as any;
 }
