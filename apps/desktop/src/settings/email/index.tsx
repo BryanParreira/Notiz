@@ -50,7 +50,10 @@ export function SettingsEmail() {
               Optional and read-only. Notiz talks straight to your mail provider
               from this device, keeps the password in your Keychain, and only
               reads message headers to show context for your meetings. It never
-              sends, deletes or marks mail as read.
+              sends, deletes or marks mail as read. The first time it reads the
+              saved password, macOS may ask you to allow it: that is your Mac
+              protecting the Keychain, and choosing Always Allow stops it from
+              asking again.
             </Trans>
           </span>
         </p>

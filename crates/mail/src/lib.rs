@@ -68,8 +68,8 @@ pub struct MailBody {
     pub truncated: bool,
 }
 
-impl From<&store::StoredAccount> for MailAccountInfo {
-    fn from(a: &store::StoredAccount) -> Self {
+impl From<&store::AccountMeta> for MailAccountInfo {
+    fn from(a: &store::AccountMeta) -> Self {
         Self {
             id: a.id.clone(),
             label: a.label.clone(),
@@ -81,7 +81,7 @@ impl From<&store::StoredAccount> for MailAccountInfo {
 }
 
 pub fn list_accounts() -> Result<Vec<MailAccountInfo>, Error> {
-    Ok(store::load()?.iter().map(MailAccountInfo::from).collect())
+    Ok(store::list()?.iter().map(MailAccountInfo::from).collect())
 }
 
 /// Verifies the credentials against the server before anything is stored.
@@ -105,18 +105,14 @@ pub async fn add_account(input: MailAccountInput) -> Result<MailAccountInfo, Err
     client::verify(&account).await?;
 
     let _guard = store::LOCK.lock().await;
-    let mut accounts = store::load()?;
-    let info = MailAccountInfo::from(&account);
-    accounts.push(account);
-    store::save(&accounts)?;
+    let info = MailAccountInfo::from(&store::AccountMeta::from(&account));
+    store::add(account)?;
     Ok(info)
 }
 
 pub async fn remove_account(id: &str) -> Result<(), Error> {
     let _guard = store::LOCK.lock().await;
-    let mut accounts = store::load()?;
-    accounts.retain(|a| a.id != id);
-    store::save(&accounts)?;
+    store::remove(id)?;
     client::forget(id);
     Ok(())
 }
@@ -147,8 +143,5 @@ pub async fn read(account_id: &str, uid: u32) -> Result<MailBody, Error> {
 }
 
 async fn find(account_id: &str) -> Result<store::StoredAccount, Error> {
-    store::load()?
-        .into_iter()
-        .find(|a| a.id == account_id)
-        .ok_or(Error::AccountNotFound)
+    store::get(account_id)
 }
