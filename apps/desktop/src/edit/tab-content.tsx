@@ -20,8 +20,11 @@ export function TabContentEdit({ tab }: { tab: EditTab }) {
     const title = store.getCell("sessions", edit.sessionId, "title");
     return typeof title === "string" && title.trim() ? title : null;
   }, [store, edit]);
+  const isNote = edit?.target === "note";
+  const isEvent = edit?.target === "event";
+  const fileName = isEvent ? "event.md" : isNote ? "note.md" : "summary.md";
   const summaryTitle = useMemo(() => {
-    if (!store || !edit) return null;
+    if (!store || !edit?.enhancedNoteId) return null;
     const title = store.getCell("enhanced_notes", edit.enhancedNoteId, "title");
     return typeof title === "string" && title.trim() ? title : null;
   }, [store, edit]);
@@ -36,13 +39,23 @@ export function TabContentEdit({ tab }: { tab: EditTab }) {
 
   const oldFile = useMemo(
     () =>
-      edit ? { name: "summary.md", contents: edit.currentContent || "" } : null,
-    [edit],
+      edit
+        ? {
+            name: fileName,
+            contents: edit.currentContent || "",
+          }
+        : null,
+    [edit, fileName],
   );
   const newFile = useMemo(
     () =>
-      edit ? { name: "summary.md", contents: edit.proposedContent } : null,
-    [edit],
+      edit
+        ? {
+            name: fileName,
+            contents: edit.proposedContent,
+          }
+        : null,
+    [edit, fileName],
   );
 
   if (!edit) {
@@ -61,10 +74,16 @@ export function TabContentEdit({ tab }: { tab: EditTab }) {
         <div className="border-border flex items-start justify-between gap-3 border-b px-4 py-3">
           <div className="min-w-0 flex-1">
             <div className="text-foreground text-[13px] font-medium">
-              {sessionTitle ?? "Untitled session"}
+              {isEvent
+                ? "Add to calendar"
+                : (sessionTitle ?? "Untitled session")}
             </div>
             <div className="text-muted-foreground text-[12px]">
-              {summaryTitle ?? "Summary"}
+              {isEvent
+                ? "New event in Apple Calendar"
+                : isNote
+                  ? "Your note"
+                  : (summaryTitle ?? "Summary")}
             </div>
           </div>
           <div className="flex shrink-0 items-center gap-2">

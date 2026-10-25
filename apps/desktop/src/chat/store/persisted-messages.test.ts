@@ -129,3 +129,23 @@ describe("persisted chat messages", () => {
     ).toBe(true);
   });
 });
+
+describe("card-only replies", () => {
+  test("are saved and shown, since the card is the reply", () => {
+    const message = {
+      id: "a1",
+      role: "assistant" as const,
+      parts: [],
+      metadata: {
+        agenda: [
+          {
+            label: "Monday, Oct 26",
+            events: [{ title: "CIS 121", time: "8:00 AM" }],
+          },
+        ],
+      },
+    };
+
+    expect(shouldPersistFinishedMessage(message)).toBe(true);
+  });
+});

@@ -1,10 +1,13 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  describeCards,
+  hasRenderableContent,
   hasRenderableParts,
   isStrayToolCallText,
   stripStrayToolCalls,
 } from "./message-content";
+import type { NotizUIMessage } from "./types";
 
 describe("isStrayToolCallText", () => {
   it("detects a tool call printed as text", () => {
@@ -50,5 +53,45 @@ describe("stripStrayToolCalls", () => {
     expect(stripStrayToolCalls('{"name": "x", "parameters": {"a": "}"}}')).toBe(
       "",
     );
+  });
+});
+
+describe("card replies", () => {
+  const card = {
+    id: "a:1",
+    from: "Stripe",
+    subject: "Fraud protection",
+    date: null,
+    unread: true,
+  };
+  const day = {
+    label: "Monday, Oct 26",
+    events: [{ title: "CIS 121", time: "8:00 AM" }],
+  };
+
+  it("counts a message that is only cards as content", () => {
+    const cardsOnly: NotizUIMessage = {
+      id: "m",
+      role: "assistant",
+      parts: [],
+      metadata: { emailCards: [card] },
+    };
+    const empty: NotizUIMessage = { id: "e", role: "assistant", parts: [] };
+
+    expect(hasRenderableContent(cardsOnly)).toBe(true);
+    expect(
+      hasRenderableContent({ ...cardsOnly, metadata: { agenda: [day] } }),
+    ).toBe(true);
+    expect(hasRenderableContent(empty)).toBe(false);
+  });
+
+  it("describes what a card reply showed for the conversation history", () => {
+    expect(describeCards({ emailCards: [card, card] })).toBe(
+      "(Showed the user 2 of their emails.)",
+    );
+    expect(describeCards({ agenda: [day] })).toBe(
+      "(Showed the user their schedule (1 events).)",
+    );
+    expect(describeCards({})).toBeNull();
   });
 });

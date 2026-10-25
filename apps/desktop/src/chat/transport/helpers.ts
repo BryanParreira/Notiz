@@ -63,19 +63,26 @@ export const TOOL_GROUPS = {
     "list_related_notes",
     "apply_session_correction",
     "edit_summary",
+    "edit_note",
   ],
   contacts: ["search_contacts"],
+  // Adding an event to Apple Calendar. Offered only when the message asks for it.
+  events: ["create_calendar_event"],
 } as const;
 
 export type ToolGroup = keyof typeof TOOL_GROUPS;
 
 const GROUP_HINTS: Record<ToolGroup, RegExp> = {
+  // Only words that clearly point at the calendar. A bare "week" or "plans" is
+  // not enough: "add this to the week 1 note" is about a note, not a schedule.
   calendar:
-    /\b(calendar|schedule|agenda|appointments?|events?|plans?|planned|upcoming|coming up|to[- ]?do|what do i have|week|today|tonight|tomorrow|this (?:week|weekend|month|morning|afternoon|evening)|next (?:week|month)|monday|tuesday|wednesday|thursday|friday|saturday|sunday|busy|my (?:day|week))\b/i,
+    /\b(calendar|schedule|agenda|appointments?|today|tonight|tomorrow|this (?:week|weekend|month|morning|afternoon|evening)|next (?:week|month)|upcoming|coming up|monday|tuesday|wednesday|thursday|friday|saturday|sunday|busy|free (?:time|slot|on|at|today|tomorrow)|what do i have|my (?:day|week))\b/i,
   inbox: /\b(inbox|e-?mails?|mail|unread|replied|reply|sent me)\b/i,
   notes:
     /\b(notes?|meetings?|transcripts?|summar(?:y|ies|ize|ise)|recordings?|action items?|follow[- ]?ups?|decided|discuss(?:ed|ion)?|what did (?:i|we)|did (?:i|we))\b/i,
   contacts: /\b(contacts?|phone number)\b/i,
+  events:
+    /\b(?:add|create|schedule|book|set up|block off)\b.*\b(?:event|meeting|appointment|call|lunch|dinner|class|session|reminder|study|workout|gym)\b|\b(?:add|put)\b.*\bcalendar\b|\bschedule (?:a|an|the)\b/i,
 };
 
 export function toolGroupsForMessage(text: string): ToolGroup[] {
@@ -113,4 +120,17 @@ const SMALL_TALK =
 export function isSmallTalk(text: string): boolean {
   const trimmed = text.trim();
   return trimmed.length > 0 && trimmed.length <= 40 && SMALL_TALK.test(trimmed);
+}
+
+// Asking to see the calendar or the inbox is answered with a card and nothing
+// else, and only when it really is a request to look. Anything that changes or
+// mentions notes, asks for a judgement or asks for writing needs the model.
+const SHOW_ME =
+  /\b(what|what's|whats|which|any|anything|do i have|have i|show|check|list|open|see|look|am i|are there|is there|unread|new|latest|upcoming)\b/i;
+
+const NEEDS_THE_MODEL =
+  /\b(draft|reply|respond|write|rewrite|compose|summar(?:y|ies|ize|ise)|explain|plan|prepare|prep|prioriti(?:s|z)e|should|suggest|recommend|help me|remind|compare|why|how|analy(?:s|z)e|add|put|insert|append|save|copy|paste|update|edit|change|rename|delete|remove|create|book|set up|block off|schedule (?:a|an|the|my)|translate|notes?)\b|\b(?:is|was|are)\b.*\babout\b/i;
+
+export function wantsCardOnly(text: string): boolean {
+  return SHOW_ME.test(text) && !NEEDS_THE_MODEL.test(text);
 }

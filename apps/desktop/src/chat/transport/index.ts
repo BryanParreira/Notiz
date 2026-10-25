@@ -1,6 +1,7 @@
 import {
   type ChatTransport,
   convertToModelMessages,
+  type UIMessageChunk,
   type LanguageModel,
   smoothStream,
   stepCountIs,
@@ -15,6 +16,7 @@ import {
 
 import type { ContextRef } from "../context/entities";
 import { extractContextRefsFromMessages } from "../context/refs";
+import { describeCards, hasMessageCards } from "../message-content";
 import { CONTEXT_TEXT_FIELD } from "../tools/context-text";
 import type { AgendaDay, EmailCard, NotizUIMessage } from "../types";
 import { buildToolGuidance } from "./guidance";
@@ -38,8 +40,19 @@ type StepLike = {
     type: string;
     toolName?: string;
     input?: unknown;
+    output?: unknown;
   }>;
 };
+
+// Tools that change something for the user. Once one has gone through (or been
+// declined) the model must report back, not try again with different details.
+const CHANGING_TOOLS = new Set([
+  "edit_note",
+  "edit_summary",
+  "create_calendar_event",
+  "apply_session_correction",
+]);
+const FINISHED_STATUSES = new Set(["applied", "created", "declined"]);
 
 export function shouldForceAnswer(
   steps: readonly StepLike[],
@@ -53,6 +66,18 @@ export function shouldForceAnswer(
   for (const step of steps) {
     for (const part of step.content ?? []) {
       if (part.type === "tool-error") {
+        return true;
+      }
+      if (
+        part.type === "tool-result" &&
+        part.toolName &&
+        CHANGING_TOOLS.has(part.toolName) &&
+        typeof part.output === "object" &&
+        part.output !== null &&
+        FINISHED_STATUSES.has(
+          String((part.output as { status?: unknown }).status),
+        )
+      ) {
         return true;
       }
       if (part.type === "tool-call") {
@@ -70,6 +95,8 @@ export function shouldForceAnswer(
 
 export type DataContext = {
   text: string | null;
+  // Answer with the cards (and `text`, if any) and skip the model entirely.
+  direct?: boolean;
   emailCards?: EmailCard[];
   agenda?: AgendaDay[];
 };
@@ -257,6 +284,38 @@ export class CustomChatTransport implements ChatTransport<NotizUIMessage> {
     };
   }
 
+  // A reply the app writes itself: the cards, and a plain sentence when there is
+  // nothing to show. No model is called, so it appears at once.
+  private directResponse(data: DataContext): ReadableStream<UIMessageChunk> {
+    const messageId = crypto.randomUUID();
+    const chunks: UIMessageChunk[] = [
+      {
+        type: "start",
+        messageId,
+        messageMetadata: {
+          createdAt: Date.now(),
+          ...(data.emailCards?.length ? { emailCards: data.emailCards } : {}),
+          ...(data.agenda?.length ? { agenda: data.agenda } : {}),
+        },
+      },
+      ...(data.text
+        ? ([
+            { type: "text-start", id: "direct" },
+            { type: "text-delta", id: "direct", delta: data.text },
+            { type: "text-end", id: "direct" },
+          ] as UIMessageChunk[])
+        : []),
+      { type: "finish" },
+    ];
+
+    return new ReadableStream<UIMessageChunk>({
+      start(controller) {
+        for (const chunk of chunks) controller.enqueue(chunk);
+        controller.close();
+      },
+    });
+  }
+
   sendMessages: ChatTransport<NotizUIMessage>["sendMessages"] = async (
     options,
   ) => {
@@ -294,6 +353,9 @@ export class CustomChatTransport implements ChatTransport<NotizUIMessage> {
     );
 
     const data = await this.buildData(groups, lastUserText);
+    if (data.direct && (data.text || hasMessageCards({ metadata: data }))) {
+      return this.directResponse(data);
+    }
     const emailCards = data.emailCards ?? [];
     const agenda = data.agenda ?? [];
 
@@ -304,6 +366,8 @@ export class CustomChatTransport implements ChatTransport<NotizUIMessage> {
       stopWhen: stepCountIs(MAX_TOOL_STEPS),
       // A model that starts rambling would otherwise fill its whole memory.
       maxOutputTokens: 700,
+      // Less randomness means fewer made-up details from a small model.
+      temperature: 0.3,
       prepareStep: async ({ messages, stepNumber, steps }) => {
         const windowed =
           messages.length > MESSAGE_WINDOW_THRESHOLD
@@ -348,6 +412,15 @@ export class CustomChatTransport implements ChatTransport<NotizUIMessage> {
           ],
         });
       } else if (msg.role === "assistant") {
+        const cardNote = describeCards(msg.metadata);
+        if (cardNote && !msg.parts.some((part) => part.type === "text")) {
+          messagesWithContext.push({
+            ...msg,
+            parts: [{ type: "text" as const, text: cardNote }],
+          });
+          continue;
+        }
+
         const expandedParts = await Promise.all(
           msg.parts.map((part) => {
             if (

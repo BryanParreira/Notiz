@@ -3,7 +3,7 @@ import { useEffect, useMemo, useState } from "react";
 
 import { commands as templateCommands } from "@notiz/plugin-template";
 
-import { isSmallTalk } from "./helpers";
+import { isSmallTalk, wantsCardOnly } from "./helpers";
 import { CustomChatTransport } from "./index";
 import type { DataContext, ResolvedChatContext } from "./index";
 
@@ -12,6 +12,7 @@ import { warmUpLocalModel } from "~/ai/hooks/useLLMConnection";
 import {
   buildAgenda,
   buildScheduleContext,
+  emptyScheduleMessage,
   rangeForMessage,
 } from "~/chat/context/daily-context";
 import { pickEmailCards } from "~/chat/context/email-cards";
@@ -100,21 +101,44 @@ const inboxCache = createInboxCache(() => fetchInboxMessages(40));
 // Mac. With any other provider they are sent only when the user asks about email.
 const ON_DEVICE_PROVIDERS = new Set(["notiz_local", "ollama", "lmstudio"]);
 
-async function loadInboxContext(
+// The email part of a card-only reply: the cards, or a plain sentence when there
+// is nothing to show (no account, nothing unread, or mail could not be read).
+async function loadInboxCards(
   text: string,
-): Promise<{ text: string; emailCards?: EmailCard[] }> {
+): Promise<{ emailCards?: EmailCard[]; plain?: string }> {
   const { inbox, error } = await inboxCache.get(8000);
 
   if (!inbox) {
     console.error("[chat] could not load the inbox", error);
     return {
-      text: `The user's email could not be loaded right now${error ? ` (${error})` : ""}. Tell them you could not check it and why.`,
+      plain: `I couldn't load your email just now${error ? ` (${error})` : ""}.`,
+    };
+  }
+  if (!inbox.connected) {
+    return {
+      plain:
+        "No email account is connected yet. You can connect one in Settings > Email.",
     };
   }
 
-  const emailCards = inbox.connected
-    ? pickEmailCards(inbox.messages, text)
-    : [];
+  const emailCards = pickEmailCards(inbox.messages, text);
+  if (emailCards.length > 0) return { emailCards };
+
+  return {
+    plain: /\bunread\b/i.test(text)
+      ? "You have no unread email."
+      : "Your inbox is empty.",
+  };
+}
+
+// The email part of a reply the model writes (drafting, explaining, planning).
+async function loadInboxContext(text: string): Promise<string> {
+  const { inbox, error } = await inboxCache.get(8000);
+
+  if (!inbox) {
+    console.error("[chat] could not load the inbox", error);
+    return `The user's email could not be loaded right now${error ? ` (${error})` : ""}. Tell them you could not check it and why.`;
+  }
 
   const candidates = /\bunread\b/i.test(text)
     ? inbox.messages.filter((message) => message.unread)
@@ -124,10 +148,7 @@ async function loadInboxContext(
     ? await fetchInboxMessage(newestId).catch(() => null)
     : null;
 
-  return {
-    text: buildInboxContext(inbox, text, newest, emailCards.length > 0),
-    emailCards,
-  };
+  return buildInboxContext(inbox, text, newest);
 }
 
 async function loadInboxSnapshot(): Promise<string | null> {
@@ -261,35 +282,60 @@ export function useTransport(
         // A greeting gets a greeting, with none of the user's week attached.
         if (isSmallTalk(text)) return null;
 
-        const parts: string[] = [];
-        let emailCards: EmailCard[] | undefined;
-        let agenda: AgendaDay[] | undefined;
+        const asksCalendar = groups.includes("calendar");
+        const asksInbox = groups.includes("inbox");
 
-        // The calendar is always there. A question about particular days gets
-        // those days, drawn by the app as a card so the reply can stay short;
-        // anything else gets today and tomorrow as background.
+        // "Show me" questions are answered with cards and nothing else, so the
+        // reply is instant and nothing is typed out twice.
+        if ((asksCalendar || asksInbox) && wantsCardOnly(text)) {
+          const plain: string[] = [];
+          let agenda: AgendaDay[] | undefined;
+          let emailCards: EmailCard[] | undefined;
+
+          if (asksCalendar && store) {
+            const range = rangeForMessage(text);
+            const days = buildAgenda(store, range);
+            if (days.length > 0) agenda = days;
+            else plain.push(emptyScheduleMessage(store, range));
+          }
+
+          if (asksInbox) {
+            const inbox = await loadInboxCards(text);
+            emailCards = inbox.emailCards;
+            if (inbox.plain) plain.push(inbox.plain);
+          }
+
+          if (agenda || emailCards || plain.length > 0) {
+            return {
+              direct: true,
+              text: plain.join("\n\n") || null,
+              agenda,
+              emailCards,
+            };
+          }
+        }
+
+        const parts: string[] = [];
+
+        // The calendar is always there for the model: the days asked about, or
+        // today and tomorrow as background.
         if (store) {
-          const asked = groups.includes("calendar");
-          const range = rangeForMessage(asked ? text : "");
-          const days = asked ? buildAgenda(store, range) : [];
-          agenda = days.length > 0 ? days : undefined;
           parts.push(
-            buildScheduleContext(store, range, new Date(), days.length > 0),
+            buildScheduleContext(
+              store,
+              rangeForMessage(asksCalendar ? text : ""),
+            ),
           );
         }
 
-        if (groups.includes("inbox")) {
-          const inbox = await loadInboxContext(text);
-          parts.push(inbox.text);
-          emailCards = inbox.emailCards;
+        if (asksInbox) {
+          parts.push(await loadInboxContext(text));
         } else if (modelIsOnDevice) {
           const snapshot = await loadInboxSnapshot();
           if (snapshot) parts.push(snapshot);
         }
 
-        return parts.length > 0
-          ? { text: parts.join("\n\n"), emailCards, agenda }
-          : null;
+        return parts.length > 0 ? { text: parts.join("\n\n") } : null;
       },
     );
   }, [model, tools, effectiveSystemPrompt, store, modelIsOnDevice]);

@@ -279,3 +279,14 @@ export function buildScheduleContext(
     lines.join("\n"),
   ].join("\n");
 }
+
+// What to say when there is nothing to draw in an agenda card.
+export function emptyScheduleMessage(
+  store: EventsStore,
+  range: DayRange,
+): string {
+  const { synced } = selectEvents(store, range);
+  return synced
+    ? `Nothing is scheduled ${range.label}.`
+    : "No calendar events have synced yet. Calendars can take a minute to load after the app opens; if you have not connected one, you can do that from the Calendar page.";
+}

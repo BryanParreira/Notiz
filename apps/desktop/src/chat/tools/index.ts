@@ -1,4 +1,6 @@
 import { CONTEXT_TEXT_FIELD } from "./context-text";
+import { buildCreateCalendarEventTool } from "./create-calendar-event";
+import { buildEditNoteTool } from "./edit-note";
 import { buildEditSummaryTool } from "./edit-summary";
 import { buildListInboxTool, buildReadEmailTool } from "./inbox";
 import { buildListScheduleTool } from "./list-schedule";
@@ -78,6 +80,11 @@ export const buildChatTools = (deps: ToolDependencies) => ({
   read_email: withToolLogging("read_email", buildReadEmailTool(deps)),
   web_search: withToolLogging("web_search", buildWebSearchTool(deps)),
   edit_summary: withToolLogging("edit_summary", buildEditSummaryTool(deps)),
+  edit_note: withToolLogging("edit_note", buildEditNoteTool(deps)),
+  create_calendar_event: withToolLogging(
+    "create_calendar_event",
+    buildCreateCalendarEventTool(deps),
+  ),
   apply_session_correction: withToolLogging(
     "apply_session_correction",
     buildApplySessionCorrectionTool(deps),
@@ -252,6 +259,26 @@ type LocalTools = {
       limit?: number;
     };
     output: WebSearchResponse;
+  };
+  create_calendar_event: {
+    input: {
+      title: string;
+      start: string;
+      end?: string;
+      all_day?: boolean;
+      location?: string;
+      notes?: string;
+      calendar?: string;
+    };
+    output: { status: string; message?: string; when?: string };
+  };
+  edit_note: {
+    input: {
+      sessionId?: string;
+      mode: "append" | "replace_all";
+      content: string;
+    };
+    output: { status: string; message?: string };
   };
   edit_summary: {
     input: { sessionId?: string; enhancedNoteId?: string; content: string };

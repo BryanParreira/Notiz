@@ -3,7 +3,10 @@ import { create } from "zustand";
 type PendingEdit = {
   requestId: string;
   sessionId: string;
-  enhancedNoteId: string;
+  // What the review is for: an AI summary (the default), the user's own note, or
+  // a new calendar event.
+  target?: "summary" | "note" | "event";
+  enhancedNoteId?: string;
   currentContent: string;
   proposedContent: string;
   resolve: (approved: boolean) => void;

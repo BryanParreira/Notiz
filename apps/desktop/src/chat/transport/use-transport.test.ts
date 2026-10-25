@@ -3,6 +3,7 @@ import { describe, expect, it, vi } from "vitest";
 import { buildToolGuidance } from "./guidance";
 import {
   isSmallTalk,
+  wantsCardOnly,
   toolGroupsForMessage,
   toolGroupsUsedIn,
   toolNamesForGroups,
@@ -142,6 +143,10 @@ describe("toolNamesForGroups", () => {
     expect(toolNamesForGroups(["calendar", "inbox"])).toEqual([]);
   });
 
+  it("offers the calendar tool only for the events group", () => {
+    expect(toolNamesForGroups(["events"])).toEqual(["create_calendar_event"]);
+  });
+
   it("lists each tool once for the groups that use tools", () => {
     expect(toolNamesForGroups(["contacts", "notes", "contacts"])).toEqual([
       "search_contacts",
@@ -152,6 +157,7 @@ describe("toolNamesForGroups", () => {
       "list_related_notes",
       "apply_session_correction",
       "edit_summary",
+      "edit_note",
     ]);
   });
 });
@@ -215,5 +221,114 @@ describe("isSmallTalk", () => {
     ]) {
       expect(isSmallTalk(text)).toBe(false);
     }
+  });
+});
+
+describe("wantsCardOnly", () => {
+  it("answers plain 'show me' questions with a card alone", () => {
+    for (const text of [
+      "what about my email?",
+      "anything important in my email?",
+      "what's unread?",
+      "check my calendar for me please",
+      "what do i have to do this upcoming week?",
+      "what do i have tomorrow",
+    ]) {
+      expect(wantsCardOnly(text)).toBe(true);
+    }
+  });
+
+  it("leaves questions that need judgement or writing to the model", () => {
+    for (const text of [
+      "draft a short reply to the latest email",
+      "what is the latest email about?",
+      "help me plan tomorrow",
+      "summarize my week",
+      "should i reply to stripe?",
+      "prepare me for my meeting",
+    ]) {
+      expect(wantsCardOnly(text)).toBe(false);
+    }
+  });
+});
+
+describe("messages about a note are not about the calendar", () => {
+  const request = "add those information into the week 1 note please";
+
+  it("does not mistake the word 'week' for a calendar question", () => {
+    expect(toolGroupsForMessage(request)).not.toContain("calendar");
+    expect(toolGroupsForMessage("rename the week 2 note")).not.toContain(
+      "calendar",
+    );
+    expect(toolGroupsForMessage("what do i have this upcoming week")).toContain(
+      "calendar",
+    );
+  });
+
+  it("never answers requests that change or mention notes with a card", () => {
+    for (const text of [
+      request,
+      "put this in my notes for today",
+      "check my notes from last week",
+      "save the agenda to the note",
+      "update tomorrow's plan in the note",
+    ]) {
+      expect(wantsCardOnly(text)).toBe(false);
+    }
+  });
+
+  it("needs a request to look before it draws a card", () => {
+    expect(wantsCardOnly("calendar")).toBe(false);
+    expect(wantsCardOnly("my email is long")).toBe(false);
+    expect(wantsCardOnly("show me my calendar")).toBe(true);
+  });
+});
+
+describe("adding events to the calendar", () => {
+  it("offers the calendar tool only when asked to add something", () => {
+    for (const text of [
+      "schedule a study session tomorrow at 3pm",
+      "add a meeting with Sam on Friday to my calendar",
+      "book lunch with Ana next week",
+      "create an event for the team call",
+    ]) {
+      expect(toolGroupsForMessage(text)).toContain("events");
+    }
+
+    for (const text of [
+      "what do i have tomorrow?",
+      "add those to the week 1 note",
+      "what's on my schedule",
+      "check my calendar",
+    ]) {
+      expect(toolGroupsForMessage(text)).not.toContain("events");
+    }
+  });
+
+  it("never answers a request to add or book something with a card", () => {
+    expect(wantsCardOnly("schedule a meeting tomorrow at 3")).toBe(false);
+    expect(wantsCardOnly("book lunch on friday, what time works?")).toBe(false);
+    expect(wantsCardOnly("what's my schedule tomorrow")).toBe(true);
+  });
+});
+
+describe("stopping after a change", () => {
+  const result = (toolName: string, status: string) => ({
+    content: [{ type: "tool-result", toolName, output: { status } }],
+  });
+
+  it("makes the model report back once a change went through or was declined", () => {
+    for (const [tool, status] of [
+      ["create_calendar_event", "created"],
+      ["edit_note", "applied"],
+      ["edit_note", "declined"],
+    ] as const) {
+      expect(shouldForceAnswer([result(tool, status)], 1)).toBe(true);
+    }
+  });
+
+  it("lets the model keep going after reading or after a failed change", () => {
+    expect(shouldForceAnswer([result("search_sessions", "ok")], 1)).toBe(false);
+    expect(shouldForceAnswer([result("edit_note", "error")], 1)).toBe(false);
   });
 });

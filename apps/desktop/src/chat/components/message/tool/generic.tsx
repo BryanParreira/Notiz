@@ -1,6 +1,8 @@
 import {
   CalendarIcon,
+  CalendarPlusIcon,
   MailIcon,
+  PencilIcon,
   UserSearchIcon,
   WrenchIcon,
 } from "lucide-react";
@@ -38,6 +40,18 @@ const FRIENDLY_TOOLS: Record<
     done: "Searched your calendar",
     failed: "Couldn't search your calendar",
     icon: CalendarIcon,
+  },
+  create_calendar_event: {
+    running: "Preparing a calendar event…",
+    done: "Proposed a calendar event",
+    failed: "Couldn't add the event",
+    icon: CalendarPlusIcon,
+  },
+  edit_note: {
+    running: "Preparing a change to your note…",
+    done: "Proposed a change to your note",
+    failed: "Couldn't change your note",
+    icon: PencilIcon,
   },
   search_contacts: {
     running: "Looking up contacts…",

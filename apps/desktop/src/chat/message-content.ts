@@ -100,6 +100,31 @@ export function hasRenderableParts(parts: unknown): boolean {
   });
 }
 
+export function hasMessageCards(message: Pick<NotizUIMessage, "metadata">) {
+  return (
+    (message.metadata?.emailCards?.length ?? 0) > 0 ||
+    (message.metadata?.agenda?.length ?? 0) > 0
+  );
+}
+
+// A reply that is only a card still counts as a reply: it is saved, shown after
+// a reload, and does not trigger the "no answer" notice.
 export function hasRenderableContent(message: NotizUIMessage) {
-  return hasRenderableParts(message.parts);
+  return hasRenderableParts(message.parts) || hasMessageCards(message);
+}
+
+// What the model is told a card reply showed, so later questions ("and
+// tomorrow?") still make sense in the conversation history.
+export function describeCards(
+  metadata: NotizUIMessage["metadata"],
+): string | null {
+  const events =
+    metadata?.agenda?.reduce((sum, day) => sum + day.events.length, 0) ?? 0;
+  const emails = metadata?.emailCards?.length ?? 0;
+
+  const parts = [
+    ...(events > 0 ? [`their schedule (${events} events)`] : []),
+    ...(emails > 0 ? [`${emails} of their emails`] : []),
+  ];
+  return parts.length > 0 ? `(Showed the user ${parts.join(" and ")}.)` : null;
 }
