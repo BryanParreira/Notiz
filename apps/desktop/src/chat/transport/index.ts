@@ -16,7 +16,7 @@ import {
 import type { ContextRef } from "../context/entities";
 import { extractContextRefsFromMessages } from "../context/refs";
 import { CONTEXT_TEXT_FIELD } from "../tools/context-text";
-import type { NotizUIMessage } from "../types";
+import type { AgendaDay, EmailCard, NotizUIMessage } from "../types";
 import { buildToolGuidance } from "./guidance";
 import {
   getSessionIdsFromSearchOutput,
@@ -68,6 +68,12 @@ export function shouldForceAnswer(
   return false;
 }
 
+export type DataContext = {
+  text: string | null;
+  emailCards?: EmailCard[];
+  agenda?: AgendaDay[];
+};
+
 export type ResolvedChatContext =
   | { kind: "session"; context: SessionContext }
   | { kind: "text"; text: string };
@@ -83,7 +89,7 @@ export class CustomChatTransport implements ChatTransport<NotizUIMessage> {
     private getDataContext?: (
       groups: ToolGroup[],
       userText: string,
-    ) => Promise<string | null>,
+    ) => Promise<DataContext | null>,
   ) {}
 
   // Data the app fetched for this question (calendar, email). It is slow and
@@ -91,14 +97,14 @@ export class CustomChatTransport implements ChatTransport<NotizUIMessage> {
   private async buildData(
     groups: ToolGroup[],
     userText: string,
-  ): Promise<string | null> {
-    if (!this.getDataContext) return null;
+  ): Promise<DataContext> {
+    if (!this.getDataContext) return { text: null };
 
     try {
-      return await this.getDataContext(groups, userText);
+      return (await this.getDataContext(groups, userText)) ?? { text: null };
     } catch (error) {
       console.error("[chat] failed to build data context", error);
-      return null;
+      return { text: null };
     }
   }
 
@@ -288,14 +294,16 @@ export class CustomChatTransport implements ChatTransport<NotizUIMessage> {
     );
 
     const data = await this.buildData(groups, lastUserText);
+    const emailCards = data.emailCards ?? [];
+    const agenda = data.agenda ?? [];
 
     const agent = new ToolLoopAgent({
       model: this.model,
-      instructions: this.buildInstructions(groups, data),
+      instructions: this.buildInstructions(groups, data.text),
       tools,
       stopWhen: stepCountIs(MAX_TOOL_STEPS),
       // A model that starts rambling would otherwise fill its whole memory.
-      maxOutputTokens: 1200,
+      maxOutputTokens: 700,
       prepareStep: async ({ messages, stepNumber, steps }) => {
         const windowed =
           messages.length > MESSAGE_WINDOW_THRESHOLD
@@ -373,7 +381,11 @@ export class CustomChatTransport implements ChatTransport<NotizUIMessage> {
       originalMessages: options.messages,
       messageMetadata: ({ part }: { part: { type: string } }) => {
         if (part.type === "start") {
-          return { createdAt: Date.now() };
+          return {
+            createdAt: Date.now(),
+            ...(emailCards.length > 0 ? { emailCards } : {}),
+            ...(agenda.length > 0 ? { agenda } : {}),
+          };
         }
       },
       onError: (error: unknown) => {

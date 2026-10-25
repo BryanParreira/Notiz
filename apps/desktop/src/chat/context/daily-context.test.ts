@@ -1,6 +1,10 @@
 import { describe, expect, it } from "vitest";
 
-import { buildScheduleContext, rangeForMessage } from "./daily-context";
+import {
+  buildAgenda,
+  buildScheduleContext,
+  rangeForMessage,
+} from "./daily-context";
 
 const at = (day: number, hour: number, minute = 0) =>
   new Date(2026, 9, day, hour, minute).toISOString();
@@ -178,5 +182,53 @@ describe("buildScheduleContext", () => {
 
     expect(text).toContain("Nothing is scheduled.");
     expect(text).not.toContain("CIS 121");
+  });
+});
+
+describe("buildAgenda", () => {
+  const events = {
+    a: { title: "CIS 121", started_at: at(26, 8), ended_at: at(26, 9, 50) },
+    b: { title: "Gym", started_at: at(26, 17), location: "Rec centre" },
+    c: { title: "MATH 115", started_at: at(27, 14), ended_at: at(27, 14, 50) },
+    d: { title: "Elsewhere", started_at: at(28, 9), calendar_id: "off" },
+  };
+
+  it("groups events by day in time order, as the card needs them", () => {
+    const days = buildAgenda(
+      storeWith(events, { off: { enabled: false } }),
+      rangeForMessage("what do i have this upcoming week", now),
+    );
+
+    expect(days.map((day) => day.label)).toEqual([
+      "Monday, Oct 26",
+      "Tuesday, Oct 27",
+    ]);
+    expect(days[0].events).toEqual([
+      { title: "CIS 121", time: "8:00 AM-9:50 AM" },
+      { title: "Gym", time: "5:00 PM", location: "Rec centre" },
+    ]);
+  });
+
+  it("is empty when nothing is scheduled", () => {
+    expect(buildAgenda(storeWith({}), rangeForMessage("today", now))).toEqual(
+      [],
+    );
+  });
+
+  it("tells the model the app draws the list, when asked to", () => {
+    const text = buildScheduleContext(
+      storeWith(events),
+      rangeForMessage("this upcoming week", now),
+      now,
+      true,
+    );
+
+    expect(text).toContain("agenda card under your reply");
+    expect(text).toContain("Monday, Oct 26: 2 events, first at 8:00 AM");
+    expect(text).toContain(
+      "In total: 4 events across 3 days (Monday, Tuesday, Wednesday).",
+    );
+    expect(text).toContain("Event names: CIS 121, Gym, MATH 115, Elsewhere");
+    expect(text).not.toContain("- 8:00 AM-9:50 AM CIS 121");
   });
 });

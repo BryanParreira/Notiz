@@ -38,6 +38,14 @@ describe("resolveScheduleRange", () => {
   });
 });
 
+// Relative to now, so the test does not go stale as the calendar moves on.
+const inDays = (days: number, hour: number) => {
+  const date = new Date();
+  date.setDate(date.getDate() + days);
+  date.setHours(hour, 0, 0, 0);
+  return date.toISOString();
+};
+
 describe("list_schedule", () => {
   it("returns only events in range, soonest first", async () => {
     const event = (id: string, startedAt: string) => ({
@@ -53,9 +61,9 @@ describe("list_schedule", () => {
     });
     const deps = {
       getCalendarEventSearchResults: async () => [
-        event("later", new Date(2026, 9, 25, 10).toISOString()),
-        event("outside", new Date(2026, 10, 20, 10).toISOString()),
-        event("sooner", new Date(2026, 9, 24, 18).toISOString()),
+        event("later", inDays(1, 10)),
+        event("outside", inDays(30, 10)),
+        event("sooner", inDays(0, 23)),
       ],
     } as unknown as ToolDependencies;
 

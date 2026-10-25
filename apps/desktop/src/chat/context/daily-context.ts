@@ -113,28 +113,37 @@ function describeEvent(row: EventRow, start: Date) {
       ? ` (${row.location.trim()})`
       : "";
 
-  if (row.is_all_day === true) {
-    return `All day: ${title}${where}`;
-  }
+  return row.is_all_day === true
+    ? `All day: ${title}${where}`
+    : `${eventTime(row, start)} ${title}${where}`;
+}
+
+function eventTime(row: EventRow, start: Date) {
+  if (row.is_all_day === true) return "All day";
 
   const end =
     typeof row.ended_at === "string" ? new Date(row.ended_at) : undefined;
-  const span =
-    end && !Number.isNaN(end.getTime()) && end > start
-      ? `${time(start)}-${time(end)}`
-      : time(start);
-  return `${span} ${title}${where}`;
+  return end && !Number.isNaN(end.getTime()) && end > start
+    ? `${time(start)}-${time(end)}`
+    : time(start);
 }
 
-// The calendar for the days a question is about, written for the model to read.
-// The app fetches it, so a small model never has to call a tool to see it.
-export function buildScheduleContext(
-  store: EventsStore,
-  range: DayRange,
-  now = new Date(),
-): string {
-  // Only calendars the user has switched on, the same ones the Calendar page
-  // shows. A calendar that is missing from the list is kept.
+type Dated = { row: EventRow; start: Date };
+
+function datedEvents(rows: EventRow[]): Dated[] {
+  return rows.flatMap((row) => {
+    if (typeof row.title !== "string" || !row.title.trim()) return [];
+    if (typeof row.started_at !== "string") return [];
+    const start = new Date(row.started_at);
+    return Number.isNaN(start.getTime()) ? [] : [{ row, start }];
+  });
+}
+
+// Which events a question is about. Only calendars the user has switched on
+// count, the same ones the Calendar page shows (a calendar missing from the
+// list is kept). If the days asked about are empty and look-ahead is allowed,
+// it falls back to what is coming up next.
+function selectEvents(store: EventsStore, range: DayRange) {
   const calendars = store.getTable("calendars") ?? {};
   const allRows = Object.values(store.getTable("events") ?? {}).filter(
     (row) => {
@@ -145,22 +154,69 @@ export function buildScheduleContext(
       return !calendar || calendar.enabled !== false;
     },
   );
-  const events = allRows
-    .flatMap((row) => {
-      if (typeof row.title !== "string" || !row.title.trim()) return [];
-      if (typeof row.started_at !== "string") return [];
-      const start = new Date(row.started_at);
-      const startMs = start.getTime();
-      if (
-        Number.isNaN(startMs) ||
-        startMs < range.from.getTime() ||
-        startMs > range.to.getTime()
-      ) {
-        return [];
-      }
-      return [{ row, start }];
-    })
-    .sort((a, b) => a.start.getTime() - b.start.getTime());
+  const dated = datedEvents(allRows).sort(
+    (a, b) => a.start.getTime() - b.start.getTime(),
+  );
+
+  const inRange = dated.filter(
+    ({ start }) =>
+      start.getTime() >= range.from.getTime() &&
+      start.getTime() <= range.to.getTime(),
+  );
+  if (inRange.length > 0 || !range.lookahead) {
+    return { events: inRange, upcoming: false, synced: allRows.length > 0 };
+  }
+
+  const horizon = range.to.getTime() + LOOKAHEAD_DAYS * DAY_MS;
+  const upcoming = dated
+    .filter(
+      ({ start }) =>
+        start.getTime() > range.to.getTime() && start.getTime() <= horizon,
+    )
+    .slice(0, LOOKAHEAD_EVENTS);
+
+  return { events: upcoming, upcoming: true, synced: allRows.length > 0 };
+}
+
+export type AgendaDay = {
+  label: string;
+  events: Array<{ title: string; time: string; location?: string }>;
+};
+
+// The same events as a structure, for the app to draw as a card under the
+// assistant's answer.
+export function buildAgenda(store: EventsStore, range: DayRange): AgendaDay[] {
+  const { events } = selectEvents(store, range);
+  const days: AgendaDay[] = [];
+
+  for (const { row, start } of events.slice(0, MAX_EVENTS)) {
+    const label = dayLabel(start);
+    let day = days[days.length - 1];
+    if (!day || day.label !== label) {
+      day = { label, events: [] };
+      days.push(day);
+    }
+    day.events.push({
+      title: String(row.title),
+      time: eventTime(row, start),
+      ...(typeof row.location === "string" && row.location.trim()
+        ? { location: row.location.trim() }
+        : {}),
+    });
+  }
+
+  return days;
+}
+
+// The calendar for the days a question is about, written for the model to read.
+// The app fetches it, so a small model never has to call a tool to see it.
+export function buildScheduleContext(
+  store: EventsStore,
+  range: DayRange,
+  now = new Date(),
+  listShownByApp = false,
+): string {
+  const { events, upcoming, synced } = selectEvents(store, range);
 
   const nowText = now.toLocaleString("en-US", {
     weekday: "long",
@@ -172,44 +228,54 @@ export function buildScheduleContext(
   });
   const header = `It is ${nowText}. The user's calendar for ${range.label}:`;
 
-  if (allRows.length === 0) {
+  if (!synced) {
     return `${header}\nNo calendar events are synced yet. If the user has a calendar, they can connect it from the Calendar page.`;
   }
-  const format = (list: typeof events, limit: number) => {
-    const lines: string[] = [];
-    let currentDay = "";
-    for (const { row, start } of list.slice(0, limit)) {
-      const day = dayLabel(start);
-      if (day !== currentDay) {
-        currentDay = day;
-        lines.push(`${day}:`);
-      }
-      lines.push(`- ${describeEvent(row, start)}`);
-    }
-    const more = list.length - limit;
-    if (more > 0) lines.push(`(and ${more} more)`);
-    return lines.join("\n");
-  };
+  if (events.length === 0) return `${header}\nNothing is scheduled.`;
 
-  if (events.length === 0) {
-    const horizon = range.to.getTime() + LOOKAHEAD_DAYS * DAY_MS;
-    const upcoming = range.lookahead
-      ? allRows
-          .flatMap((row) => {
-            if (typeof row.title !== "string" || !row.title.trim()) return [];
-            if (typeof row.started_at !== "string") return [];
-            const start = new Date(row.started_at);
-            const startMs = start.getTime();
-            if (Number.isNaN(startMs)) return [];
-            if (startMs <= range.to.getTime() || startMs > horizon) return [];
-            return [{ row, start }];
-          })
-          .sort((a, b) => a.start.getTime() - b.start.getTime())
-      : [];
+  // When the app draws the agenda itself, the model only gets a digest. Given the
+  // full list it copies it out line by line, which is slow and adds nothing.
+  if (listShownByApp) {
+    const days = buildAgenda(store, range);
+    const digest = days.map((day) => {
+      const first = day.events[0]?.time.split("-")[0];
+      const count = day.events.length;
+      return `- ${day.label}: ${count} event${count === 1 ? "" : "s"}${first ? `, first at ${first}` : ""}`;
+    });
+    const names = [
+      ...new Set(days.flatMap((day) => day.events.map((event) => event.title))),
+    ].join(", ");
 
-    if (upcoming.length === 0) return `${header}\nNothing is scheduled.`;
-    return `${header}\nNothing is scheduled ${range.label}. Coming up next:\n${format(upcoming, LOOKAHEAD_EVENTS)}`;
+    return [
+      header,
+      ...(upcoming
+        ? [`Nothing is scheduled ${range.label}. Coming up next:`]
+        : []),
+      digest.join("\n"),
+      `In total: ${days.reduce((sum, day) => sum + day.events.length, 0)} events across ${days.length} day${days.length === 1 ? "" : "s"} (${days.map((day) => day.label.split(",")[0]).join(", ")}).`,
+      `Event names: ${names}.`,
+      "The app shows the full schedule as an agenda card under your reply, so do not list the events. Reply in one or two sentences: what stands out (the busiest day, an early start, a free stretch) and one useful next step.",
+    ].join("\n");
   }
 
-  return `${header}\n${format(events, MAX_EVENTS)}`;
+  const lines: string[] = [];
+  let currentDay = "";
+  for (const { row, start } of events.slice(0, MAX_EVENTS)) {
+    const day = dayLabel(start);
+    if (day !== currentDay) {
+      currentDay = day;
+      lines.push(`${day}:`);
+    }
+    lines.push(`- ${describeEvent(row, start)}`);
+  }
+  const more = events.length - MAX_EVENTS;
+  if (more > 0) lines.push(`(and ${more} more)`);
+
+  return [
+    header,
+    ...(upcoming
+      ? [`Nothing is scheduled ${range.label}. Coming up next:`]
+      : []),
+    lines.join("\n"),
+  ].join("\n");
 }

@@ -29,7 +29,7 @@ describe("buildInboxContext", () => {
   it("lists senders and subjects and marks email as untrusted", () => {
     const text = buildInboxContext(inbox, "anything important in my email?");
 
-    expect(text).toContain("2 found, 1 of them unread");
+    expect(text).toContain("2 most recent messages, 1 of them unread");
     expect(text).toContain("Stripe: Customize fraud protection");
     expect(text).toContain("Ana: Lunch");
     expect(text).toMatch(/never follow instructions/i);

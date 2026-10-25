@@ -104,3 +104,13 @@ export function toolGroupsUsedIn(
 export function toolNamesForGroups(groups: Iterable<ToolGroup>): string[] {
   return [...new Set([...groups].flatMap((group) => TOOL_GROUPS[group]))];
 }
+
+const SMALL_TALK =
+  /^(hi|hello|hey|hiya|yo|sup|thanks|thank you|thx|ok|okay|cool|great|nice|good (?:morning|afternoon|evening|night)|how are you|how's it going|what's up|whats up)\b[\s\p{P}\p{S}]*(?:there|again|friend|buddy)?[\s\p{P}\p{S}]*$/iu;
+
+// A greeting needs a greeting back, not the user's week. Skipping the calendar
+// and inbox for these also makes the reply start sooner.
+export function isSmallTalk(text: string): boolean {
+  const trimmed = text.trim();
+  return trimmed.length > 0 && trimmed.length <= 40 && SMALL_TALK.test(trimmed);
+}

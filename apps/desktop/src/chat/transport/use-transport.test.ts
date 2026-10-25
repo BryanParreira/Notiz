@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from "vitest";
 
 import { buildToolGuidance } from "./guidance";
 import {
+  isSmallTalk,
   toolGroupsForMessage,
   toolGroupsUsedIn,
   toolNamesForGroups,
@@ -188,5 +189,31 @@ describe("buildToolGuidance", () => {
     const all = buildToolGuidance(["calendar", "inbox", "notes", "contacts"]);
 
     expect(all.length / 4).toBeLessThan(750);
+  });
+});
+
+describe("isSmallTalk", () => {
+  it("recognises greetings so they get no calendar or inbox attached", () => {
+    for (const text of [
+      "hello",
+      "Hello!",
+      "hey there",
+      "thanks",
+      "good morning",
+      "how are you?",
+    ]) {
+      expect(isSmallTalk(text)).toBe(true);
+    }
+  });
+
+  it("does not treat real requests as small talk", () => {
+    for (const text of [
+      "hello, what do i have tomorrow?",
+      "thanks, now draft a reply",
+      "plan my day",
+      "",
+    ]) {
+      expect(isSmallTalk(text)).toBe(false);
+    }
   });
 });

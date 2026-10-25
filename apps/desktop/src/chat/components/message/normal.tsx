@@ -5,6 +5,8 @@ import { Streamdown } from "streamdown";
 
 import { cn } from "@notiz/utils";
 
+import { AgendaCard } from "./agenda-card";
+import { EmailCards } from "./email-cards";
 import { Disclosure, MessageBubble, MessageContainer } from "./shared";
 import { Tool } from "./tool";
 import type { Part } from "./types";
@@ -59,7 +61,14 @@ export function NormalMessage({
     }
   }, [message]);
 
-  if (!hasRenderableContent(message)) {
+  const emailCards = isUser ? [] : (message.metadata?.emailCards ?? []);
+  const agenda = isUser ? [] : (message.metadata?.agenda ?? []);
+
+  if (
+    !hasRenderableContent(message) &&
+    emailCards.length === 0 &&
+    agenda.length === 0
+  ) {
     return null;
   }
 
@@ -76,6 +85,8 @@ export function NormalMessage({
             <Part key={i} part={part as Part} />
           ))}
         </MessageBubble>
+        {agenda.length > 0 && <AgendaCard days={agenda} />}
+        {emailCards.length > 0 && <EmailCards cards={emailCards} />}
         {!isUser && (
           <div className="mt-1 flex items-center gap-1 opacity-0 transition-opacity group-hover:opacity-100">
             <button

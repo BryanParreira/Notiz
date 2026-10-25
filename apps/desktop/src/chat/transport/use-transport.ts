@@ -3,14 +3,18 @@ import { useEffect, useMemo, useState } from "react";
 
 import { commands as templateCommands } from "@notiz/plugin-template";
 
+import { isSmallTalk } from "./helpers";
 import { CustomChatTransport } from "./index";
-import type { ResolvedChatContext } from "./index";
+import type { DataContext, ResolvedChatContext } from "./index";
 
 import { useLanguageModel } from "~/ai/hooks";
+import { warmUpLocalModel } from "~/ai/hooks/useLLMConnection";
 import {
+  buildAgenda,
   buildScheduleContext,
   rangeForMessage,
 } from "~/chat/context/daily-context";
+import { pickEmailCards } from "~/chat/context/email-cards";
 import type { ContextRef } from "~/chat/context/entities";
 import { createInboxCache } from "~/chat/context/inbox-cache";
 import {
@@ -23,6 +27,7 @@ import {
   fetchInboxMessages,
 } from "~/chat/context/inbox-data";
 import { hydrateSessionContextFromFs } from "~/chat/context/session-context-hydrator";
+import type { AgendaDay, EmailCard } from "~/chat/types";
 import { useToolRegistry } from "~/contexts/tool";
 import { useConfigValue } from "~/shared/config";
 import * as main from "~/store/tinybase/store/main";
@@ -95,13 +100,21 @@ const inboxCache = createInboxCache(() => fetchInboxMessages(40));
 // Mac. With any other provider they are sent only when the user asks about email.
 const ON_DEVICE_PROVIDERS = new Set(["notiz_local", "ollama", "lmstudio"]);
 
-async function loadInboxContext(text: string): Promise<string> {
+async function loadInboxContext(
+  text: string,
+): Promise<{ text: string; emailCards?: EmailCard[] }> {
   const { inbox, error } = await inboxCache.get(8000);
 
   if (!inbox) {
     console.error("[chat] could not load the inbox", error);
-    return `The user's email could not be loaded right now${error ? ` (${error})` : ""}. Tell them you could not check it and why.`;
+    return {
+      text: `The user's email could not be loaded right now${error ? ` (${error})` : ""}. Tell them you could not check it and why.`,
+    };
   }
+
+  const emailCards = inbox.connected
+    ? pickEmailCards(inbox.messages, text)
+    : [];
 
   const candidates = /\bunread\b/i.test(text)
     ? inbox.messages.filter((message) => message.unread)
@@ -111,11 +124,14 @@ async function loadInboxContext(text: string): Promise<string> {
     ? await fetchInboxMessage(newestId).catch(() => null)
     : null;
 
-  return buildInboxContext(inbox, text, newest);
+  return {
+    text: buildInboxContext(inbox, text, newest, emailCards.length > 0),
+    emailCards,
+  };
 }
 
 async function loadInboxSnapshot(): Promise<string | null> {
-  const { inbox } = await inboxCache.get(1500);
+  const { inbox } = await inboxCache.get(600);
   return inbox ? buildInboxSnapshot(inbox) : null;
 }
 
@@ -138,7 +154,12 @@ export function useTransport(
     if (modelIsOnDevice) {
       inboxCache.refresh().catch(() => {});
     }
-  }, [modelIsOnDevice]);
+    // Load the built-in model while the user is still typing, so the first
+    // answer does not wait for it to start. It unloads again if unused.
+    if (current_llm_provider === "notiz_local") {
+      warmUpLocalModel();
+    }
+  }, [modelIsOnDevice, current_llm_provider]);
   const [systemPrompt, setSystemPrompt] = useState<string | undefined>();
 
   useEffect(() => {
@@ -236,28 +257,39 @@ export function useTransport(
           ? ({ kind: "text", text } satisfies ResolvedChatContext)
           : null;
       },
-      async (groups, text) => {
+      async (groups, text): Promise<DataContext | null> => {
+        // A greeting gets a greeting, with none of the user's week attached.
+        if (isSmallTalk(text)) return null;
+
         const parts: string[] = [];
+        let emailCards: EmailCard[] | undefined;
+        let agenda: AgendaDay[] | undefined;
 
         // The calendar is always there. A question about particular days gets
-        // those days; anything else gets today and tomorrow.
+        // those days, drawn by the app as a card so the reply can stay short;
+        // anything else gets today and tomorrow as background.
         if (store) {
+          const asked = groups.includes("calendar");
+          const range = rangeForMessage(asked ? text : "");
+          const days = asked ? buildAgenda(store, range) : [];
+          agenda = days.length > 0 ? days : undefined;
           parts.push(
-            buildScheduleContext(
-              store,
-              rangeForMessage(groups.includes("calendar") ? text : ""),
-            ),
+            buildScheduleContext(store, range, new Date(), days.length > 0),
           );
         }
 
         if (groups.includes("inbox")) {
-          parts.push(await loadInboxContext(text));
+          const inbox = await loadInboxContext(text);
+          parts.push(inbox.text);
+          emailCards = inbox.emailCards;
         } else if (modelIsOnDevice) {
           const snapshot = await loadInboxSnapshot();
           if (snapshot) parts.push(snapshot);
         }
 
-        return parts.length > 0 ? parts.join("\n\n") : null;
+        return parts.length > 0
+          ? { text: parts.join("\n\n"), emailCards, agenda }
+          : null;
       },
     );
   }, [model, tools, effectiveSystemPrompt, store, modelIsOnDevice]);
