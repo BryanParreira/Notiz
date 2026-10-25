@@ -1,5 +1,7 @@
+import { resolveScheduleRange } from "../tools/list-schedule";
+
 const DAY_MS = 24 * 60 * 60 * 1000;
-const MAX_PER_DAY = 8;
+const MAX_EVENTS = 30;
 
 type EventRow = Record<string, unknown>;
 
@@ -7,8 +9,24 @@ type EventsStore = {
   getTable: (tableId: "events") => Record<string, EventRow>;
 };
 
+export type DayRange = { from: Date; to: Date; label: string };
+
+const WEEKDAYS = [
+  "sunday",
+  "monday",
+  "tuesday",
+  "wednesday",
+  "thursday",
+  "friday",
+  "saturday",
+];
+
 function startOfDay(date: Date) {
   return new Date(date.getFullYear(), date.getMonth(), date.getDate());
+}
+
+function endOfDay(date: Date) {
+  return new Date(startOfDay(date).getTime() + DAY_MS - 1);
 }
 
 function time(date: Date) {
@@ -16,6 +34,48 @@ function time(date: Date) {
     hour: "numeric",
     minute: "2-digit",
   });
+}
+
+function dayLabel(date: Date) {
+  return date.toLocaleDateString("en-US", {
+    weekday: "long",
+    month: "short",
+    day: "numeric",
+  });
+}
+
+// Reads the days a question is about. Without any hint the answer covers today
+// and tomorrow, which is what most "what's on" questions mean.
+export function rangeForMessage(text: string, now = new Date()): DayRange {
+  const lower = text.toLowerCase();
+  const today = startOfDay(now);
+
+  if (/\bnext week\b/.test(lower)) {
+    return { ...resolveScheduleRange("next_week", now), label: "next week" };
+  }
+  if (/\b(this week|rest of the week|the week|my week)\b/.test(lower)) {
+    return { ...resolveScheduleRange("this_week", now), label: "this week" };
+  }
+
+  const weekday = WEEKDAYS.findIndex((name) => lower.includes(name));
+  if (weekday !== -1) {
+    const ahead = (weekday - today.getDay() + 7) % 7;
+    const day = new Date(today.getTime() + ahead * DAY_MS);
+    return { from: day, to: endOfDay(day), label: dayLabel(day) };
+  }
+
+  if (/\btomorrow\b/.test(lower) && !/\btoday\b/.test(lower)) {
+    return { ...resolveScheduleRange("tomorrow", now), label: "tomorrow" };
+  }
+  if (/\b(today|tonight)\b/.test(lower) && !/\btomorrow\b/.test(lower)) {
+    return { ...resolveScheduleRange("today", now), label: "today" };
+  }
+
+  return {
+    from: today,
+    to: endOfDay(new Date(today.getTime() + DAY_MS)),
+    label: "today and tomorrow",
+  };
 }
 
 function describeEvent(row: EventRow, start: Date) {
@@ -38,44 +98,29 @@ function describeEvent(row: EventRow, start: Date) {
   return `${span} ${title}${where}`;
 }
 
-function listDay(rows: EventRow[], from: Date, label: string) {
-  const to = from.getTime() + DAY_MS;
-
-  const events = rows
+// The calendar for the days a question is about, written for the model to read.
+// The app fetches it, so a small model never has to call a tool to see it.
+export function buildScheduleContext(
+  store: EventsStore,
+  range: DayRange,
+  now = new Date(),
+): string {
+  const events = Object.values(store.getTable("events") ?? {})
     .flatMap((row) => {
       if (typeof row.title !== "string" || !row.title.trim()) return [];
       if (typeof row.started_at !== "string") return [];
       const start = new Date(row.started_at);
       const startMs = start.getTime();
-      if (Number.isNaN(startMs) || startMs < from.getTime() || startMs >= to) {
+      if (
+        Number.isNaN(startMs) ||
+        startMs < range.from.getTime() ||
+        startMs > range.to.getTime()
+      ) {
         return [];
       }
       return [{ row, start }];
     })
     .sort((a, b) => a.start.getTime() - b.start.getTime());
-
-  if (events.length === 0) return `${label}: nothing scheduled.`;
-
-  const lines = events
-    .slice(0, MAX_PER_DAY)
-    .map(({ row, start }) => `- ${describeEvent(row, start)}`);
-  const more = events.length - MAX_PER_DAY;
-  if (more > 0) lines.push(`- and ${more} more`);
-
-  return `${label}:\n${lines.join("\n")}`;
-}
-
-// A short, always-available picture of the user's day, so questions like "what
-// is my day like" are answered from the prompt instead of hoping a small model
-// remembers to call a tool. Only the calendar goes here; email is read when
-// the user asks about it.
-export function buildDailyContext(
-  store: EventsStore,
-  now = new Date(),
-): string {
-  const today = startOfDay(now);
-  const tomorrow = new Date(today.getTime() + DAY_MS);
-  const rows = Object.values(store.getTable("events") ?? {});
 
   const nowText = now.toLocaleString("en-US", {
     weekday: "long",
@@ -85,11 +130,22 @@ export function buildDailyContext(
     hour: "numeric",
     minute: "2-digit",
   });
+  const header = `It is ${nowText}. The user's calendar for ${range.label}:`;
 
-  return [
-    `It is ${nowText}.`,
-    "The user's calendar (use list_schedule for other days):",
-    listDay(rows, today, "Today"),
-    listDay(rows, tomorrow, "Tomorrow"),
-  ].join("\n");
+  if (events.length === 0) return `${header}\nNothing is scheduled.`;
+
+  const lines: string[] = [];
+  let currentDay = "";
+  for (const { row, start } of events.slice(0, MAX_EVENTS)) {
+    const day = dayLabel(start);
+    if (day !== currentDay) {
+      currentDay = day;
+      lines.push(`${day}:`);
+    }
+    lines.push(`- ${describeEvent(row, start)}`);
+  }
+  const more = events.length - MAX_EVENTS;
+  if (more > 0) lines.push(`(and ${more} more)`);
+
+  return `${header}\n${lines.join("\n")}`;
 }

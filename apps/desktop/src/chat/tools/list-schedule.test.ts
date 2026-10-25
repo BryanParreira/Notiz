@@ -1,7 +1,11 @@
 import { asSchema } from "ai";
 import { describe, expect, it } from "vitest";
 
-import { buildListScheduleTool, resolveScheduleRange } from "./list-schedule";
+import {
+  buildListScheduleTool,
+  coerceScheduleRange,
+  resolveScheduleRange,
+} from "./list-schedule";
 import {
   buildSearchSessionsTool,
   coerceSearchFilters,
@@ -101,5 +105,18 @@ describe("coerceSearchFilters", () => {
     };
 
     expect(json.properties).toHaveProperty("filters");
+  });
+});
+
+describe("coerceScheduleRange", () => {
+  it("reads the range the model meant, however it is written", () => {
+    expect(coerceScheduleRange("this week")).toBe("this_week");
+    expect(coerceScheduleRange("This Week")).toBe("this_week");
+    expect(coerceScheduleRange("next week")).toBe("next_week");
+    expect(coerceScheduleRange("next 7 days")).toBe("next_7_days");
+    expect(coerceScheduleRange("tomorrow")).toBe("tomorrow");
+    expect(coerceScheduleRange("tonight")).toBe("today");
+    expect(coerceScheduleRange("whenever")).toBeUndefined();
+    expect(coerceScheduleRange(7)).toBeUndefined();
   });
 });

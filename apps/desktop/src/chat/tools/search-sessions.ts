@@ -1,6 +1,7 @@
 import { tool } from "ai";
 import { z } from "zod";
 
+import { lenientInt } from "./lenient";
 import type { ToolDependencies } from "./types";
 
 import type { SearchFilters } from "~/search/contexts/engine/types";
@@ -156,13 +157,7 @@ Returns relevant sessions with their content.
           "Optional text query for finding relevant sessions. Omit this when filtering only by date/time.",
         ),
       filters: searchSessionsFiltersSchema,
-      limit: z
-        .number()
-        .int()
-        .min(0)
-        .max(10)
-        .optional()
-        .describe("Maximum number of sessions to return"),
+      limit: lenientInt(0, 10).describe("Maximum number of sessions to return"),
     }),
     execute: async (params: {
       query?: string;

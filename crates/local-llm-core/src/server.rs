@@ -37,13 +37,15 @@ impl LlmServer {
             "127.0.0.1",
             "-ngl",
             "99",
-            // 32768 previously here needs ~9-10GB of GPU memory just for the
-            // KV cache on this model (n_layers * ctx * n_embd * 2 * fp16),
-            // on top of the ~2GB of weights — enough to exhaust unified
-            // memory on 16GB Macs and crash the Metal compute pipeline.
-            // 4096 covers a normal chat turn at a fraction of the memory.
+            // 32768 previously here needed several GB of GPU memory just for
+            // the KV cache (about 0.1 MB per token on this model), enough to
+            // exhaust unified memory on 16GB Macs and crash the Metal compute
+            // pipeline. 4096 left no room once tool descriptions, instructions
+            // and a reply were in play ("context size exceeded"). 8192 costs
+            // roughly half a gigabyte more, and only while the model is loaded:
+            // it is unloaded after a few idle minutes.
             "--ctx-size",
-            "4096",
+            "8192",
         ]);
 
         let (mut rx, child) = command

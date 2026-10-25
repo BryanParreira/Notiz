@@ -24,6 +24,15 @@ export function ChatBodyNonEmpty({
     (status === "submitted" || status === "streaming") &&
     (lastMessage?.role !== "assistant" || !hasRenderableContent(lastMessage));
 
+  // A model can finish without writing anything, or only print a tool call that
+  // is hidden. Never leave the user staring at their own message in silence.
+  const noReply =
+    status === "ready" &&
+    !showErrorState &&
+    (lastMessage?.role === "user" ||
+      (lastMessage?.role === "assistant" &&
+        !hasRenderableContent(lastMessage)));
+
   let lastAssistantIndex = -1;
   for (let i = messages.length - 1; i >= 0; i--) {
     if (messages[i].role === "assistant") {
@@ -69,6 +78,12 @@ export function ChatBodyNonEmpty({
         )}
       </AnimatePresence>
       {showErrorState && <ErrorMessage error={error} onRetry={onReload} />}
+      {noReply && (
+        <ErrorMessage
+          error={new Error("No answer came back. Try again.")}
+          onRetry={onReload}
+        />
+      )}
     </div>
   );
 }

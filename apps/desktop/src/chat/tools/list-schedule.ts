@@ -1,6 +1,7 @@
 import { tool } from "ai";
 import { z } from "zod";
 
+import { lenientInt } from "./lenient";
 import type { ToolDependencies } from "./types";
 
 const RANGES = [
@@ -12,6 +13,24 @@ const RANGES = [
 ] as const;
 
 type ScheduleRange = (typeof RANGES)[number];
+
+// Models write "this week" or "Next 7 days" instead of the enum value. Read the
+// intent rather than failing the call.
+export function coerceScheduleRange(value: unknown): unknown {
+  if (typeof value !== "string") return undefined;
+
+  const key = value
+    .trim()
+    .toLowerCase()
+    .replace(/[\s-]+/g, "_");
+
+  if ((RANGES as readonly string[]).includes(key)) return key;
+  if (key.includes("next") && key.includes("week")) return "next_week";
+  if (key.includes("week")) return "this_week";
+  if (key.includes("tomorrow")) return "tomorrow";
+  if (key.includes("today") || key.includes("tonight")) return "today";
+  return undefined;
+}
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 
@@ -77,16 +96,9 @@ Use search_calendar_events instead to find one specific event by name.
 `.trim(),
     inputSchema: z.object({
       range: z
-        .enum(RANGES)
-        .optional()
+        .preprocess(coerceScheduleRange, z.enum(RANGES).optional())
         .describe("Which days to list. Defaults to next_7_days."),
-      limit: z
-        .number()
-        .int()
-        .min(1)
-        .max(50)
-        .optional()
-        .describe("Maximum number of events to return"),
+      limit: lenientInt(1, 50).describe("Maximum number of events to return"),
     }),
     execute: async (params: { range?: ScheduleRange; limit?: number }) => {
       const range = params.range ?? "next_7_days";

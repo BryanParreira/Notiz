@@ -1,6 +1,7 @@
 import { tool } from "ai";
 import { z } from "zod";
 
+import { lenientInt } from "./lenient";
 import type { ToolDependencies } from "./types";
 
 export const buildSearchContactsTool = (deps: ToolDependencies) =>
@@ -9,13 +10,7 @@ export const buildSearchContactsTool = (deps: ToolDependencies) =>
       "Search contacts and return names, emails, phone numbers, roles, and organizations.",
     inputSchema: z.object({
       query: z.string().describe("Search query for contacts"),
-      limit: z
-        .number()
-        .int()
-        .min(1)
-        .max(20)
-        .optional()
-        .describe("Maximum number of contacts to return"),
+      limit: lenientInt(1, 20).describe("Maximum number of contacts to return"),
     }),
     execute: async (params: { query: string; limit?: number }) => {
       const limit = params.limit ?? 8;

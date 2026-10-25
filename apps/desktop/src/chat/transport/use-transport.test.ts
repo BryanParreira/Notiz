@@ -1,23 +1,12 @@
 import { describe, expect, it, vi } from "vitest";
 
-import { isSmallTalk } from "./helpers";
+import { buildToolGuidance } from "./guidance";
+import {
+  toolGroupsForMessage,
+  toolGroupsUsedIn,
+  toolNamesForGroups,
+} from "./helpers";
 import { CustomChatTransport, shouldForceAnswer } from "./index";
-import { appendFileContextToolGuidance } from "./use-transport";
-
-describe("chat transport prompt guidance", () => {
-  it("keeps tools for questions that need notes, and off for small talk", () => {
-    const prompt = appendFileContextToolGuidance("Base prompt");
-
-    expect(prompt).toContain("Base prompt");
-    expect(prompt).toContain("general-purpose assistant first");
-    expect(prompt).toContain("use list_schedule");
-    expect(prompt).toContain("use list_inbox");
-    expect(prompt).toContain("use search_sessions");
-    expect(prompt).toContain("greetings, small talk");
-    expect(prompt).toContain("do not call any tool");
-    expect(prompt).toContain("Never call the same tool twice");
-  });
-});
 
 describe("shouldForceAnswer", () => {
   const call = (toolName: string, input: unknown) => ({
@@ -97,27 +86,105 @@ describe("context loading", () => {
   });
 });
 
-describe("isSmallTalk", () => {
-  it("treats greetings as small talk so they get no tools", () => {
+describe("toolGroupsForMessage", () => {
+  it("offers no tools for conversation, greetings and general questions", () => {
     for (const text of [
       "hello",
       "Hello!",
-      "hey there",
       "thanks",
-      "good morning",
       "how are you?",
+      "explain how a binary tree works",
+      "write a haiku about autumn",
+      "what is the capital of France",
     ]) {
-      expect(isSmallTalk(text)).toBe(true);
+      expect(toolGroupsForMessage(text)).toEqual([]);
     }
   });
 
-  it("keeps tools for real questions", () => {
-    for (const text of [
-      "hello, what did we decide in yesterday's meeting?",
-      "summarize my last note",
-      "",
-    ]) {
-      expect(isSmallTalk(text)).toBe(false);
-    }
+  it("recognises the kind of question, so the right data is fetched", () => {
+    expect(
+      toolGroupsForMessage("hello can u tell what do i have this week?"),
+    ).toEqual(["calendar"]);
+    expect(toolGroupsForMessage("anything important in my email?")).toEqual([
+      "inbox",
+    ]);
+    expect(toolGroupsForMessage("what's unread in my inbox")).toEqual([
+      "inbox",
+    ]);
+    expect(toolGroupsForMessage("did we decide on pricing")).toEqual(["notes"]);
+    expect(toolGroupsForMessage("look up the latest news on tauri")).toEqual([
+      "web",
+    ]);
+    expect(toolGroupsForMessage("what's on my calendar tomorrow")).toEqual([
+      "calendar",
+    ]);
+  });
+
+  it("combines groups when a message spans them", () => {
+    expect(
+      toolGroupsForMessage("summarize my meeting and check my email"),
+    ).toEqual(["inbox", "notes"]);
+  });
+});
+
+describe("toolGroupsUsedIn", () => {
+  it("keeps the groups already used so follow-ups still work", () => {
+    expect(
+      toolGroupsUsedIn([
+        { parts: [{ type: "text" }] },
+        { parts: [{ type: "tool-search_sessions" }, { type: "text" }] },
+      ]),
+    ).toEqual(["notes"]);
+    expect(toolGroupsUsedIn([{ parts: [{ type: "text" }] }])).toEqual([]);
+  });
+});
+
+describe("toolNamesForGroups", () => {
+  it("offers no tools for calendar and email, which are fetched by the app", () => {
+    expect(toolNamesForGroups(["calendar", "inbox"])).toEqual([]);
+  });
+
+  it("lists each tool once for the groups that use tools", () => {
+    expect(toolNamesForGroups(["web", "contacts", "web"])).toEqual([
+      "web_search",
+      "search_contacts",
+    ]);
+  });
+});
+
+describe("buildToolGuidance", () => {
+  it("is just the assistant brief when nothing is offered", () => {
+    const text = buildToolGuidance([]);
+
+    expect(text).toContain("general-purpose assistant first");
+    expect(text).not.toContain("Tool rules");
+  });
+
+  it("has no tool rules for calendar and email, which need no tools", () => {
+    const text = buildToolGuidance(["calendar", "inbox"]);
+
+    expect(text).toContain("calendar is given below");
+    expect(text).toContain("email is given below");
+    expect(text).not.toContain("Tool rules");
+  });
+
+  it("only mentions the tools on offer", () => {
+    const text = buildToolGuidance(["notes"]);
+
+    expect(text).toContain("search_sessions");
+    expect(text).toContain("never call the same tool twice");
+    expect(text).not.toContain("web_search");
+  });
+
+  it("stays small enough for a model with a few thousand tokens", () => {
+    const all = buildToolGuidance([
+      "calendar",
+      "inbox",
+      "notes",
+      "contacts",
+      "web",
+    ]);
+
+    expect(all.length / 4).toBeLessThan(750);
   });
 });

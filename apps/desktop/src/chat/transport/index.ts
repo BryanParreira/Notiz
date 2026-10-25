@@ -17,11 +17,15 @@ import type { ContextRef } from "../context/entities";
 import { extractContextRefsFromMessages } from "../context/refs";
 import { CONTEXT_TEXT_FIELD } from "../tools/context-text";
 import type { NotizUIMessage } from "../types";
+import { buildToolGuidance } from "./guidance";
 import {
   getSessionIdsFromSearchOutput,
   hasContextText,
   isRecord,
-  isSmallTalk,
+  type ToolGroup,
+  toolGroupsForMessage,
+  toolGroupsUsedIn,
+  toolNamesForGroups,
   isToolOutputPart,
   MAX_TOOL_STEPS,
   MESSAGE_WINDOW_SIZE,
@@ -76,25 +80,38 @@ export class CustomChatTransport implements ChatTransport<NotizUIMessage> {
     private resolveContextRef?: (
       ref: ContextRef,
     ) => Promise<ResolvedChatContext | null>,
-    private getDailyContext?: () => string | null,
+    private getDataContext?: (
+      groups: ToolGroup[],
+      userText: string,
+    ) => Promise<string | null>,
   ) {}
 
-  private buildInstructions(): string | undefined {
-    let daily: string | null = null;
-    try {
-      daily = this.getDailyContext?.() ?? null;
-    } catch (error) {
-      console.error("[chat] failed to build daily context", error);
-    }
+  // Data the app fetched for this question (calendar, email). It is slow and
+  // can fail, so a problem here never stops the assistant from answering.
+  private async buildData(
+    groups: ToolGroup[],
+    userText: string,
+  ): Promise<string | null> {
+    if (!this.getDataContext || groups.length === 0) return null;
 
-    const parts = [this.systemPrompt, daily].filter(
+    try {
+      return await this.getDataContext(groups, userText);
+    } catch (error) {
+      console.error("[chat] failed to build data context", error);
+      return null;
+    }
+  }
+
+  private buildInstructions(
+    groups: ToolGroup[],
+    data: string | null,
+  ): string | undefined {
+    const parts = [this.systemPrompt, buildToolGuidance(groups), data].filter(
       (part): part is string => !!part && part.trim().length > 0,
     );
     return parts.length > 0 ? parts.join("\n\n") : undefined;
   }
 
-  // Notes are only extra context. If loading them fails, answer without them
-  // rather than failing the whole message.
   private async renderContextBlock(
     contextRefs: ContextRef[],
     cache: Map<string, string | null>,
@@ -260,13 +277,25 @@ export class CustomChatTransport implements ChatTransport<NotizUIMessage> {
       options.messages[lastUserMessageIndex]?.parts
         .flatMap((part) => (part.type === "text" ? [part.text] : []))
         .join(" ") ?? "";
-    const smallTalk = isSmallTalk(lastUserText);
+    const groups = [
+      ...new Set([
+        ...toolGroupsForMessage(lastUserText),
+        ...toolGroupsUsedIn(options.messages),
+      ]),
+    ];
+    const activeTools = toolNamesForGroups(groups).filter(
+      (name) => name in tools,
+    );
+
+    const data = await this.buildData(groups, lastUserText);
 
     const agent = new ToolLoopAgent({
       model: this.model,
-      instructions: this.buildInstructions(),
+      instructions: this.buildInstructions(groups, data),
       tools,
       stopWhen: stepCountIs(MAX_TOOL_STEPS),
+      // A model that starts rambling would otherwise fill its whole memory.
+      maxOutputTokens: 1200,
       prepareStep: async ({ messages, stepNumber, steps }) => {
         const windowed =
           messages.length > MESSAGE_WINDOW_THRESHOLD
@@ -277,10 +306,16 @@ export class CustomChatTransport implements ChatTransport<NotizUIMessage> {
         // again and never answer. Stop offering tools once a step has failed,
         // a call has repeated, or only the last step is left, so the model has
         // to write its reply.
-        if (smallTalk || shouldForceAnswer(steps, stepNumber)) {
-          return { ...windowed, toolChoice: "none" as const };
+        if (activeTools.length === 0 || shouldForceAnswer(steps, stepNumber)) {
+          // toolChoice alone is not enough: with tools still in the request
+          // this model replies with the raw call as text, so take them out.
+          return {
+            ...windowed,
+            toolChoice: "none" as const,
+            activeTools: [] as never[],
+          };
         }
-        return windowed;
+        return { ...windowed, activeTools: activeTools as never[] };
       },
     });
 

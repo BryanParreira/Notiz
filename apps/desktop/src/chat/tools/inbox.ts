@@ -1,10 +1,13 @@
 import { tool } from "ai";
 import { z } from "zod";
 
+import { lenientBoolean, lenientInt } from "./lenient";
 import type { ToolDependencies } from "./types";
 
 const DAY_MS = 24 * 60 * 60 * 1000;
-const MAX_BODY_CHARS = 6000;
+// Kept short: the built-in model has a small memory and a long email would
+// push the rest of the conversation out of it.
+const MAX_BODY_CHARS = 3500;
 
 // Email is written by third parties, so it is data to read, never instructions
 // to follow, even if a message says otherwise.
@@ -36,24 +39,13 @@ Use "query" to match a sender or subject. Then call read_email with an id to rea
         .string()
         .optional()
         .describe("Only emails whose sender or subject contains this text"),
-      unread_only: z
-        .boolean()
-        .optional()
-        .describe("Only emails that have not been read"),
-      days: z
-        .number()
-        .int()
-        .min(1)
-        .max(60)
-        .optional()
-        .describe("Only emails from the last N days"),
-      limit: z
-        .number()
-        .int()
-        .min(1)
-        .max(20)
-        .optional()
-        .describe("Maximum number of emails to return (default 10)"),
+      unread_only: lenientBoolean().describe(
+        "Only emails that have not been read",
+      ),
+      days: lenientInt(1, 60).describe("Only emails from the last N days"),
+      limit: lenientInt(1, 20).describe(
+        "Maximum number of emails to return (default 10)",
+      ),
     }),
     execute: async (params: {
       query?: string;

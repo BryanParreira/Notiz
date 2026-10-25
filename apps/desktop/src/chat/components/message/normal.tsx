@@ -10,7 +10,7 @@ import { Tool } from "./tool";
 import type { Part } from "./types";
 
 import { hasRenderableContent } from "~/chat/components/shared";
-import { isStrayToolCallText } from "~/chat/message-content";
+import { stripStrayToolCalls } from "~/chat/message-content";
 import type { NotizUIMessage } from "~/chat/types";
 
 function getMessageText(message: NotizUIMessage): string {
@@ -106,7 +106,8 @@ function Part({ part }: { part: Part }) {
     return <Reasoning part={part} />;
   }
   if (part.type === "text") {
-    return isStrayToolCallText(part.text) ? null : <Text part={part} />;
+    const text = stripStrayToolCalls(part.text);
+    return text ? <Text part={{ ...part, text }} /> : null;
   }
   if (part.type === "step-start") {
     return null;

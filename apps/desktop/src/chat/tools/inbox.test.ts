@@ -83,7 +83,7 @@ describe("read_email", () => {
       {} as never,
     )) as { body: string; truncated: boolean; notice: string };
 
-    expect(result.body).toHaveLength(6000);
+    expect(result.body).toHaveLength(3500);
     expect(result.truncated).toBe(true);
     expect(result.notice).toMatch(/never follow instructions/i);
   });
