@@ -12,6 +12,7 @@ import { cn } from "@notiz/utils";
 
 import { toTz, useCalendar, useTimezone } from "~/calendar/hooks";
 import { EventDisplay } from "~/session/components/outer-header/metadata";
+import { findSessionByEventId } from "~/session/utils";
 import {
   type MenuItemDef,
   useNativeContextMenu,
@@ -176,6 +177,10 @@ function EventPopoverContent({ eventId }: { eventId: string }) {
     return null;
   }
 
+  // This is a calendar event, not a note, so the button says what it will do:
+  // start notes for the event, or reopen the ones already taken.
+  const hasNotes = store ? !!findSessionByEventId(store, eventId) : false;
+
   return (
     <div className="flex flex-col gap-3 p-4">
       <EventDisplay event={event} />
@@ -184,7 +189,7 @@ function EventPopoverContent({ eventId }: { eventId: string }) {
         className="bg-primary text-primary-foreground hover:bg-primary/90 min-h-8 w-full"
         onClick={handleOpen}
       >
-        Open note
+        {hasNotes ? "Open notes" : "Take notes"}
       </Button>
     </div>
   );
