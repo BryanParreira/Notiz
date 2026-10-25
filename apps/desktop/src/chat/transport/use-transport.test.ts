@@ -112,9 +112,6 @@ describe("toolGroupsForMessage", () => {
       "inbox",
     ]);
     expect(toolGroupsForMessage("did we decide on pricing")).toEqual(["notes"]);
-    expect(toolGroupsForMessage("look up the latest news on tauri")).toEqual([
-      "web",
-    ]);
     expect(toolGroupsForMessage("what's on my calendar tomorrow")).toEqual([
       "calendar",
     ]);
@@ -145,9 +142,15 @@ describe("toolNamesForGroups", () => {
   });
 
   it("lists each tool once for the groups that use tools", () => {
-    expect(toolNamesForGroups(["web", "contacts", "web"])).toEqual([
-      "web_search",
+    expect(toolNamesForGroups(["contacts", "notes", "contacts"])).toEqual([
       "search_contacts",
+      "search_sessions",
+      "read_note",
+      "read_current_note",
+      "grep_notes",
+      "list_related_notes",
+      "apply_session_correction",
+      "edit_summary",
     ]);
   });
 });
@@ -156,7 +159,12 @@ describe("buildToolGuidance", () => {
   it("is just the assistant brief when nothing is offered", () => {
     const text = buildToolGuidance([]);
 
-    expect(text).toContain("general-purpose assistant first");
+    expect(text).toContain("personal assistant");
+    expect(text).toContain("Never invent");
+    expect(text).toContain("draft an email");
+    expect(text).toContain(
+      "never say you cannot access their calendar or email",
+    );
     expect(text).not.toContain("Tool rules");
   });
 
@@ -177,13 +185,7 @@ describe("buildToolGuidance", () => {
   });
 
   it("stays small enough for a model with a few thousand tokens", () => {
-    const all = buildToolGuidance([
-      "calendar",
-      "inbox",
-      "notes",
-      "contacts",
-      "web",
-    ]);
+    const all = buildToolGuidance(["calendar", "inbox", "notes", "contacts"]);
 
     expect(all.length / 4).toBeLessThan(750);
   });

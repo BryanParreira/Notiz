@@ -6,10 +6,19 @@ const MAX_EVENTS = 30;
 type EventRow = Record<string, unknown>;
 
 type EventsStore = {
-  getTable: (tableId: "events") => Record<string, EventRow>;
+  getTable: (tableId: "events" | "calendars") => Record<string, EventRow>;
 };
 
-export type DayRange = { from: Date; to: Date; label: string };
+export type DayRange = {
+  from: Date;
+  to: Date;
+  label: string;
+  // When the days asked about are empty, also show what is coming up next.
+  lookahead?: boolean;
+};
+
+const LOOKAHEAD_DAYS = 14;
+const LOOKAHEAD_EVENTS = 8;
 
 const WEEKDAYS = [
   "sunday",
@@ -50,10 +59,28 @@ export function rangeForMessage(text: string, now = new Date()): DayRange {
   const lower = text.toLowerCase();
   const today = startOfDay(now);
 
+  if (
+    /\b(upcoming|coming up|coming week|week ahead|next 7 days|next seven days)\b/.test(
+      lower,
+    )
+  ) {
+    return {
+      ...resolveScheduleRange("next_7_days", now),
+      label: "the next 7 days",
+    };
+  }
   if (/\bnext week\b/.test(lower)) {
     return { ...resolveScheduleRange("next_week", now), label: "next week" };
   }
   if (/\b(this week|rest of the week|the week|my week)\b/.test(lower)) {
+    // On a weekend "this week" would be one or two days, and what people mean
+    // is the week that is about to start.
+    if (today.getDay() === 0 || today.getDay() === 6) {
+      return {
+        ...resolveScheduleRange("next_7_days", now),
+        label: "the coming week",
+      };
+    }
     return { ...resolveScheduleRange("this_week", now), label: "this week" };
   }
 
@@ -75,6 +102,7 @@ export function rangeForMessage(text: string, now = new Date()): DayRange {
     from: today,
     to: endOfDay(new Date(today.getTime() + DAY_MS)),
     label: "today and tomorrow",
+    lookahead: true,
   };
 }
 
@@ -105,7 +133,19 @@ export function buildScheduleContext(
   range: DayRange,
   now = new Date(),
 ): string {
-  const events = Object.values(store.getTable("events") ?? {})
+  // Only calendars the user has switched on, the same ones the Calendar page
+  // shows. A calendar that is missing from the list is kept.
+  const calendars = store.getTable("calendars") ?? {};
+  const allRows = Object.values(store.getTable("events") ?? {}).filter(
+    (row) => {
+      const calendar =
+        typeof row.calendar_id === "string"
+          ? calendars[row.calendar_id]
+          : undefined;
+      return !calendar || calendar.enabled !== false;
+    },
+  );
+  const events = allRows
     .flatMap((row) => {
       if (typeof row.title !== "string" || !row.title.trim()) return [];
       if (typeof row.started_at !== "string") return [];
@@ -132,20 +172,44 @@ export function buildScheduleContext(
   });
   const header = `It is ${nowText}. The user's calendar for ${range.label}:`;
 
-  if (events.length === 0) return `${header}\nNothing is scheduled.`;
-
-  const lines: string[] = [];
-  let currentDay = "";
-  for (const { row, start } of events.slice(0, MAX_EVENTS)) {
-    const day = dayLabel(start);
-    if (day !== currentDay) {
-      currentDay = day;
-      lines.push(`${day}:`);
-    }
-    lines.push(`- ${describeEvent(row, start)}`);
+  if (allRows.length === 0) {
+    return `${header}\nNo calendar events are synced yet. If the user has a calendar, they can connect it from the Calendar page.`;
   }
-  const more = events.length - MAX_EVENTS;
-  if (more > 0) lines.push(`(and ${more} more)`);
+  const format = (list: typeof events, limit: number) => {
+    const lines: string[] = [];
+    let currentDay = "";
+    for (const { row, start } of list.slice(0, limit)) {
+      const day = dayLabel(start);
+      if (day !== currentDay) {
+        currentDay = day;
+        lines.push(`${day}:`);
+      }
+      lines.push(`- ${describeEvent(row, start)}`);
+    }
+    const more = list.length - limit;
+    if (more > 0) lines.push(`(and ${more} more)`);
+    return lines.join("\n");
+  };
 
-  return `${header}\n${lines.join("\n")}`;
+  if (events.length === 0) {
+    const horizon = range.to.getTime() + LOOKAHEAD_DAYS * DAY_MS;
+    const upcoming = range.lookahead
+      ? allRows
+          .flatMap((row) => {
+            if (typeof row.title !== "string" || !row.title.trim()) return [];
+            if (typeof row.started_at !== "string") return [];
+            const start = new Date(row.started_at);
+            const startMs = start.getTime();
+            if (Number.isNaN(startMs)) return [];
+            if (startMs <= range.to.getTime() || startMs > horizon) return [];
+            return [{ row, start }];
+          })
+          .sort((a, b) => a.start.getTime() - b.start.getTime())
+      : [];
+
+    if (upcoming.length === 0) return `${header}\nNothing is scheduled.`;
+    return `${header}\nNothing is scheduled ${range.label}. Coming up next:\n${format(upcoming, LOOKAHEAD_EVENTS)}`;
+  }
+
+  return `${header}\n${format(events, MAX_EVENTS)}`;
 }

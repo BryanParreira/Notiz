@@ -30,8 +30,8 @@ describe("ChatBodyNonEmpty", () => {
       <ChatBodyNonEmpty messages={[user]} status="ready" onReload={onReload} />,
     );
 
-    expect(screen.getByText("No answer came back. Try again.")).toBeTruthy();
-    screen.getByRole("button", { name: /retry/i }).click();
+    expect(screen.getByText("No answer came back.")).toBeTruthy();
+    screen.getByRole("button", { name: /try again/i }).click();
     expect(onReload).toHaveBeenCalledTimes(1);
   });
 
@@ -48,14 +48,14 @@ describe("ChatBodyNonEmpty", () => {
     };
     render(<ChatBodyNonEmpty messages={[user, assistant]} status="ready" />);
 
-    expect(screen.getByText("No answer came back. Try again.")).toBeTruthy();
+    expect(screen.getByText("No answer came back.")).toBeTruthy();
   });
 
   it("stays quiet while a reply is on its way or has arrived", () => {
     const { rerender } = render(
       <ChatBodyNonEmpty messages={[user]} status="submitted" />,
     );
-    expect(screen.queryByText("No answer came back. Try again.")).toBeNull();
+    expect(screen.queryByText("No answer came back.")).toBeNull();
 
     const assistant: NotizUIMessage = {
       id: "a1",
@@ -63,6 +63,6 @@ describe("ChatBodyNonEmpty", () => {
       parts: [{ type: "text", text: "Hi there!" }],
     };
     rerender(<ChatBodyNonEmpty messages={[user, assistant]} status="ready" />);
-    expect(screen.queryByText("No answer came back. Try again.")).toBeNull();
+    expect(screen.queryByText("No answer came back.")).toBeNull();
   });
 });

@@ -92,7 +92,7 @@ export class CustomChatTransport implements ChatTransport<NotizUIMessage> {
     groups: ToolGroup[],
     userText: string,
   ): Promise<string | null> {
-    if (!this.getDataContext || groups.length === 0) return null;
+    if (!this.getDataContext) return null;
 
     try {
       return await this.getDataContext(groups, userText);

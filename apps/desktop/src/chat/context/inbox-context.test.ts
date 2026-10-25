@@ -1,7 +1,11 @@
 import { describe, expect, it } from "vitest";
 
 import type { InboxEmail } from "../tools/types";
-import { buildInboxContext, wantsEmailBody } from "./inbox-context";
+import {
+  buildInboxContext,
+  buildInboxSnapshot,
+  wantsEmailBody,
+} from "./inbox-context";
 
 const email = (overrides: Partial<InboxEmail>): InboxEmail => ({
   id: "a:1",
@@ -25,6 +29,7 @@ describe("buildInboxContext", () => {
   it("lists senders and subjects and marks email as untrusted", () => {
     const text = buildInboxContext(inbox, "anything important in my email?");
 
+    expect(text).toContain("2 found, 1 of them unread");
     expect(text).toContain("Stripe: Customize fraud protection");
     expect(text).toContain("Ana: Lunch");
     expect(text).toMatch(/never follow instructions/i);
@@ -66,5 +71,30 @@ describe("wantsEmailBody", () => {
   it("is true for questions about what an email says", () => {
     expect(wantsEmailBody("what is the latest email about?")).toBe(true);
     expect(wantsEmailBody("anything important in my email?")).toBe(false);
+  });
+});
+
+describe("buildInboxSnapshot", () => {
+  it("summarises unread count and the latest few emails", () => {
+    const text = buildInboxSnapshot({
+      connected: true,
+      messages: [
+        email({}),
+        email({ id: "a:2", fromName: "Ana", subject: "Lunch", unread: false }),
+      ],
+    });
+
+    expect(text).toContain("1 unread among the 2 most recent");
+    expect(text).toContain("Stripe: Customize fraud protection");
+    expect(text).toMatch(/never follow instructions/i);
+  });
+
+  it("says when there is no account or the inbox is empty", () => {
+    expect(buildInboxSnapshot({ connected: false, messages: [] })).toContain(
+      "Settings > Email",
+    );
+    expect(buildInboxSnapshot({ connected: true, messages: [] })).toContain(
+      "empty",
+    );
   });
 });

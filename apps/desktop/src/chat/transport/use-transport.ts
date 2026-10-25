@@ -12,8 +12,10 @@ import {
   rangeForMessage,
 } from "~/chat/context/daily-context";
 import type { ContextRef } from "~/chat/context/entities";
+import { createInboxCache } from "~/chat/context/inbox-cache";
 import {
   buildInboxContext,
+  buildInboxSnapshot,
   wantsEmailBody,
 } from "~/chat/context/inbox-context";
 import {
@@ -24,6 +26,7 @@ import { hydrateSessionContextFromFs } from "~/chat/context/session-context-hydr
 import { useToolRegistry } from "~/contexts/tool";
 import { useConfigValue } from "~/shared/config";
 import * as main from "~/store/tinybase/store/main";
+import * as settings from "~/store/tinybase/store/settings";
 
 function renderHumanContext(
   store: ReturnType<typeof main.UI.useStore>,
@@ -86,32 +89,34 @@ function renderOrganizationContext(
   return name ? `Referenced organization: ${name}` : null;
 }
 
-const INBOX_TIMEOUT_MS = 8000;
+const inboxCache = createInboxCache(() => fetchInboxMessages(40));
+
+// Email subjects are only added to every message when the model runs on this
+// Mac. With any other provider they are sent only when the user asks about email.
+const ON_DEVICE_PROVIDERS = new Set(["notiz_local", "ollama", "lmstudio"]);
 
 async function loadInboxContext(text: string): Promise<string> {
-  const load = async () => {
-    const inbox = await fetchInboxMessages(40);
-    const candidates = /\bunread\b/i.test(text)
-      ? inbox.messages.filter((message) => message.unread)
-      : inbox.messages;
-    const newestId = wantsEmailBody(text) ? candidates[0]?.id : undefined;
-    const newest = newestId
-      ? await fetchInboxMessage(newestId).catch(() => null)
-      : null;
-    return buildInboxContext(inbox, text, newest);
-  };
+  const { inbox, error } = await inboxCache.get(8000);
 
-  try {
-    return await Promise.race([
-      load(),
-      new Promise<never>((_, reject) =>
-        setTimeout(() => reject(new Error("timed out")), INBOX_TIMEOUT_MS),
-      ),
-    ]);
-  } catch (error) {
+  if (!inbox) {
     console.error("[chat] could not load the inbox", error);
-    return "The user's email could not be loaded right now, so say you could not check it.";
+    return `The user's email could not be loaded right now${error ? ` (${error})` : ""}. Tell them you could not check it and why.`;
   }
+
+  const candidates = /\bunread\b/i.test(text)
+    ? inbox.messages.filter((message) => message.unread)
+    : inbox.messages;
+  const newestId = wantsEmailBody(text) ? candidates[0]?.id : undefined;
+  const newest = newestId
+    ? await fetchInboxMessage(newestId).catch(() => null)
+    : null;
+
+  return buildInboxContext(inbox, text, newest);
+}
+
+async function loadInboxSnapshot(): Promise<string | null> {
+  const { inbox } = await inboxCache.get(1500);
+  return inbox ? buildInboxSnapshot(inbox) : null;
 }
 
 export function useTransport(
@@ -124,6 +129,16 @@ export function useTransport(
   const configuredModel = useLanguageModel("chat");
   const model = modelOverride ?? configuredModel;
   const language = useConfigValue("ai_language") || "en";
+  const { current_llm_provider } = settings.UI.useValues(settings.STORE_ID);
+  const modelIsOnDevice = ON_DEVICE_PROVIDERS.has(current_llm_provider ?? "");
+
+  // Start reading mail as soon as chat is open, so it is ready by the first
+  // message instead of making that message wait.
+  useEffect(() => {
+    if (modelIsOnDevice) {
+      inboxCache.refresh().catch(() => {});
+    }
+  }, [modelIsOnDevice]);
   const [systemPrompt, setSystemPrompt] = useState<string | undefined>();
 
   useEffect(() => {
@@ -224,18 +239,28 @@ export function useTransport(
       async (groups, text) => {
         const parts: string[] = [];
 
-        if (groups.includes("calendar") && store) {
-          parts.push(buildScheduleContext(store, rangeForMessage(text)));
+        // The calendar is always there. A question about particular days gets
+        // those days; anything else gets today and tomorrow.
+        if (store) {
+          parts.push(
+            buildScheduleContext(
+              store,
+              rangeForMessage(groups.includes("calendar") ? text : ""),
+            ),
+          );
         }
 
         if (groups.includes("inbox")) {
           parts.push(await loadInboxContext(text));
+        } else if (modelIsOnDevice) {
+          const snapshot = await loadInboxSnapshot();
+          if (snapshot) parts.push(snapshot);
         }
 
         return parts.length > 0 ? parts.join("\n\n") : null;
       },
     );
-  }, [model, tools, effectiveSystemPrompt, store]);
+  }, [model, tools, effectiveSystemPrompt, store, modelIsOnDevice]);
 
   return {
     transport,

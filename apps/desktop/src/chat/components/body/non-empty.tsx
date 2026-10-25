@@ -1,4 +1,5 @@
 import type { ChatStatus } from "ai";
+import { RotateCcwIcon } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 
 import { ErrorMessage } from "~/chat/components/message/error";
@@ -78,11 +79,26 @@ export function ChatBodyNonEmpty({
         )}
       </AnimatePresence>
       {showErrorState && <ErrorMessage error={error} onRetry={onReload} />}
-      {noReply && (
-        <ErrorMessage
-          error={new Error("No answer came back. Try again.")}
-          onRetry={onReload}
-        />
+      {noReply && <NoReplyNotice onRetry={onReload} />}
+    </div>
+  );
+}
+
+// Not an error, so it does not look like one: a quiet line in the same voice as
+// the rest of the chat, with a way to try again.
+function NoReplyNotice({ onRetry }: { onRetry?: () => void }) {
+  return (
+    <div className="text-muted-foreground flex items-center gap-2 px-0.5 py-2.5 text-[15px]">
+      <span>No answer came back.</span>
+      {onRetry && (
+        <button
+          type="button"
+          onClick={onRetry}
+          className="text-foreground hover:bg-accent flex items-center gap-1.5 rounded-full px-2.5 py-1 text-sm transition-colors"
+        >
+          <RotateCcwIcon className="size-3.5" />
+          Try again
+        </button>
       )}
     </div>
   );

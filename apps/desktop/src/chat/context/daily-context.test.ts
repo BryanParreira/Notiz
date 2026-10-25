@@ -5,8 +5,12 @@ import { buildScheduleContext, rangeForMessage } from "./daily-context";
 const at = (day: number, hour: number, minute = 0) =>
   new Date(2026, 9, day, hour, minute).toISOString();
 
-const storeWith = (events: Record<string, Record<string, unknown>>) => ({
-  getTable: () => events,
+const storeWith = (
+  events: Record<string, Record<string, unknown>>,
+  calendars: Record<string, Record<string, unknown>> = {},
+) => ({
+  getTable: (tableId: "events" | "calendars") =>
+    tableId === "events" ? events : calendars,
 });
 
 // Saturday, 24 Oct 2026, 5:46 PM.
@@ -14,12 +18,33 @@ const now = new Date(2026, 9, 24, 17, 46);
 
 describe("rangeForMessage", () => {
   it("reads the days a question is about", () => {
-    expect(rangeForMessage("what do i have this week?", now).label).toBe(
-      "this week",
-    );
     expect(rangeForMessage("anything next week", now).label).toBe("next week");
     expect(rangeForMessage("am i free tomorrow", now).label).toBe("tomorrow");
     expect(rangeForMessage("what's on today", now).label).toBe("today");
+  });
+
+  it("reads 'upcoming week' as the next seven days", () => {
+    const range = rangeForMessage(
+      "what do i have to do this upcoming week?",
+      now,
+    );
+
+    expect(range.label).toBe("the next 7 days");
+    expect(range.from.getDate()).toBe(24);
+    expect(range.to.getDate()).toBe(30);
+  });
+
+  it("treats 'this week' on a weekend as the week about to start", () => {
+    const range = rangeForMessage("what do i have this week?", now);
+
+    expect(range.label).toBe("the coming week");
+    expect(range.to.getDate()).toBe(30);
+  });
+
+  it("keeps 'this week' as the rest of the week on a weekday", () => {
+    const wednesday = new Date(2026, 9, 28, 9);
+
+    expect(rangeForMessage("this week", wednesday).label).toBe("this week");
   });
 
   it("finds the next given weekday", () => {
@@ -70,7 +95,7 @@ describe("buildScheduleContext", () => {
       rangeForMessage("today", now),
       now,
     );
-    expect(empty).toContain("Nothing is scheduled.");
+    expect(empty).toContain("No calendar events are synced yet");
 
     const allDay = buildScheduleContext(
       storeWith({
@@ -93,5 +118,65 @@ describe("buildScheduleContext", () => {
     );
 
     expect(text).toContain("Nothing is scheduled.");
+  });
+
+  it("skips events from calendars the user has switched off", () => {
+    const text = buildScheduleContext(
+      storeWith(
+        {
+          a: { title: "Class", started_at: at(25, 9), calendar_id: "on" },
+          b: { title: "Birthday", started_at: at(25, 10), calendar_id: "off" },
+        },
+        { on: { enabled: true }, off: { enabled: false } },
+      ),
+      rangeForMessage("tomorrow", now),
+      now,
+    );
+
+    expect(text).toContain("Class");
+    expect(text).not.toContain("Birthday");
+  });
+
+  it("tells the assistant when no calendar is synced at all", () => {
+    const text = buildScheduleContext(
+      storeWith({}),
+      rangeForMessage("today", now),
+      now,
+    );
+
+    expect(text).toContain("No calendar events are synced yet");
+  });
+
+  it("shows what is coming up when today and tomorrow are empty", () => {
+    const text = buildScheduleContext(
+      storeWith({
+        a: { title: "CIS 121", started_at: at(26, 8), ended_at: at(26, 9) },
+        b: { title: "Far away", started_at: at(30, 8) },
+        c: {
+          title: "Months away",
+          started_at: new Date(2027, 2, 1).toISOString(),
+        },
+      }),
+      rangeForMessage("check my calendar", now),
+      now,
+    );
+
+    expect(text).toContain(
+      "Nothing is scheduled today and tomorrow. Coming up next:",
+    );
+    expect(text).toContain("CIS 121");
+    expect(text).toContain("Far away");
+    expect(text).not.toContain("Months away");
+  });
+
+  it("does not look ahead when a specific day was asked about", () => {
+    const text = buildScheduleContext(
+      storeWith({ a: { title: "CIS 121", started_at: at(26, 8) } }),
+      rangeForMessage("what do i have tomorrow", now),
+      now,
+    );
+
+    expect(text).toContain("Nothing is scheduled.");
+    expect(text).not.toContain("CIS 121");
   });
 });

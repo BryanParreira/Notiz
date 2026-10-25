@@ -65,19 +65,17 @@ export const TOOL_GROUPS = {
     "edit_summary",
   ],
   contacts: ["search_contacts"],
-  web: ["web_search"],
 } as const;
 
 export type ToolGroup = keyof typeof TOOL_GROUPS;
 
 const GROUP_HINTS: Record<ToolGroup, RegExp> = {
   calendar:
-    /\b(calendar|schedule|agenda|appointments?|events?|today|tonight|tomorrow|this (?:week|weekend|month|morning|afternoon|evening)|next (?:week|month)|monday|tuesday|wednesday|thursday|friday|saturday|sunday|busy|my (?:day|week))\b/i,
+    /\b(calendar|schedule|agenda|appointments?|events?|plans?|planned|upcoming|coming up|to[- ]?do|what do i have|week|today|tonight|tomorrow|this (?:week|weekend|month|morning|afternoon|evening)|next (?:week|month)|monday|tuesday|wednesday|thursday|friday|saturday|sunday|busy|my (?:day|week))\b/i,
   inbox: /\b(inbox|e-?mails?|mail|unread|replied|reply|sent me)\b/i,
   notes:
     /\b(notes?|meetings?|transcripts?|summar(?:y|ies|ize|ise)|recordings?|action items?|follow[- ]?ups?|decided|discuss(?:ed|ion)?|what did (?:i|we)|did (?:i|we))\b/i,
   contacts: /\b(contacts?|phone number)\b/i,
-  web: /\b(search the web|look up|google|latest news|news)\b|https?:\/\//i,
 };
 
 export function toolGroupsForMessage(text: string): ToolGroup[] {
