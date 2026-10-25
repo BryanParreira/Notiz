@@ -208,7 +208,17 @@ function RenderContent({ part }: { part: Part }) {
   }
 
   if (part.state === "output-error") {
-    return <div className="text-sm text-red-500">Error: {part.errorText}</div>;
+    return (
+      <div className="flex flex-col gap-1">
+        <div className="text-sm">
+          Couldn't search your notes this time, so the answer comes without
+          them.
+        </div>
+        <div className="text-muted-foreground text-[11px] break-words">
+          {part.errorText}
+        </div>
+      </div>
+    );
   }
 
   return details.length > 0 ? (

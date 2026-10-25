@@ -66,11 +66,49 @@ const createdAtFilterSchema = z
     "Date filter for sessions. Uses event started_at for event-backed sessions, otherwise session created_at.",
   );
 
+// Small models often send `filters` as a string like "{'kind': 'relative',
+// 'recent_days': 7}" or without the `created_at` wrapper. Repair what can be
+// read and drop the rest, so a sloppy filter never fails the whole search.
+export function coerceSearchFilters(value: unknown): unknown {
+  let filters = value;
+
+  if (typeof filters === "string") {
+    const text = filters.trim();
+    if (!text) return undefined;
+    try {
+      filters = JSON.parse(text);
+    } catch {
+      try {
+        filters = JSON.parse(text.replace(/'/g, '"'));
+      } catch {
+        return undefined;
+      }
+    }
+  }
+
+  if (typeof filters !== "object" || filters === null) return undefined;
+
+  if ("kind" in filters && !("created_at" in filters)) {
+    return { created_at: filters };
+  }
+
+  const createdAt = (filters as { created_at?: unknown }).created_at;
+  if (typeof createdAt === "string") {
+    return { created_at: coerceSearchFilters(createdAt) };
+  }
+
+  return filters;
+}
+
 const searchSessionsFiltersSchema = z
-  .object({
-    created_at: createdAtFilterSchema.optional(),
-  })
-  .optional()
+  .preprocess(
+    coerceSearchFilters,
+    z
+      .object({
+        created_at: createdAtFilterSchema.optional(),
+      })
+      .optional(),
+  )
   .describe("Optional session filters");
 
 type AbsoluteCreatedAtFilter = z.infer<typeof absoluteCreatedAtFilterSchema>;

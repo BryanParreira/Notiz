@@ -1,5 +1,6 @@
 import { CONTEXT_TEXT_FIELD } from "./context-text";
 import { buildEditSummaryTool } from "./edit-summary";
+import { buildListScheduleTool } from "./list-schedule";
 import {
   buildGrepNotesTool,
   buildListRelatedNotesTool,
@@ -71,6 +72,7 @@ export const buildChatTools = (deps: ToolDependencies) => ({
     "search_calendar_events",
     buildSearchCalendarEventsTool(deps),
   ),
+  list_schedule: withToolLogging("list_schedule", buildListScheduleTool(deps)),
   web_search: withToolLogging("web_search", buildWebSearchTool(deps)),
   edit_summary: withToolLogging("edit_summary", buildEditSummaryTool(deps)),
   apply_session_correction: withToolLogging(
@@ -179,6 +181,28 @@ type LocalTools = {
     output: {
       query: string;
       results: CalendarEventSearchResult[];
+    };
+  };
+  list_schedule: {
+    input: {
+      range?: "today" | "tomorrow" | "this_week" | "next_week" | "next_7_days";
+      limit?: number;
+    };
+    output: {
+      range: string;
+      from: string;
+      to: string;
+      message?: string;
+      results: Array<{
+        id: string;
+        title: string;
+        when: string;
+        startedAt: string | null;
+        endedAt: string | null;
+        location: string | null;
+        meetingLink: string | null;
+        participantCount: number;
+      }>;
     };
   };
   web_search: {
