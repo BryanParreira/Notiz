@@ -17,8 +17,8 @@ msgstr ""
 msgid "(default)"
 msgstr "(default)"
 
-#: src/inbox/index.tsx:375
-#: src/inbox/index.tsx:470
+#: src/inbox/index.tsx:387
+#: src/inbox/index.tsx:482
 #: src/session/components/note-input/brief-emails.tsx:68
 msgid "(no subject)"
 msgstr "(no subject)"
@@ -345,7 +345,7 @@ msgstr "Check for updates"
 msgid "Checking folder..."
 msgstr "Checking folder..."
 
-#: src/inbox/index.tsx:287
+#: src/inbox/index.tsx:299
 msgid "Checking your inbox…"
 msgstr "Checking your inbox…"
 
@@ -463,7 +463,7 @@ msgstr "Connect"
 msgid "Connect {0}"
 msgstr "Connect {0}"
 
-#: src/inbox/index.tsx:256
+#: src/inbox/index.tsx:268
 msgid "Connect an email account to read your mail next to your notes. It is optional and read-only."
 msgstr "Connect an email account to read your mail next to your notes. It is optional and read-only."
 
@@ -475,7 +475,7 @@ msgstr "Connect an email account to read your mail next to your notes. It is opt
 msgid "Connect calendar (optional)"
 msgstr "Connect calendar (optional)"
 
-#: src/inbox/index.tsx:268
+#: src/inbox/index.tsx:280
 msgid "Connect email"
 msgstr "Connect email"
 
@@ -527,7 +527,7 @@ msgstr "Copied!"
 msgid "Copy as Markdown"
 msgstr "Copy as Markdown"
 
-#: src/chat/components/message/normal.tsx:84
+#: src/chat/components/message/normal.tsx:95
 msgid "Copy message"
 msgstr "Copy message"
 
@@ -937,11 +937,11 @@ msgstr "How long the mic must be active before triggering"
 msgid "Human"
 msgstr "Human"
 
-#: src/inbox/index.tsx:447
+#: src/inbox/index.tsx:459
 msgid "Images"
 msgstr "Images"
 
-#: src/inbox/index.tsx:447
+#: src/inbox/index.tsx:459
 msgid "Images off"
 msgstr "Images off"
 
@@ -965,7 +965,7 @@ msgstr "In {totalSeconds} second"
 msgid "In {totalSeconds} seconds"
 msgstr "In {totalSeconds} seconds"
 
-#: src/inbox/index.tsx:223
+#: src/inbox/index.tsx:235
 #: src/sidebar/nav.tsx:74
 msgid "Inbox"
 msgstr "Inbox"
@@ -1279,7 +1279,7 @@ msgstr "Note breadcrumb"
 msgid "Notes"
 msgstr "Notes"
 
-#: src/inbox/index.tsx:289
+#: src/inbox/index.tsx:301
 msgid "Nothing in your inbox."
 msgstr "Nothing in your inbox."
 
@@ -1480,7 +1480,7 @@ msgstr "Preparing transcript..."
 msgid "Previous match"
 msgstr "Previous match"
 
-#: src/inbox/index.tsx:227
+#: src/inbox/index.tsx:239
 msgid "Read-only mail from your own account. Nothing leaves this device."
 msgstr "Read-only mail from your own account. Nothing leaves this device."
 
@@ -1526,7 +1526,7 @@ msgstr "Regenerate action items"
 msgid "Regenerate insights"
 msgstr "Regenerate insights"
 
-#: src/chat/components/message/normal.tsx:92
+#: src/chat/components/message/normal.tsx:103
 msgid "Regenerate message"
 msgstr "Regenerate message"
 
@@ -1579,7 +1579,7 @@ msgstr "Replace with..."
 msgid "Replay"
 msgstr "Replay"
 
-#: src/inbox/index.tsx:456
+#: src/inbox/index.tsx:468
 msgid "Reply"
 msgstr "Reply"
 
@@ -1972,15 +1972,15 @@ msgstr "Thinking..."
 msgid "This folder is empty. Right-click any note and choose \"Move to\" to add it here."
 msgstr "This folder is empty. Right-click any note and choose \"Move to\" to add it here."
 
-#: src/inbox/index.tsx:540
+#: src/inbox/index.tsx:552
 msgid "This message has no readable text."
 msgstr "This message has no readable text."
 
-#: src/inbox/index.tsx:532
+#: src/inbox/index.tsx:544
 msgid "This message is long, so only the beginning is shown."
 msgstr "This message is long, so only the beginning is shown."
 
-#: src/inbox/index.tsx:521
+#: src/inbox/index.tsx:533
 msgid "This message is long, so some content may be missing."
 msgstr "This message is long, so some content may be missing."
 
@@ -2005,8 +2005,8 @@ msgstr "Transcript"
 msgid "Transcription"
 msgstr "Transcription"
 
-#: src/inbox/index.tsx:281
-#: src/inbox/index.tsx:513
+#: src/inbox/index.tsx:293
+#: src/inbox/index.tsx:525
 msgid "Try again"
 msgstr "Try again"
 
