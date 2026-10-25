@@ -26,6 +26,26 @@ export type CalendarEventSearchResult = {
   linkedSessionId: string | null;
 };
 
+export type InboxEmail = {
+  id: string;
+  fromName: string;
+  fromEmail: string;
+  subject: string;
+  date: string | null;
+  unread: boolean;
+};
+
+export type EmailContent = {
+  id: string;
+  fromName: string;
+  fromEmail: string;
+  to: string;
+  subject: string;
+  date: string | null;
+  text: string;
+  truncated: boolean;
+};
+
 export type WebSearchResult = {
   title: string;
   url: string;
@@ -54,6 +74,10 @@ export interface ToolDependencies {
     query: string,
     limit: number,
   ) => Promise<CalendarEventSearchResult[]>;
+  getInboxMessages?: (
+    limit: number,
+  ) => Promise<{ connected: boolean; messages: InboxEmail[] }>;
+  readInboxMessage?: (id: string) => Promise<EmailContent | null>;
   getStore: () => Store | undefined;
   getIndexes: () => Indexes | undefined;
   getSessionId: () => string | undefined;

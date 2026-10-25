@@ -1,5 +1,6 @@
 import { CONTEXT_TEXT_FIELD } from "./context-text";
 import { buildEditSummaryTool } from "./edit-summary";
+import { buildListInboxTool, buildReadEmailTool } from "./inbox";
 import { buildListScheduleTool } from "./list-schedule";
 import {
   buildGrepNotesTool,
@@ -73,6 +74,8 @@ export const buildChatTools = (deps: ToolDependencies) => ({
     buildSearchCalendarEventsTool(deps),
   ),
   list_schedule: withToolLogging("list_schedule", buildListScheduleTool(deps)),
+  list_inbox: withToolLogging("list_inbox", buildListInboxTool(deps)),
+  read_email: withToolLogging("read_email", buildReadEmailTool(deps)),
   web_search: withToolLogging("web_search", buildWebSearchTool(deps)),
   edit_summary: withToolLogging("edit_summary", buildEditSummaryTool(deps)),
   apply_session_correction: withToolLogging(
@@ -203,6 +206,42 @@ type LocalTools = {
         meetingLink: string | null;
         participantCount: number;
       }>;
+    };
+  };
+  list_inbox: {
+    input: {
+      query?: string;
+      unread_only?: boolean;
+      days?: number;
+      limit?: number;
+    };
+    output: {
+      status: string;
+      message?: string;
+      notice?: string;
+      total_matches?: number;
+      results: Array<{
+        id: string;
+        from: string;
+        subject: string;
+        when: string | null;
+        unread: boolean;
+      }>;
+    };
+  };
+  read_email: {
+    input: { id: string };
+    output: {
+      status: string;
+      message?: string;
+      notice?: string;
+      id?: string;
+      from?: string;
+      to?: string;
+      subject?: string;
+      when?: string | null;
+      body?: string;
+      truncated?: boolean;
     };
   };
   web_search: {

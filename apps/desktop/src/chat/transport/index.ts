@@ -76,7 +76,22 @@ export class CustomChatTransport implements ChatTransport<NotizUIMessage> {
     private resolveContextRef?: (
       ref: ContextRef,
     ) => Promise<ResolvedChatContext | null>,
+    private getDailyContext?: () => string | null,
   ) {}
+
+  private buildInstructions(): string | undefined {
+    let daily: string | null = null;
+    try {
+      daily = this.getDailyContext?.() ?? null;
+    } catch (error) {
+      console.error("[chat] failed to build daily context", error);
+    }
+
+    const parts = [this.systemPrompt, daily].filter(
+      (part): part is string => !!part && part.trim().length > 0,
+    );
+    return parts.length > 0 ? parts.join("\n\n") : undefined;
+  }
 
   // Notes are only extra context. If loading them fails, answer without them
   // rather than failing the whole message.
@@ -249,7 +264,7 @@ export class CustomChatTransport implements ChatTransport<NotizUIMessage> {
 
     const agent = new ToolLoopAgent({
       model: this.model,
-      instructions: this.systemPrompt,
+      instructions: this.buildInstructions(),
       tools,
       stopWhen: stepCountIs(MAX_TOOL_STEPS),
       prepareStep: async ({ messages, stepNumber, steps }) => {

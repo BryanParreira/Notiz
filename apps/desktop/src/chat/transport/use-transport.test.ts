@@ -11,6 +11,7 @@ describe("chat transport prompt guidance", () => {
     expect(prompt).toContain("Base prompt");
     expect(prompt).toContain("general-purpose assistant first");
     expect(prompt).toContain("use list_schedule");
+    expect(prompt).toContain("use list_inbox");
     expect(prompt).toContain("use search_sessions");
     expect(prompt).toContain("greetings, small talk");
     expect(prompt).toContain("do not call any tool");

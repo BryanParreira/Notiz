@@ -1,10 +1,51 @@
-import { WrenchIcon } from "lucide-react";
+import {
+  CalendarIcon,
+  MailIcon,
+  UserSearchIcon,
+  WrenchIcon,
+} from "lucide-react";
 
 import { useToolState } from "./shared";
 
 import { Disclosure } from "~/chat/components/message/shared";
 import { extractMcpOutputText } from "~/chat/mcp/mcp-output-parser";
 import { CONTEXT_TEXT_FIELD } from "~/chat/tools/context-text";
+
+const FRIENDLY_TOOLS: Record<
+  string,
+  { running: string; done: string; failed: string; icon: typeof WrenchIcon }
+> = {
+  list_inbox: {
+    running: "Checking your inbox…",
+    done: "Checked your inbox",
+    failed: "Couldn't check your inbox",
+    icon: MailIcon,
+  },
+  read_email: {
+    running: "Reading an email…",
+    done: "Read an email",
+    failed: "Couldn't read that email",
+    icon: MailIcon,
+  },
+  list_schedule: {
+    running: "Checking your calendar…",
+    done: "Checked your calendar",
+    failed: "Couldn't check your calendar",
+    icon: CalendarIcon,
+  },
+  search_calendar_events: {
+    running: "Searching your calendar…",
+    done: "Searched your calendar",
+    failed: "Couldn't search your calendar",
+    icon: CalendarIcon,
+  },
+  search_contacts: {
+    running: "Looking up contacts…",
+    done: "Looked up contacts",
+    failed: "Couldn't look up contacts",
+    icon: UserSearchIcon,
+  },
+};
 
 function formatToolName(name: string): string {
   return name.replace(/_/g, " ").replace(/^\w/, (c) => c.toUpperCase());
@@ -50,17 +91,19 @@ export function ToolGeneric({ part }: { part: Record<string, unknown> }) {
   );
   const { failed } = useToolState(part as { state: string });
   const done = (part.state as string) === "output-available";
+  const friendly = FRIENDLY_TOOLS[toolName];
+  const Icon = friendly?.icon ?? WrenchIcon;
 
   if (done || failed) {
     const outputText = done ? formatOutputText(part.output) : null;
 
     return (
       <Disclosure
-        icon={<WrenchIcon className="h-3 w-3" />}
+        icon={<Icon className="h-3 w-3" />}
         title={
           failed
-            ? `${formatToolName(toolName)} failed`
-            : formatToolName(toolName)
+            ? (friendly?.failed ?? `${formatToolName(toolName)} failed`)
+            : (friendly?.done ?? formatToolName(toolName))
         }
       >
         <div className="flex flex-col gap-2">
@@ -82,8 +125,8 @@ export function ToolGeneric({ part }: { part: Record<string, unknown> }) {
 
   return (
     <Disclosure
-      icon={<WrenchIcon className="h-3 w-3" />}
-      title={`Running ${formatToolName(toolName)}…`}
+      icon={<Icon className="h-3 w-3" />}
+      title={friendly?.running ?? `Running ${formatToolName(toolName)}…`}
       disabled
     >
       {null}
