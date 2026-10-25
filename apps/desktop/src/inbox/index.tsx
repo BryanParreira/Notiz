@@ -20,6 +20,7 @@ import { commands as openerCommands } from "@notiz/plugin-opener2";
 import { cn } from "@notiz/utils";
 
 import { EmailFrame } from "./email-frame";
+import { takePendingInboxSelection } from "./pending-selection";
 
 import { useMailAccounts } from "~/settings/email";
 import { StandardTabWrapper } from "~/shared/main";
@@ -156,6 +157,17 @@ export function TabContentInbox() {
     setSelectedKey(message.key);
     setReadKeys((prev) => new Set(prev).add(message.key));
   };
+
+  // An email opened from chat is picked once the list has loaded.
+  useEffect(() => {
+    if (isFetching || messages.length === 0) return;
+
+    const key = takePendingInboxSelection();
+    if (key && messages.some((message) => message.key === key)) {
+      setSelectedKey(key);
+      setReadKeys((prev) => new Set(prev).add(key));
+    }
+  }, [isFetching, messages]);
 
   // Keep the selected row in view by scrolling only the list; scrollIntoView
   // can also move ancestor containers and shift the whole layout.
