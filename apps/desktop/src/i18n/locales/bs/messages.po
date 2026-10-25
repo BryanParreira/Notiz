@@ -96,7 +96,7 @@ msgstr ""
 msgid "Add a summary to this note first."
 msgstr ""
 
-#: src/settings/email/index.tsx:133
+#: src/settings/email/index.tsx:136
 msgid "Add an account"
 msgstr ""
 
@@ -350,7 +350,7 @@ msgid "Checking your inbox…"
 msgstr ""
 
 #: src/settings/calendar/index.tsx:252
-#: src/settings/email/index.tsx:235
+#: src/settings/email/index.tsx:238
 #: src/settings/general/index.tsx:335
 msgid "Checking…"
 msgstr ""
@@ -451,7 +451,7 @@ msgstr ""
 msgid "Confirm"
 msgstr ""
 
-#: src/settings/email/index.tsx:235
+#: src/settings/email/index.tsx:238
 msgid "Connect"
 msgstr ""
 
@@ -1327,7 +1327,7 @@ msgstr ""
 
 #: src/calendar/components/apple/permission.tsx:156
 #: src/settings/calendar/index.tsx:194
-#: src/settings/email/index.tsx:208
+#: src/settings/email/index.tsx:211
 #: src/settings/general/permissions.tsx:100
 #: src/task/resource-view.tsx:280
 msgid "Open"
@@ -1402,7 +1402,11 @@ msgid "Option"
 msgstr ""
 
 #: src/settings/email/index.tsx:49
-msgid "Optional and read-only. Notiz talks straight to your mail provider from this device, keeps the password in your Keychain, and only reads message headers to show context for your meetings. It never sends, deletes or marks mail as read."
+#~ msgid "Optional and read-only. Notiz talks straight to your mail provider from this device, keeps the password in your Keychain, and only reads message headers to show context for your meetings. It never sends, deletes or marks mail as read."
+#~ msgstr ""
+
+#: src/settings/email/index.tsx:49
+msgid "Optional and read-only. Notiz talks straight to your mail provider from this device, keeps the password in your Keychain, and only reads message headers to show context for your meetings. It never sends, deletes or marks mail as read. The first time it reads the saved password, macOS may ask you to allow it: that is your Mac protecting the Keychain, and choosing Always Allow stops it from asking again."
 msgstr ""
 
 #: src/calendar/components/apple/permission.tsx:154
