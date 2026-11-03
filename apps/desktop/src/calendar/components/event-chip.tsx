@@ -155,7 +155,7 @@ export function EventChip({ eventId }: { eventId: string }) {
   );
 }
 
-function EventPopoverContent({ eventId }: { eventId: string }) {
+export function EventPopoverContent({ eventId }: { eventId: string }) {
   const event = useEvent(eventId);
   const store = main.UI.useStore(main.STORE_ID);
   const openNew = useTabs((state) => state.openNew);

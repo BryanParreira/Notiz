@@ -38,16 +38,6 @@ const useNavigationEvents = () => {
       const [, type, id] = match;
       if (type === "session") {
         openNew({ type: "sessions", id });
-      } else if (type === "human") {
-        openNew({
-          type: "contacts",
-          state: { selected: { type: "person", id } },
-        });
-      } else if (type === "organization") {
-        openNew({
-          type: "contacts",
-          state: { selected: { type: "organization", id } },
-        });
       }
     };
 

@@ -1,11 +1,9 @@
-import { Trans, useLingui } from "@lingui/react/macro";
-import { usePrevious } from "@uidotdev/usehooks";
+import { useLingui } from "@lingui/react/macro";
 import {
   type CSSProperties,
   forwardRef,
   memo,
   useCallback,
-  useEffect,
   useImperativeHandle,
   useLayoutEffect,
   useRef,
@@ -15,7 +13,6 @@ import { useResizeObserver } from "usehooks-ts";
 
 import { cn } from "@notiz/utils";
 
-import { useTitleGenerating } from "~/ai/hooks";
 import * as main from "~/store/tinybase/store/main";
 import { useLiveTitle } from "~/store/zustand/live-title";
 import { type Tab } from "~/store/zustand/tabs";
@@ -50,78 +47,10 @@ export const TitleInput = forwardRef<
       id: sessionId,
       state: { view },
     } = tab;
-    const isGenerating = useTitleGenerating(sessionId);
-    const wasGenerating = usePrevious(isGenerating);
-    const [showRevealAnimation, setShowRevealAnimation] = useState(false);
-    const [generatedTitle, setGeneratedTitle] = useState<string | null>(null);
-    const storeTitle = main.UI.useCell(
-      "sessions",
-      sessionId,
-      "title",
-      main.STORE_ID,
-    ) as string | undefined;
-
     const editorId = view ? "active" : "inactive";
     const inputRef = useRef<TitleInputHandle>(null);
 
     useImperativeHandle(ref, () => inputRef.current!, []);
-
-    useEffect(() => {
-      if (wasGenerating && !isGenerating) {
-        setGeneratedTitle(storeTitle ?? null);
-        setShowRevealAnimation(true);
-        const timer = setTimeout(() => {
-          setShowRevealAnimation(false);
-        }, 1000);
-        return () => clearTimeout(timer);
-      }
-    }, [wasGenerating, isGenerating, storeTitle]);
-
-    if (isGenerating) {
-      return (
-        <div
-          data-tauri-drag-region="false"
-          className={cn([
-            "flex w-full items-center justify-start",
-            variant === "breadcrumb" ? "h-5" : "h-8",
-          ])}
-        >
-          <span
-            className={cn([
-              "text-muted-foreground animate-pulse",
-              variant === "breadcrumb"
-                ? "text-sm leading-5"
-                : "font-display text-3xl leading-tight font-normal",
-            ])}
-          >
-            <Trans>Generating title...</Trans>
-          </span>
-        </div>
-      );
-    }
-
-    if (showRevealAnimation && generatedTitle) {
-      return (
-        <div
-          data-tauri-drag-region="false"
-          className={cn([
-            "flex w-full items-center justify-start overflow-hidden",
-            variant === "breadcrumb" ? "h-5" : "h-8",
-          ])}
-        >
-          <span
-            className={cn([
-              "animate-reveal-left whitespace-nowrap",
-              variant === "breadcrumb"
-                ? "text-sm leading-5"
-                : "font-display text-3xl leading-tight font-normal",
-            ])}
-          >
-            {generatedTitle}
-          </span>
-        </div>
-      );
-    }
 
     return (
       <TitleInputInner

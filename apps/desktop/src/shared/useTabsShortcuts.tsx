@@ -2,11 +2,9 @@ import { useCallback, useRef } from "react";
 import { useHotkeys } from "react-hotkeys-hook";
 import { useShallow } from "zustand/shallow";
 
-import { useShell } from "~/contexts/shell";
 import { useMountEffect } from "~/shared/hooks/useMountEffect";
-import { useNewNote, useNewNoteAndListen } from "~/shared/useNewNote";
+import { useNewNote } from "~/shared/useNewNote";
 import { uniqueIdfromTab, useTabs } from "~/store/zustand/tabs";
-import { useListener } from "~/stt/contexts";
 
 export function useMainTabsShortcuts({ onModT }: { onModT: () => void }) {
   const runEscapeShortcut = useMainEscapeShortcutAction();
@@ -20,7 +18,6 @@ export function useMainTabsShortcuts({ onModT }: { onModT: () => void }) {
     restoreLastClosedTab,
     openNew,
     unpin,
-    setPendingCloseConfirmationTab,
   } = useTabs(
     useShallow((state) => ({
       tabs: state.tabs,
@@ -32,21 +29,14 @@ export function useMainTabsShortcuts({ onModT }: { onModT: () => void }) {
       restoreLastClosedTab: state.restoreLastClosedTab,
       openNew: state.openNew,
       unpin: state.unpin,
-      setPendingCloseConfirmationTab: state.setPendingCloseConfirmationTab,
     })),
   );
-  const liveSessionId = useListener((state) => state.live.sessionId);
-  const liveStatus = useListener((state) => state.live.status);
-  const isListening = liveStatus === "active" || liveStatus === "finalizing";
-  const { chat } = useShell();
 
   const newNote = useNewNote();
   const newNoteCurrent = useNewNote({ behavior: "current" });
 
   const escapeShortcutRef = useRef(runEscapeShortcut);
   escapeShortcutRef.current = runEscapeShortcut;
-  const chatRef = useRef(chat);
-  chatRef.current = chat;
 
   useMountEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
@@ -61,7 +51,6 @@ export function useMainTabsShortcuts({ onModT }: { onModT: () => void }) {
         fromProseMirrorEditor &&
         document.querySelector("[data-editor-escape-consumer]") !== null;
       const hadMeaningfulFocus = hasMeaningfulFocus(event.target);
-      const hadOpenChat = chatRef.current.mode !== "FloatingClosed";
 
       window.setTimeout(() => {
         if (
@@ -73,11 +62,6 @@ export function useMainTabsShortcuts({ onModT }: { onModT: () => void }) {
             hadMeaningfulFocus,
           })
         ) {
-          return;
-        }
-
-        if (hadOpenChat) {
-          chatRef.current.sendEvent({ type: "CLOSE" });
           return;
         }
 
@@ -94,11 +78,6 @@ export function useMainTabsShortcuts({ onModT }: { onModT: () => void }) {
   useHotkeys(
     "mod+n",
     () => {
-      if (isPersistentChatInputFocused(chat.mode)) {
-        chat.startNewChat();
-        return;
-      }
-
       if (currentTab?.type === "empty") {
         newNoteCurrent();
       } else {
@@ -110,7 +89,7 @@ export function useMainTabsShortcuts({ onModT }: { onModT: () => void }) {
       enableOnFormTags: true,
       enableOnContentEditable: true,
     },
-    [chat, currentTab, newNote, newNoteCurrent],
+    [currentTab, newNote, newNoteCurrent],
   );
 
   useHotkeys(
@@ -128,13 +107,7 @@ export function useMainTabsShortcuts({ onModT }: { onModT: () => void }) {
     "mod+w",
     async () => {
       if (currentTab) {
-        const isCurrentTabListening =
-          isListening &&
-          currentTab.type === "sessions" &&
-          currentTab.id === liveSessionId;
-        if (isCurrentTabListening) {
-          setPendingCloseConfirmationTab(currentTab);
-        } else if (currentTab.pinned) {
+        if (currentTab.pinned) {
           unpin(currentTab);
         } else {
           close(currentTab);
@@ -146,14 +119,7 @@ export function useMainTabsShortcuts({ onModT }: { onModT: () => void }) {
       enableOnFormTags: true,
       enableOnContentEditable: true,
     },
-    [
-      currentTab,
-      close,
-      unpin,
-      isListening,
-      liveSessionId,
-      setPendingCloseConfirmationTab,
-    ],
+    [currentTab, close, unpin],
   );
 
   useHotkeys(
@@ -210,7 +176,7 @@ export function useMainTabsShortcuts({ onModT }: { onModT: () => void }) {
 
   useHotkeys(
     "mod+shift+comma",
-    () => openNew({ type: "settings", state: { tab: "transcription" } }),
+    () => openNew({ type: "settings", state: { tab: "general" } }),
     {
       preventDefault: true,
       enableOnFormTags: true,
@@ -219,31 +185,11 @@ export function useMainTabsShortcuts({ onModT }: { onModT: () => void }) {
     [openNew],
   );
 
-  const newNoteAndListen = useNewNoteAndListen();
-
-  useHotkeys(
-    "mod+shift+n",
-    () => newNoteAndListen(),
-    {
-      preventDefault: true,
-      enableOnFormTags: true,
-      enableOnContentEditable: true,
-    },
-    [newNoteAndListen],
-  );
-
   return { runEscapeShortcut };
 }
 
 export function useMainEscapeShortcutAction() {
-  const { chat } = useShell();
-
   return useCallback(() => {
-    if (chat.mode !== "FloatingClosed") {
-      chat.sendEvent({ type: "CLOSE" });
-      return;
-    }
-
     const { tabs, currentTab, openCurrent, select, goBack, canGoBack } =
       useTabs.getState();
 
@@ -278,7 +224,7 @@ export function useMainEscapeShortcutAction() {
     }
 
     openCurrent({ type: "empty" });
-  }, [chat.mode, chat.sendEvent]);
+  }, []);
 }
 
 function shouldSkipEscapeShortcut(
@@ -368,23 +314,4 @@ function isFromSessionSurface(target: EventTarget | null) {
     target instanceof Element &&
     target.closest("[data-session-surface]") !== null
   );
-}
-
-function isPersistentChatInputFocused(
-  mode: ReturnType<typeof useShell>["chat"]["mode"],
-) {
-  if (mode === "FloatingClosed") {
-    return false;
-  }
-
-  if (typeof document === "undefined") {
-    return false;
-  }
-
-  const activeElement = document.activeElement;
-  if (!(activeElement instanceof HTMLElement)) {
-    return false;
-  }
-
-  return activeElement.closest("[data-chat-message-input]") !== null;
 }

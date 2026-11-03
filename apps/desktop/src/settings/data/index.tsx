@@ -12,7 +12,6 @@ import {
 import { ImportPreview } from "./import-preview";
 import { SourceItem } from "./source-item";
 
-import { StyledStreamdown } from "~/settings/ai/shared";
 import { importData } from "~/store/tinybase/store/importer";
 import * as main from "~/store/tinybase/store/main";
 import { save } from "~/store/tinybase/store/save";
@@ -95,9 +94,9 @@ export function Data() {
 
   return (
     <div>
-      <StyledStreamdown className="text-muted-foreground">
-        {"Import data from other apps."}
-      </StyledStreamdown>
+      <p className="text-muted-foreground mt-1 text-sm">
+        Import data from other apps.
+      </p>
 
       <div className="mt-4 flex flex-col gap-3">
         {dryRunResult ? (

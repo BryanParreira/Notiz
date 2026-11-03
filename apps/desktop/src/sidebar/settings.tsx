@@ -1,17 +1,13 @@
 import { Trans, useLingui } from "@lingui/react/macro";
 import { platform } from "@tauri-apps/plugin-os";
 import {
-  AudioLinesIcon,
   ArrowUpRightIcon,
   BellIcon,
-  MicIcon,
   CalendarIcon,
   ImportIcon,
   LockIcon,
   MailIcon,
-  SlidersHorizontalIcon,
   SmartphoneIcon,
-  SparklesIcon,
 } from "lucide-react";
 import { useCallback } from "react";
 
@@ -65,18 +61,6 @@ export function SettingsNav() {
         { id: "email", label: t`Email`, icon: MailIcon },
       ],
     },
-    {
-      label: "AI",
-      items: [
-        { id: "transcription", label: t`Transcription`, icon: AudioLinesIcon },
-        { id: "intelligence", label: t`Intelligence`, icon: SparklesIcon },
-        {
-          id: "personalization",
-          label: t`Personalization`,
-          icon: SlidersHorizontalIcon,
-        },
-      ],
-    },
   ];
   const isMacos = platform() === "macos";
   if (isMacos) {
@@ -84,11 +68,6 @@ export function SettingsNav() {
       id: "permissions" as const,
       label: t`Permissions`,
       icon: LockIcon,
-    });
-    groups[1].items.push({
-      id: "dictation" as const,
-      label: t`Dictation`,
-      icon: MicIcon,
     });
   }
 

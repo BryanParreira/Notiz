@@ -66,9 +66,6 @@ jobs:
           APPLE_PASSWORD: ${{ secrets.APPLE_PASSWORD }}
           APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
 
-      - name: Stage bundled llama-server
-        run: ./apps/desktop/src-tauri/scripts/fetch-llama-server.sh
-
       - name: Build desktop app
         run: |
           BUILD_ARGS=(

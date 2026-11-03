@@ -64,7 +64,6 @@ describe("LeftSidebar", () => {
     expect(container.firstElementChild?.className).toContain("pt-0");
     expect(screen.getByRole("navigation")).toBeTruthy();
     expect(screen.getByText("Home")).toBeTruthy();
-    expect(screen.getByText("Chat")).toBeTruthy();
     expect(screen.getByLabelText("Private, on this device")).toBeTruthy();
     expect(screen.getByText("Settings")).toBeTruthy();
   });

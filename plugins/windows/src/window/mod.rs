@@ -1,7 +1,7 @@
-pub(crate) mod composer;
 pub(crate) mod devtools_panel;
 pub(crate) mod floating_bar;
 pub(crate) mod live_caption;
+pub mod tray_panel;
 mod v1;
 
 pub type AppWindow = v1::AppWindow;

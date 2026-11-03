@@ -194,8 +194,8 @@ impl AppWindow {
     }
 
     pub fn hide(&self, app: &AppHandle<tauri::Wry>) -> Result<(), crate::Error> {
-        if matches!(self, Self::Composer) {
-            crate::window::composer::hide(app)?;
+        if matches!(self, Self::TrayPanel) {
+            crate::window::tray_panel::hide(app)?;
             let _ = events::VisibilityEvent {
                 window: self.clone(),
                 visible: false,
@@ -259,9 +259,9 @@ impl AppWindow {
         &self,
         app: &AppHandle<tauri::Wry>,
     ) -> Result<Option<WebviewWindow>, crate::Error> {
-        if matches!(self, Self::Composer) {
+        if matches!(self, Self::TrayPanel) {
             return if self.get(app).is_some() {
-                crate::window::composer::show(app).map(Some)
+                crate::window::tray_panel::show(app).map(Some)
             } else {
                 Ok(None)
             };
@@ -313,8 +313,8 @@ impl AppWindow {
     {
         self.prepare_show(app);
 
-        if matches!(self, Self::Composer) {
-            let window = crate::window::composer::show(app)?;
+        if matches!(self, Self::TrayPanel) {
+            let window = crate::window::tray_panel::show(app)?;
 
             let _ = events::VisibilityEvent {
                 window: self.clone(),
@@ -352,8 +352,8 @@ impl AppWindow {
     {
         self.prepare_show(app);
 
-        if matches!(self, Self::Composer) {
-            let window = crate::window::composer::show(app)?;
+        if matches!(self, Self::TrayPanel) {
+            let window = crate::window::tray_panel::show(app)?;
 
             let _ = events::VisibilityEvent {
                 window: self.clone(),

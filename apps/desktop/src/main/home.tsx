@@ -1,15 +1,14 @@
-import { Trans, useLingui } from "@lingui/react/macro";
+import { Trans } from "@lingui/react/macro";
 import { useQuery } from "@tanstack/react-query";
 import { format, isSameDay, isToday, parseISO, startOfDay } from "date-fns";
-import { ArrowUpIcon, FileTextIcon, MailIcon, PlusIcon } from "lucide-react";
-import { useMemo, useState } from "react";
+import { FileTextIcon, MailIcon, PlusIcon } from "lucide-react";
+import { useMemo } from "react";
 
 import { Kbd } from "@notiz/ui/components/ui/kbd";
 import { cn } from "@notiz/utils";
 
-import { fetchInboxMessages } from "~/chat/context/inbox-data";
-import { setPendingChatPrompt } from "~/chat/pending-prompt";
 import { NotesList } from "~/folders/notes-list";
+import { fetchInboxMessages } from "~/inbox/data";
 import { selectInboxMessageOnOpen } from "~/inbox/pending-selection";
 import { AppleMailConnect } from "~/settings/email/apple-mail";
 import { useConfigValue } from "~/shared/config";
@@ -89,7 +88,6 @@ export function Home() {
             <Notes />
           </div>
         </div>
-        <AskBar />
       </div>
     </StandardTabWrapper>
   );
@@ -171,11 +169,12 @@ function ComingUp() {
 }
 
 const GLANCE_COUNT = 4;
+const INBOX_FETCH_LIMIT = 80;
 
 function useInboxGlance() {
   return useQuery({
     queryKey: ["home-inbox-glance"],
-    queryFn: () => fetchInboxMessages(30),
+    queryFn: () => fetchInboxMessages(INBOX_FETCH_LIMIT),
     staleTime: 2 * 60 * 1000,
     retry: false,
   });
@@ -218,7 +217,7 @@ function Briefing() {
   }
   if (unread > 0) {
     parts.push(
-      `${unread > 29 ? "30+" : unread} unread ${unread === 1 ? "email" : "emails"}.`,
+      `${unread >= INBOX_FETCH_LIMIT ? `${INBOX_FETCH_LIMIT}+` : unread} unread ${unread === 1 ? "email" : "emails"}.`,
     );
   }
 
@@ -269,7 +268,9 @@ function InboxGlance() {
         </h2>
         {unread.length > 0 && (
           <span className="bg-primary text-primary-foreground rounded-full px-2 py-0.5 text-xs">
-            {unread.length > 29 ? "30+" : unread.length}
+            {unread.length >= INBOX_FETCH_LIMIT
+              ? `${INBOX_FETCH_LIMIT}+`
+              : unread.length}
           </span>
         )}
       </button>
@@ -328,58 +329,5 @@ function Notes() {
         </section>
       }
     />
-  );
-}
-
-function AskBar() {
-  const { t } = useLingui();
-  const openNew = useTabs((state) => state.openNew);
-  const [value, setValue] = useState("");
-
-  const ask = (question: string) => {
-    const text = question.trim();
-    if (!text) return;
-    setPendingChatPrompt(text);
-    setValue("");
-    openNew({ type: "chat" });
-  };
-
-  return (
-    <div className="pointer-events-none absolute inset-x-0 bottom-0 flex justify-center px-6 pb-6">
-      <div
-        className={cn([
-          "pointer-events-auto flex w-full max-w-2xl items-center gap-3",
-          "border-border bg-card/90 rounded-full border py-2 pr-2 pl-5",
-          "shadow-[0_10px_30px_rgba(0,0,0,0.12)] backdrop-blur",
-          "focus-within:border-primary/50 transition-[border-color] duration-200",
-          "dark:shadow-[0_10px_30px_rgba(0,0,0,0.45)]",
-        ])}
-      >
-        <input
-          value={value}
-          onChange={(e) => setValue(e.target.value)}
-          onKeyDown={(e) => {
-            if (e.key === "Enter") ask(value);
-          }}
-          placeholder={t`Ask anything`}
-          aria-label={t`Ask Notiz anything`}
-          className="text-foreground placeholder:text-muted-foreground min-w-0 flex-1 bg-transparent text-base outline-none"
-        />
-        <button
-          type="button"
-          aria-label={t`Send`}
-          disabled={!value.trim()}
-          onClick={() => ask(value)}
-          className={cn([
-            "flex size-9 shrink-0 items-center justify-center rounded-full transition-all duration-150",
-            value.trim()
-              ? "bg-primary text-primary-foreground hover:opacity-90"
-              : "bg-secondary text-muted-foreground/50",
-          ])}
-        >
-          <ArrowUpIcon className="size-4" />
-        </button>
-      </div>
-    </div>
   );
 }

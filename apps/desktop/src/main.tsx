@@ -3,7 +3,7 @@ import "./styles/cursor.css";
 
 import { QueryClientProvider } from "@tanstack/react-query";
 import { createRouter, RouterProvider } from "@tanstack/react-router";
-import { StrictMode, useMemo } from "react";
+import { StrictMode } from "react";
 import ReactDOM from "react-dom/client";
 import { Provider as TinyBaseProvider, useStores } from "tinybase/ui-react";
 import { createManager } from "tinytick";
@@ -19,12 +19,11 @@ import {
 } from "@notiz/plugin-windows";
 import { Toaster } from "@notiz/ui/components/ui/toast";
 
-import { createToolRegistry } from "./contexts/tool-registry/core";
 import { AppI18nProvider } from "./i18n/provider";
-import { FloatingMeetingWindowHost } from "./meeting-float/host";
 import { routeTree } from "./routeTree.gen";
 import { EventListeners } from "./services/event-listeners";
 import { TaskManager } from "./services/task-manager";
+import { TraySync } from "./services/tray-sync";
 import { RawEditorSyncBridge } from "./session/raw-editor-sync";
 import { ErrorComponent, NotFoundComponent } from "./shared/control";
 import { SplashScreen } from "./shared/splash-screen";
@@ -40,12 +39,8 @@ import {
   type Store as SettingsStore,
   StoreComponent as SettingsStoreComponent,
 } from "./store/tinybase/store/settings";
-import { createAITaskStore } from "./store/zustand/ai-task";
-import { listenerStore } from "./store/zustand/listener/instance";
 
 import { queryClient } from "~/shared/query-client";
-
-const toolRegistry = createToolRegistry();
 
 const router = createRouter({
   routeTree,
@@ -66,14 +61,7 @@ function App() {
   const store = stores[STORE_ID] as unknown as Store;
   const settingsStore = stores[SETTINGS_STORE_ID] as unknown as SettingsStore;
 
-  const aiTaskStore = useMemo(() => {
-    if (!store || !settingsStore) {
-      return null;
-    }
-    return createAITaskStore({ persistedStore: store, settingsStore });
-  }, [store, settingsStore]);
-
-  if (!store || !settingsStore || !aiTaskStore) {
+  if (!store || !settingsStore) {
     return <SplashScreen />;
   }
 
@@ -85,9 +73,6 @@ function App() {
           context={{
             persistedStore: store,
             internalStore: store,
-            listenerStore,
-            aiTaskStore,
-            toolRegistry,
           }}
         />
       </AppI18nProvider>
@@ -110,8 +95,8 @@ function AppWithTiny() {
           <RawEditorSyncBridge />
           <App />
           {isMainWindow ? <TaskManager /> : null}
-          {isMainWindow ? <FloatingMeetingWindowHost /> : null}
           {isMainWindow ? <EventListeners /> : null}
+          {isMainWindow ? <TraySync /> : null}
           <Toaster />
         </TinyBaseProvider>
       </TinyTickProvider>

@@ -5,7 +5,6 @@ import {
 import { cn } from "@notiz/utils";
 
 export { MainShellBodyFrame } from "./body-frame";
-export { MainChatPanels } from "./chat-panels";
 export { useMainContentCenterOffset } from "./content-offset";
 export {
   MainSessionStatusBannerHost,

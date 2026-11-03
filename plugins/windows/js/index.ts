@@ -5,7 +5,7 @@ import { commands } from "./bindings.gen";
 
 export type WindowLabel =
   | "main"
-  | "composer"
+  | "tray-panel"
   | "floating"
   | `note-${string}`
   | "calendar"

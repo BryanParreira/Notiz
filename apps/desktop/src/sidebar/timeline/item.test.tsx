@@ -103,8 +103,8 @@ vi.mock("~/store/tinybase/store/main", () => ({
   STORE_ID: "main",
   INDEXES: { enhancedNotesBySession: "enhancedNotesBySession" },
   UI: {
-    useCell: (tableId: string) =>
-      tableId === "enhanced_notes" ? mocks.summaryContent : mocks.storeTitle,
+    useCell: (_tableId: string, _rowId: string, cellId: string) =>
+      cellId === "raw_md" ? mocks.summaryContent : mocks.storeTitle,
     useIndexes: () => ({}),
     useRow: () => null,
     useSliceRowIds: () => (mocks.summaryContent ? ["note-1"] : []),
@@ -183,45 +183,7 @@ describe("TimelineItemComponent", () => {
     mocks.timelineSelection.toggleSelect.mockClear();
   });
 
-  it("marks the active session row red in the sidebar timeline", () => {
-    mocks.sessionMode = "active";
-
-    render(
-      <TimelineItemComponent
-        item={{
-          type: "session",
-          id: "session-live",
-          data: {
-            title: "Live Note",
-            created_at: "2024-01-15T10:30:00.000Z",
-          },
-        }}
-        precision="time"
-        selected
-        timezone="UTC"
-        multiSelected={false}
-        flatItemKeys={["session-session-live"]}
-      />,
-    );
-
-    const rowButton = screen.getByText("Live Note").closest("button");
-
-    expect(rowButton?.className).toContain("bg-destructive");
-    expect(rowButton?.className).toContain("text-destructive-foreground");
-    expect(rowButton?.className).not.toContain("bg-accent");
-    expect(screen.getByTestId("dancing-sticks").dataset.amplitude).toBe("0.5");
-
-    const stopButton = screen.getByRole("button", { name: "Stop listening" });
-    expect(stopButton.className).toContain("text-white/80");
-    expect(stopButton.className).toContain("hover:text-white");
-
-    fireEvent.click(stopButton);
-
-    expect(mocks.stop).toHaveBeenCalledOnce();
-    expect(mocks.openCurrent).not.toHaveBeenCalled();
-  });
-
-  it("previews the start of the summary next to the time", () => {
+  it("previews the start of the note next to the time", () => {
     mocks.sessionMode = "inactive";
     mocks.summaryContent = "Live Note Math assignment is due Friday";
 
@@ -244,31 +206,6 @@ describe("TimelineItemComponent", () => {
     );
 
     expect(screen.getByText("Math assignment is due Friday")).toBeTruthy();
-  });
-
-  it("does not preview a summary on a live note", () => {
-    mocks.sessionMode = "active";
-    mocks.summaryContent = "Earlier summary text";
-
-    render(
-      <TimelineItemComponent
-        item={{
-          type: "session",
-          id: "session-live",
-          data: {
-            title: "Live Note",
-            created_at: "2024-01-15T10:30:00.000Z",
-          },
-        }}
-        precision="time"
-        selected
-        timezone="UTC"
-        multiSelected={false}
-        flatItemKeys={["session-session-live"]}
-      />,
-    );
-
-    expect(screen.queryByText("Earlier summary text")).toBeNull();
   });
 
   it("exposes the selected session row for sidebar scroll anchoring", () => {
@@ -401,36 +338,6 @@ describe("TimelineItemComponent", () => {
       .closest("button")?.parentElement;
 
     expect(itemNodeRef.mock.calls.some(([node]) => node === row)).toBe(true);
-  });
-
-  it("renders finalizing session spinner at the end of the row", () => {
-    mocks.sessionMode = "finalizing";
-    mocks.storeTitle = "Finalizing Note";
-
-    render(
-      <TimelineItemComponent
-        item={{
-          type: "session",
-          id: "session-finalizing",
-          data: {
-            title: "Finalizing Note",
-            created_at: "2024-01-15T10:30:00.000Z",
-          },
-        }}
-        precision="time"
-        selected={false}
-        timezone="UTC"
-        multiSelected={false}
-        flatItemKeys={["session-session-finalizing"]}
-      />,
-    );
-
-    const rowButton = screen.getByText("Finalizing Note").closest("button");
-    const spinnerSlot = screen.getByTestId("spinner").parentElement;
-
-    expect(rowButton?.className).toContain("pr-10");
-    expect(spinnerSlot?.className).toContain("absolute");
-    expect(spinnerSlot?.className).toContain("right-3");
   });
 
   it("opens the current tab after a single-click on a session row", () => {

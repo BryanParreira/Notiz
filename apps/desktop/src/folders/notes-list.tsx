@@ -8,6 +8,7 @@ import { cn } from "@notiz/utils";
 import { moveNoteToFolder } from "./actions";
 import { type FolderNode, isInFolder, useFolders } from "./hooks";
 
+import { extractPlainText } from "~/search/contexts/engine/utils";
 import {
   type MenuItemDef,
   useNativeContextMenu,
@@ -17,9 +18,12 @@ import { useTabs } from "~/store/zustand/tabs";
 
 const MAX_NOTES = 100;
 
+const PREVIEW_MAX_LENGTH = 140;
+
 type NoteRow = {
   id: string;
   title: string;
+  preview: string;
   folderId: string;
   createdAt: Date;
 };
@@ -39,9 +43,17 @@ function useNotesByDay(folderId: string | null) {
       const createdAt = safeParse(row.created_at);
       const noteFolder = String(row.folder_id ?? "");
       if (!createdAt || !isInFolder(noteFolder, folderId)) continue;
+      const title = String(row.title || "");
+      let preview = extractPlainText(row.raw_md).trim();
+      if (title && preview.startsWith(title)) {
+        preview = preview.slice(title.length).trim();
+      }
+      if (!title && !preview) continue;
+
       notes.push({
         id,
-        title: String(row.title || ""),
+        title,
+        preview: preview.slice(0, PREVIEW_MAX_LENGTH),
         folderId: noteFolder,
         createdAt,
       });
@@ -147,11 +159,18 @@ function NoteListItem({
         </span>
         <span className="flex min-w-0 flex-1 flex-col">
           <span className="text-foreground truncate text-base">
-            {note.title || <Trans>New note</Trans>}
+            {note.title || <Trans>Untitled</Trans>}
           </span>
-          <span className="text-muted-foreground truncate text-xs">
-            {note.folderId ? note.folderId : <Trans>Me</Trans>}
-          </span>
+          {(note.preview || note.folderId) && (
+            <span className="text-muted-foreground truncate text-xs">
+              {note.folderId && (
+                <span className="text-foreground/70 mr-1.5 font-medium">
+                  {note.folderId}
+                </span>
+              )}
+              {note.preview}
+            </span>
+          )}
         </span>
         <span className="text-muted-foreground shrink-0 text-xs">
           {format(note.createdAt, "h:mm a")}

@@ -1,10 +1,13 @@
 mod commands;
 mod ext;
 mod menu_items;
+mod summary;
 mod tray_icon;
 
+pub(crate) use ext::TRAY_ID;
 pub use ext::*;
 pub use menu_items::{NotizMenuItem, UpdateMenuState};
+pub use summary::{TrayEventItem, TraySummary};
 
 const PLUGIN_NAME: &str = "notiz-tray";
 
@@ -15,6 +18,10 @@ pub fn init() -> tauri::plugin::TauriPlugin<tauri::Wry> {
         .invoke_handler(specta_builder.invoke_handler())
         .setup(|app, _api| {
             setup_update_listeners(app);
+            let handle = app.clone();
+            app.on_menu_event(move |_app, event| {
+                summary::handle_menu_event(&handle, event.id().as_ref());
+            });
             Ok(())
         })
         .build()
@@ -62,6 +69,9 @@ fn make_specta_builder() -> tauri_specta::Builder<tauri::Wry> {
         .plugin_name(PLUGIN_NAME)
         .commands(tauri_specta::collect_commands![
             commands::set_tray_icon_visible,
+            commands::set_tray_summary,
+            commands::get_tray_summary,
+            commands::tray_action,
         ])
         .error_handling(tauri_specta::ErrorHandlingMode::Result)
 }

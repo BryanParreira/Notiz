@@ -4,13 +4,14 @@ import {
   useQuery,
   useQueryClient,
 } from "@tanstack/react-query";
-import { format, isToday, isYesterday, parseISO } from "date-fns";
+import { format, isThisYear, isToday, isYesterday, parseISO } from "date-fns";
 import {
   ImageIcon,
   ImageOffIcon,
   MailIcon,
   RefreshCwIcon,
   ReplyIcon,
+  SearchIcon,
   XIcon,
 } from "lucide-react";
 import { Fragment, useEffect, useMemo, useRef, useState } from "react";
@@ -125,6 +126,12 @@ function dayLabel(date: Date | null) {
   return format(date, "EEE, MMM d");
 }
 
+function rowDate(date: Date | null) {
+  if (!date) return "";
+  if (isToday(date)) return format(date, "h:mm a");
+  return format(date, isThisYear(date) ? "MMM d" : "MMM d, yyyy");
+}
+
 export function TabContentInbox() {
   const { data: accounts = [] } = useMailAccounts();
   const accountIds = useMemo(() => accounts.map((a) => a.id), [accounts]);
@@ -139,26 +146,46 @@ export function TabContentInbox() {
   const listRef = useRef<HTMLDivElement>(null);
   const [selectedKey, setSelectedKey] = useState<string | null>(null);
   const [readKeys, setReadKeys] = useState<Set<string>>(() => new Set());
+  const [query, setQuery] = useState("");
+  const [unreadOnly, setUnreadOnly] = useState(false);
 
   const selected = messages.find((m) => m.key === selectedKey) ?? null;
 
+  const isSeen = (message: InboxMessage) =>
+    message.seen || readKeys.has(message.key);
+  const unreadCount = messages.filter((m) => !isSeen(m)).length;
+
+  const visible = useMemo(() => {
+    const needle = query.trim().toLowerCase();
+    return messages.filter((message) => {
+      if (message.key === selectedKey) return true;
+      if (unreadOnly && (message.seen || readKeys.has(message.key))) {
+        return false;
+      }
+      if (!needle) return true;
+      return `${message.fromName} ${message.fromEmail} ${message.subject}`
+        .toLowerCase()
+        .includes(needle);
+    });
+  }, [messages, query, unreadOnly, readKeys, selectedKey]);
+
   const groups = useMemo(() => {
     const result: { label: string; messages: InboxMessage[] }[] = [];
-    for (const message of messages) {
+    for (const message of visible) {
       const label = dayLabel(message.date);
       const last = result[result.length - 1];
       if (last && last.label === label) last.messages.push(message);
       else result.push({ label, messages: [message] });
     }
     return result;
-  }, [messages]);
+  }, [visible]);
 
   const select = (message: InboxMessage) => {
     setSelectedKey(message.key);
     setReadKeys((prev) => new Set(prev).add(message.key));
   };
 
-  // An email opened from chat is picked once the list has loaded.
+  // An email opened from Home is picked once the list has loaded.
   useEffect(() => {
     if (isFetching || messages.length === 0) return;
 
@@ -208,12 +235,12 @@ export function TabContentInbox() {
           : e.key === "ArrowUp" || e.key === "k"
             ? -1
             : 0;
-      if (step === 0 || messages.length === 0) return;
+      if (step === 0 || visible.length === 0) return;
 
       e.preventDefault();
-      const current = messages.findIndex((m) => m.key === selectedKey);
+      const current = visible.findIndex((m) => m.key === selectedKey);
       const next =
-        messages[Math.min(Math.max(current + step, 0), messages.length - 1)];
+        visible[Math.min(Math.max(current + step, 0), visible.length - 1)];
       if (next) select(next);
     };
     window.addEventListener("keydown", onKey);
@@ -231,8 +258,13 @@ export function TabContentInbox() {
         >
           <header className="flex shrink-0 items-end justify-between gap-4 px-8 pt-12 pb-5">
             <div className="flex min-w-0 flex-col gap-2">
-              <h1 className="font-display text-foreground text-4xl leading-none">
+              <h1 className="font-display text-foreground flex items-center gap-3 text-4xl leading-none">
                 <Trans>Inbox</Trans>
+                {unreadCount > 0 && (
+                  <span className="bg-primary text-primary-foreground rounded-full px-2.5 py-1 font-sans text-xs font-medium">
+                    {unreadCount} <Trans>unread</Trans>
+                  </span>
+                )}
               </h1>
               {!selected && (
                 <p className="text-muted-foreground text-sm">
@@ -256,6 +288,48 @@ export function TabContentInbox() {
               </button>
             )}
           </header>
+
+          {accounts.length > 0 && messages.length > 0 && (
+            <div className="flex shrink-0 items-center gap-2 px-8 pb-3">
+              <label className="border-border bg-card focus-within:border-primary/50 flex h-9 min-w-0 flex-1 items-center gap-2 rounded-full border px-3 transition-colors">
+                <SearchIcon className="text-muted-foreground size-4 shrink-0" />
+                <input
+                  value={query}
+                  onChange={(e) => setQuery(e.target.value)}
+                  placeholder="Search mail"
+                  aria-label="Search mail"
+                  className="text-foreground placeholder:text-muted-foreground min-w-0 flex-1 bg-transparent text-sm outline-none"
+                />
+                {query && (
+                  <button
+                    type="button"
+                    aria-label="Clear search"
+                    onClick={() => setQuery("")}
+                    className="text-muted-foreground hover:text-foreground"
+                  >
+                    <XIcon className="size-3.5" />
+                  </button>
+                )}
+              </label>
+              <div className="border-border bg-card flex h-9 shrink-0 items-center rounded-full border p-0.5">
+                {([false, true] as const).map((only) => (
+                  <button
+                    key={String(only)}
+                    type="button"
+                    onClick={() => setUnreadOnly(only)}
+                    className={cn([
+                      "h-full rounded-full px-3 text-xs transition-colors",
+                      unreadOnly === only
+                        ? "bg-accent text-foreground font-medium"
+                        : "text-muted-foreground hover:text-foreground",
+                    ])}
+                  >
+                    {only ? <Trans>Unread</Trans> : <Trans>All</Trans>}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
 
           <div
             ref={listRef}
@@ -297,6 +371,10 @@ export function TabContentInbox() {
               <p className="text-muted-foreground px-3 py-8 text-sm">
                 {isFetching ? (
                   <Trans>Checking your inbox…</Trans>
+                ) : query.trim() ? (
+                  <Trans>No mail matches your search.</Trans>
+                ) : unreadOnly ? (
+                  <Trans>You're all caught up.</Trans>
                 ) : (
                   <Trans>Nothing in your inbox.</Trans>
                 )}
@@ -376,7 +454,9 @@ function MessageRow({
           >
             {sender}
           </span>
-          {!seen && <span className="bg-live size-1.5 shrink-0 rounded-full" />}
+          {!seen && (
+            <span className="bg-primary size-1.5 shrink-0 rounded-full" />
+          )}
         </span>
         <span
           className={cn([
@@ -388,17 +468,31 @@ function MessageRow({
         </span>
       </span>
       <span className="text-muted-foreground shrink-0 text-xs">
-        {message.date ? format(message.date, "h:mm a") : ""}
+        {rowDate(message.date)}
       </span>
     </button>
   );
 }
 
+const AVATAR_HUES = [25, 80, 140, 200, 280, 340];
+
+function avatarHue(name: string) {
+  let hash = 0;
+  for (const char of name) hash = (hash * 31 + char.charCodeAt(0)) | 0;
+  return AVATAR_HUES[Math.abs(hash) % AVATAR_HUES.length];
+}
+
 function Avatar({ name, className }: { name: string; className?: string }) {
+  const hue = avatarHue(name);
+
   return (
     <span
+      style={{
+        backgroundColor: `hsl(${hue} 32% 90%)`,
+        color: `hsl(${hue} 34% 30%)`,
+      }}
       className={cn([
-        "bg-secondary text-muted-foreground flex shrink-0 items-center justify-center rounded-full uppercase",
+        "flex shrink-0 items-center justify-center rounded-full font-medium uppercase",
         className,
       ])}
     >

@@ -84,7 +84,6 @@ describe("desktop tab lifecycle", () => {
           typeof createSessionTabCloseHandler
         >[0]["indexes"],
         invalidateSessionResource,
-        getSessionMode: vi.fn().mockReturnValue(null),
         isSessionEmptyFn: vi.fn().mockReturnValue(true),
         deleteSessionFn,
       });
@@ -100,29 +99,25 @@ describe("desktop tab lifecycle", () => {
       );
     });
 
-    it("skips cleanup for non-inactive sessions and non-session tabs", () => {
-      for (const sessionMode of ["active", "finalizing", "running_batch"]) {
-        const invalidateSessionResource = vi.fn();
-        const deleteSessionFn = vi.fn();
-        const handler = createSessionTabCloseHandler({
-          store: {} as Parameters<
-            typeof createSessionTabCloseHandler
-          >[0]["store"],
-          indexes: {} as Parameters<
-            typeof createSessionTabCloseHandler
-          >[0]["indexes"],
-          invalidateSessionResource,
-          getSessionMode: vi.fn().mockReturnValue(sessionMode),
-          isSessionEmptyFn: vi.fn().mockReturnValue(true),
-          deleteSessionFn,
-        });
+    it("skips cleanup for non-session tabs", () => {
+      const invalidateSessionResource = vi.fn();
+      const deleteSessionFn = vi.fn();
+      const handler = createSessionTabCloseHandler({
+        store: {} as Parameters<
+          typeof createSessionTabCloseHandler
+        >[0]["store"],
+        indexes: {} as Parameters<
+          typeof createSessionTabCloseHandler
+        >[0]["indexes"],
+        invalidateSessionResource,
+        isSessionEmptyFn: vi.fn().mockReturnValue(true),
+        deleteSessionFn,
+      });
 
-        handler(createSessionTab({ id: `session-${sessionMode}` }));
-        handler(createContactsTab());
+      handler(createContactsTab());
 
-        expect(invalidateSessionResource).not.toHaveBeenCalled();
-        expect(deleteSessionFn).not.toHaveBeenCalled();
-      }
+      expect(invalidateSessionResource).not.toHaveBeenCalled();
+      expect(deleteSessionFn).not.toHaveBeenCalled();
     });
   });
 });

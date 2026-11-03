@@ -11,9 +11,6 @@ import {
 } from "tinybase/with-schemas";
 
 import { commands as detectCommands } from "@notiz/plugin-detect";
-import { commands as localLlmCommands } from "@notiz/plugin-local-llm";
-import { commands as localSttCommands } from "@notiz/plugin-local-stt";
-import { commands as shortcutCommands } from "@notiz/plugin-shortcut";
 import { commands as trayCommands } from "@notiz/plugin-tray";
 import {
   commands as windowsCommands,
@@ -22,9 +19,7 @@ import {
 
 import { registerSaveHandler } from "./save";
 
-import { hotkeyFor } from "~/dictation/hotkey";
 import { useSettingsPersister } from "~/store/tinybase/persister/settings";
-import { isConfiguredSttModel, isNotizLocalSttModel } from "~/stt/capabilities";
 
 export const STORE_ID = "settings";
 
@@ -384,62 +379,6 @@ type SettingsListeners = {
   ) => void;
 };
 
-function clearInvalidSttModel(store: Store) {
-  const provider = store.getValue("current_stt_provider") as string | undefined;
-  const model = store.getValue("current_stt_model") as string | undefined;
-
-  if (provider === "notiz" && model && !isConfiguredSttModel(provider, model)) {
-    store.delValue("current_stt_model");
-    return true;
-  }
-
-  return false;
-}
-
-function syncLocalSttServer(store: Store) {
-  if (clearInvalidSttModel(store)) {
-    localSttCommands.stopServer(null).catch(console.error);
-    return;
-  }
-
-  const provider = store.getValue("current_stt_provider") as string | undefined;
-  const model = store.getValue("current_stt_model") as string | undefined;
-
-  if (isNotizLocalSttModel(provider, model)) {
-    localSttCommands.startServer(model).catch(console.error);
-  } else {
-    localSttCommands.stopServer(null).catch(console.error);
-  }
-}
-
-function syncLocalLlmServer(store: Store) {
-  const provider = store.getValue("current_llm_provider") as string | undefined;
-  const model = store.getValue("current_llm_model") as string | undefined;
-
-  // Selecting the local model does not start it; the first request does (see
-  // ai/local-llm-fetch). Only free the memory when switching away.
-  if (!(provider === "notiz_local" && model)) {
-    localLlmCommands.stopServer().catch(console.error);
-  }
-}
-
-export function syncDictationHotkey(store: Pick<Store, "getValue">) {
-  if (store.getValue("dictation_enabled") !== true) {
-    shortcutCommands.unregisterHotkey().catch(console.error);
-    return;
-  }
-
-  const hotkeyId = store.getValue("dictation_hotkey") as string | undefined;
-  shortcutCommands
-    .registerHotkey(hotkeyFor(hotkeyId), {})
-    .then((result) => {
-      if (result.status === "error") {
-        console.error("[dictation] hotkey registration failed", result.error);
-      }
-    })
-    .catch(console.error);
-}
-
 const SETTINGS_LISTENERS: SettingsListeners = {
   autostart: (_store, newValue) => {
     if (newValue) {
@@ -466,12 +405,6 @@ const SETTINGS_LISTENERS: SettingsListeners = {
   mic_active_threshold: (_store, newValue) => {
     detectCommands.setMicActiveThreshold(newValue).catch(console.error);
   },
-  current_stt_provider: (store) => syncLocalSttServer(store),
-  current_stt_model: (store) => syncLocalSttServer(store),
-  current_llm_provider: (store) => syncLocalLlmServer(store),
-  current_llm_model: (store) => syncLocalLlmServer(store),
-  dictation_enabled: (store) => syncDictationHotkey(store),
-  dictation_hotkey: (store) => syncDictationHotkey(store),
   show_app_in_dock: (_store, newValue) => {
     windowsCommands.setShowAppInDock(newValue).catch(console.error);
   },
@@ -493,9 +426,6 @@ function registerSettingsListeners(store: Store): () => void {
       }),
     );
   }
-
-  clearInvalidSttModel(store);
-  syncDictationHotkey(store);
 
   return () => {
     for (const id of cleanups) {

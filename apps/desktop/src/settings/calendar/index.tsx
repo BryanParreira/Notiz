@@ -1,7 +1,13 @@
 import { Trans } from "@lingui/react/macro";
 import { useForm } from "@tanstack/react-form";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { CalendarDaysIcon, ShieldCheckIcon, Trash2Icon } from "lucide-react";
+import {
+  CalendarDaysIcon,
+  ChevronDownIcon,
+  ShieldCheckIcon,
+  Trash2Icon,
+} from "lucide-react";
+import { useState } from "react";
 
 import { commands as calendarCommands } from "@notiz/plugin-calendar";
 import { commands as openerCommands } from "@notiz/plugin-opener2";
@@ -134,6 +140,8 @@ export function AddCalendarLinkForm({
     },
   });
 
+  const [openPreset, setOpenPreset] = useState<string | null>(null);
+
   const form = useForm({
     defaultValues: { preset: "google", url: "", label: "" },
     onSubmit: async ({ value, formApi }) => {
@@ -142,45 +150,33 @@ export function AddCalendarLinkForm({
     },
   });
 
-  return (
-    <form
-      onSubmit={(e) => {
-        e.preventDefault();
-        void form.handleSubmit();
-      }}
-      className="flex flex-col gap-4"
-    >
-      <h3 className="text-sm font-medium">
-        <Trans>Add a calendar</Trans>
-      </h3>
-
-      <form.Field name="preset">
-        {(field) => (
-          <div className="flex flex-wrap gap-2">
-            {CALENDAR_LINK_PRESETS.map((preset) => (
-              <button
-                key={preset.id}
-                type="button"
-                onClick={() => field.handleChange(preset.id)}
-                className={cn([
-                  "rounded-full border px-3 py-1.5 text-sm transition-colors",
-                  field.state.value === preset.id
-                    ? "border-primary bg-primary text-primary-foreground"
-                    : "border-border text-muted-foreground hover:text-foreground",
-                ])}
-              >
-                {preset.label}
-              </button>
-            ))}
-          </div>
-        )}
-      </form.Field>
-
-      <form.Subscribe selector={(state) => state.values.preset}>
-        {(presetId) => {
-          const preset = getCalendarPreset(presetId);
-          return (
-            <div className="flex flex-col gap-3">
+  const details = (
+    <form.Subscribe selector={(state) => state.values.preset}>
+      {(presetId) => {
+        const preset = getCalendarPreset(presetId);
+        return (
+          <div className="flex flex-col gap-3">
+            {compact ? (
+              <details className="text-muted-foreground group text-xs">
+                <summary className="hover:text-foreground cursor-pointer select-none">
+                  <Trans>How to find this link</Trans>
+                </summary>
+                <p className="mt-2 leading-relaxed">
+                  {preset.steps}{" "}
+                  {preset.helpUrl && (
+                    <button
+                      type="button"
+                      onClick={async () => {
+                        await openerCommands.openUrl(preset.helpUrl!, null);
+                      }}
+                      className="underline"
+                    >
+                      <Trans>Open</Trans>
+                    </button>
+                  )}
+                </p>
+              </details>
+            ) : (
               <p className="text-muted-foreground text-xs">
                 {preset.steps}{" "}
                 {preset.helpUrl && (
@@ -195,32 +191,35 @@ export function AddCalendarLinkForm({
                   </button>
                 )}
               </p>
-              <form.Field name="url">
-                {(field) => (
-                  <Input
-                    value={field.state.value}
-                    onChange={(e) => field.handleChange(e.target.value)}
-                    placeholder={preset.placeholder}
-                    autoComplete="off"
-                    spellCheck={false}
-                  />
-                )}
-              </form.Field>
-              <form.Field name="label">
-                {(field) => (
-                  <Input
-                    value={field.state.value}
-                    onChange={(e) => field.handleChange(e.target.value)}
-                    placeholder="Name (optional)"
-                    autoComplete="off"
-                  />
-                )}
-              </form.Field>
-            </div>
-          );
-        }}
-      </form.Subscribe>
-
+            )}
+            <form.Field name="url">
+              {(field) => (
+                <Input
+                  value={field.state.value}
+                  onChange={(e) => field.handleChange(e.target.value)}
+                  placeholder={preset.placeholder}
+                  autoComplete="off"
+                  spellCheck={false}
+                />
+              )}
+            </form.Field>
+            <form.Field name="label">
+              {(field) => (
+                <Input
+                  value={field.state.value}
+                  onChange={(e) => field.handleChange(e.target.value)}
+                  placeholder="Name (optional)"
+                  autoComplete="off"
+                />
+              )}
+            </form.Field>
+          </div>
+        );
+      }}
+    </form.Subscribe>
+  );
+  const messages = (
+    <>
       {add.isError && (
         <p className="text-destructive text-sm">
           {add.error instanceof Error ? add.error.message : String(add.error)}
@@ -240,22 +239,114 @@ export function AddCalendarLinkForm({
           )}
         </p>
       )}
+    </>
+  );
+  const submit = (
+    <form.Subscribe selector={(state) => state.values.url.trim().length > 0}>
+      {(ready) => (
+        <Button
+          type="submit"
+          disabled={!ready || add.isPending}
+          className={cn(["rounded-full", compact ? "w-full" : "w-fit"])}
+        >
+          {add.isPending ? (
+            <Trans>Checking…</Trans>
+          ) : (
+            <Trans>Add calendar</Trans>
+          )}
+        </Button>
+      )}
+    </form.Subscribe>
+  );
 
-      <form.Subscribe selector={(state) => state.values.url.trim().length > 0}>
-        {(ready) => (
-          <Button
-            type="submit"
-            disabled={!ready || add.isPending}
-            className="w-fit rounded-full"
-          >
-            {add.isPending ? (
-              <Trans>Checking…</Trans>
-            ) : (
-              <Trans>Add calendar</Trans>
+  return (
+    <form
+      onSubmit={(e) => {
+        e.preventDefault();
+        void form.handleSubmit();
+      }}
+      className="flex flex-col gap-4"
+    >
+      <h3 className="text-sm font-medium">
+        <Trans>Add a calendar</Trans>
+      </h3>
+
+      {compact ? (
+        <form.Field name="preset">
+          {(field) => (
+            <div className="flex flex-col gap-1">
+              {CALENDAR_LINK_PRESETS.map((preset) => {
+                const active = openPreset === preset.id;
+                return (
+                  <div
+                    key={preset.id}
+                    className={cn([
+                      "rounded-xl border transition-colors",
+                      active ? "border-border bg-card" : "border-transparent",
+                    ])}
+                  >
+                    <button
+                      type="button"
+                      onClick={() => {
+                        field.handleChange(preset.id);
+                        setOpenPreset(active ? null : preset.id);
+                      }}
+                      className={cn([
+                        "flex w-full items-center justify-between gap-2 rounded-xl px-3 py-2 text-left text-sm transition-colors",
+                        active
+                          ? "text-foreground font-medium"
+                          : "text-muted-foreground hover:bg-sidebar-accent/60 hover:text-foreground",
+                      ])}
+                    >
+                      <span className="truncate">{preset.label}</span>
+                      <ChevronDownIcon
+                        className={cn([
+                          "size-4 shrink-0 transition-transform",
+                          active && "rotate-180",
+                        ])}
+                      />
+                    </button>
+                    {active && (
+                      <div className="flex flex-col gap-3 px-3 pb-3">
+                        {details}
+                        {messages}
+                        {submit}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </form.Field>
+      ) : (
+        <>
+          <form.Field name="preset">
+            {(field) => (
+              <div className="flex flex-wrap gap-2">
+                {CALENDAR_LINK_PRESETS.map((preset) => (
+                  <button
+                    key={preset.id}
+                    type="button"
+                    onClick={() => field.handleChange(preset.id)}
+                    className={cn([
+                      "rounded-full border px-3 py-1.5 text-sm transition-colors",
+                      field.state.value === preset.id
+                        ? "border-primary bg-primary text-primary-foreground"
+                        : "border-border text-muted-foreground hover:text-foreground",
+                    ])}
+                  >
+                    {preset.label}
+                  </button>
+                ))}
+              </div>
             )}
-          </Button>
-        )}
-      </form.Subscribe>
+          </form.Field>
+          {details}
+          {messages}
+          {submit}
+        </>
+      )}
     </form>
   );
 }

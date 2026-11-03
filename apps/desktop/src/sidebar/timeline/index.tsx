@@ -58,7 +58,6 @@ import * as main from "~/store/tinybase/store/main";
 import { useTabs } from "~/store/zustand/tabs";
 import { useTimelineSelection } from "~/store/zustand/timeline-selection";
 import { useUndoDelete } from "~/store/zustand/undo-delete";
-import { useListener } from "~/stt/contexts";
 
 export function TimelineView({
   showOpenCalendarButton = true,
@@ -119,11 +118,7 @@ export function TimelineView({
     },
     [],
   );
-  const activeSessionId = useListener((state) =>
-    state.live.status === "active" || state.live.status === "finalizing"
-      ? state.live.sessionId
-      : null,
-  );
+  const activeSessionId: string | null = null;
   const hasActiveVisibleSession = useMemo(
     () =>
       !!activeSessionId &&

@@ -9,9 +9,6 @@ import {
 } from "@notiz/editor/note";
 import { cn } from "@notiz/utils";
 
-import { AudioDropTarget } from "./audio-drop-target";
-import { useNoteFileHandlerConfig } from "./file-handler";
-
 import { AppLinkView } from "~/editor-bridge/app-link-view";
 import { useMentionConfig } from "~/editor-bridge/mention-config";
 import { openEditorLink } from "~/editor-bridge/open-editor-link";
@@ -26,6 +23,9 @@ import {
 import * as main from "~/store/tinybase/store/main";
 
 const extraNodeViews = { appLink: AppLinkView, session: SessionNodeView };
+
+const notePlaceholder = ({ node }: { node: { type: { name: string } } }) =>
+  node.type.name === "heading" ? "Untitled" : "Write something…";
 
 export const RawEditor = forwardRef<
   NoteEditorRef,
@@ -63,8 +63,6 @@ export const RawEditor = forwardRef<
       "title",
       main.STORE_ID,
     ) as string | undefined;
-    const { audioDropTargetProps, fileHandlerConfig, isAudioDragActive } =
-      useNoteFileHandlerConfig(sessionId);
     const syncSourceId = useRawEditorSyncSourceId();
 
     const initialContent = useMemo<JSONContent>(
@@ -125,30 +123,25 @@ export const RawEditor = forwardRef<
     const mentionConfig = useMentionConfig();
 
     return (
-      <AudioDropTarget
-        targetProps={audioDropTargetProps}
-        isActive={isAudioDragActive}
-      >
-        <NoteEditor
-          ref={ref}
-          className={cn(["session-note-editor", className])}
-          key={`session-${sessionId}-raw`}
-          initialContent={initialContent}
-          handleChange={handleChange}
-          mentionConfig={mentionConfig}
-          sessionMentionDropConfig={sessionMentionDropConfig}
-          onNavigateToTitle={onNavigateToTitle}
-          onLinkOpen={openEditorLink}
-          fileHandlerConfig={fileHandlerConfig}
-          taskSource={
-            syncTasks ? { type: "session_raw_note", id: sessionId } : undefined
-          }
-          extraNodeViews={extraNodeViews}
-          showFormatToolbar={showFormatToolbar}
-          onViewReady={onViewReady}
-          onViewDisposed={onViewDisposed}
-        />
-      </AudioDropTarget>
+      <NoteEditor
+        ref={ref}
+        className={cn(["session-note-editor", className])}
+        key={`session-${sessionId}-raw`}
+        initialContent={initialContent}
+        handleChange={handleChange}
+        placeholderComponent={notePlaceholder as never}
+        mentionConfig={mentionConfig}
+        sessionMentionDropConfig={sessionMentionDropConfig}
+        onNavigateToTitle={onNavigateToTitle}
+        onLinkOpen={openEditorLink}
+        taskSource={
+          syncTasks ? { type: "session_raw_note", id: sessionId } : undefined
+        }
+        extraNodeViews={extraNodeViews}
+        showFormatToolbar={showFormatToolbar}
+        onViewReady={onViewReady}
+        onViewDisposed={onViewDisposed}
+      />
     );
   },
 );

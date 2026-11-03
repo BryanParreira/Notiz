@@ -29,6 +29,7 @@ tauri-plugin-updater2 = { workspace = true }
 tauri-plugin-windows = { workspace = true }
 
 open = { workspace = true }
+serde = { workspace = true, features = ["derive"] }
 serde_json = { workspace = true }
 specta = { workspace = true }
 tokio = { workspace = true, features = ["time"] }

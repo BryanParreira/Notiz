@@ -90,10 +90,7 @@ describe("SettingsNav", () => {
       "Notifications",
       "Permissions",
       "Calendars",
-      "AI",
-      "Transcription",
-      "Intelligence",
-      "Personalization",
+      "Email",
     ].forEach((label) => {
       expect(screen.getByText(label)).toBeTruthy();
     });

@@ -1,11 +1,7 @@
 import { Trans } from "@lingui/react/macro";
 import {
-  AudioLinesIcon,
   FileDownIcon,
-  FileTextIcon,
-  MailIcon,
   MoreHorizontalIcon,
-  PictureInPicture2Icon,
   SquareArrowOutUpRightIcon,
 } from "lucide-react";
 import { useState } from "react";
@@ -22,73 +18,22 @@ import {
 
 import { DeleteNote } from "./delete";
 import { ExportModal } from "./export-modal";
-import { FollowUpModal } from "./follow-up-modal";
-import { Listening } from "./listening";
 import { ShowInFinder } from "./misc";
 
-import { openFloatingMeetingPanel } from "~/meeting-float/host";
-import {
-  useCurrentNoteHasContent,
-  useHasTranscript,
-} from "~/session/components/shared";
 import { openStandaloneNoteWindow } from "~/session/window";
-import { useConfigValue } from "~/shared/config";
-import * as settingsStore from "~/store/tinybase/store/settings";
-import type { EditorView } from "~/store/zustand/tabs/schema";
-import { useListener } from "~/stt/contexts";
-import { useUploadFile } from "~/stt/useUploadFile";
 
 export function OverflowButton({
-  allowListening = true,
   standaloneWindow = false,
   sessionId,
-  currentView,
 }: {
-  allowListening?: boolean;
   standaloneWindow?: boolean;
   sessionId: string;
-  currentView: EditorView;
 }) {
   const [open, setOpen] = useState(false);
   const [isExportModalOpen, setIsExportModalOpen] = useState(false);
-  const [isFollowUpModalOpen, setIsFollowUpModalOpen] = useState(false);
-  const hasTranscript = useHasTranscript(sessionId);
-  const currentNoteHasContent = useCurrentNoteHasContent(
-    sessionId,
-    currentView,
-  );
-  const { uploadAudio, uploadTranscript } = useUploadFile(sessionId);
-  const sessionMode = useListener((state) => state.getSessionMode(sessionId));
-  const floatingBarEnabled = useConfigValue("floating_bar_enabled");
-  const settings = settingsStore.UI.useStore(settingsStore.STORE_ID);
-  const isMeetingInProgress =
-    sessionMode === "active" || sessionMode === "finalizing";
-  const showUploadActions = !currentNoteHasContent && !isMeetingInProgress;
-  const canOpenFloatingPanel =
-    allowListening && floatingBarEnabled && sessionMode === "active";
   const openExportModal = () => {
     setOpen(false);
     requestAnimationFrame(() => setIsExportModalOpen(true));
-  };
-  const openFollowUpModal = () => {
-    setOpen(false);
-    requestAnimationFrame(() => setIsFollowUpModalOpen(true));
-  };
-  const handleUploadAudio = () => {
-    setOpen(false);
-    uploadAudio();
-  };
-  const handleUploadTranscript = () => {
-    setOpen(false);
-    uploadTranscript();
-  };
-  const handleOpenFloatingPanel = () => {
-    setOpen(false);
-    void openFloatingMeetingPanel({
-      sessionId,
-      enabled: floatingBarEnabled,
-      store: settings,
-    });
   };
   const handleOpenStandaloneWindow = () => {
     setOpen(false);
@@ -119,54 +64,6 @@ export function OverflowButton({
                 <Trans>Export</Trans>
               </span>
             </DropdownMenuItem>
-            {currentNoteHasContent && (
-              <DropdownMenuItem
-                onClick={openFollowUpModal}
-                className="cursor-pointer"
-              >
-                <MailIcon />
-                <span>
-                  <Trans>Draft follow-up</Trans>
-                </span>
-              </DropdownMenuItem>
-            )}
-            <DropdownMenuSeparator />
-            {allowListening && (
-              <Listening sessionId={sessionId} hasTranscript={hasTranscript} />
-            )}
-            {showUploadActions && (
-              <>
-                <DropdownMenuItem
-                  onClick={handleUploadAudio}
-                  className="cursor-pointer"
-                >
-                  <AudioLinesIcon />
-                  <span>
-                    <Trans>Upload audio</Trans>
-                  </span>
-                </DropdownMenuItem>
-                <DropdownMenuItem
-                  onClick={handleUploadTranscript}
-                  className="cursor-pointer"
-                >
-                  <FileTextIcon />
-                  <span>
-                    <Trans>Upload transcript</Trans>
-                  </span>
-                </DropdownMenuItem>
-              </>
-            )}
-            {canOpenFloatingPanel && (
-              <DropdownMenuItem
-                onClick={handleOpenFloatingPanel}
-                className="cursor-pointer"
-              >
-                <PictureInPicture2Icon />
-                <span>
-                  <Trans>Open floating panel</Trans>
-                </span>
-              </DropdownMenuItem>
-            )}
             <DropdownMenuSeparator />
             {!standaloneWindow && (
               <DropdownMenuItem
@@ -186,14 +83,8 @@ export function OverflowButton({
       </DropdownMenu>
       <ExportModal
         sessionId={sessionId}
-        currentView={currentView}
         open={isExportModalOpen}
         onOpenChange={setIsExportModalOpen}
-      />
-      <FollowUpModal
-        sessionId={sessionId}
-        open={isFollowUpModalOpen}
-        onOpenChange={setIsFollowUpModalOpen}
       />
     </>
   );

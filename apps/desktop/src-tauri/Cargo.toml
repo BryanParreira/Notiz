@@ -1,6 +1,6 @@
 [package]
 name = "desktop"
-version = "1.3.6"
+version = "1.4.0"
 authors = ["you"]
 edition = "2024"
 description = "Notiz Desktop App"
@@ -22,12 +22,9 @@ tauri-build = { workspace = true, features = [] }
 [dependencies]
 tauri = { workspace = true, features = ["specta", "macos-private-api", "protocol-asset"] }
 
-tauri-plugin-agent = { workspace = true }
 tauri-plugin-analytics = { workspace = true }
-tauri-plugin-audio-priority = { workspace = true }
 tauri-plugin-auth = { workspace = true }
 tauri-plugin-autostart = { workspace = true }
-tauri-plugin-bedrock = { workspace = true }
 tauri-plugin-calendar = { workspace = true }
 tauri-plugin-clipboard-manager = { workspace = true }
 tauri-plugin-db = { workspace = true }
@@ -35,7 +32,6 @@ tauri-plugin-deep-link = { workspace = true }
 tauri-plugin-deeplink2 = { workspace = true }
 tauri-plugin-detect = { workspace = true }
 tauri-plugin-dialog = { workspace = true }
-tauri-plugin-dictation = { workspace = true }
 tauri-plugin-dock = { workspace = true }
 tauri-plugin-export = { workspace = true }
 tauri-plugin-flag = { workspace = true }
@@ -47,10 +43,7 @@ tauri-plugin-http = { workspace = true }
 tauri-plugin-icon = { workspace = true }
 tauri-plugin-importer = { workspace = true }
 tauri-plugin-js = { workspace = true }
-tauri-plugin-local-llm = { workspace = true }
-tauri-plugin-local-stt = { workspace = true }
 tauri-plugin-mail = { workspace = true }
-tauri-plugin-mcp = { workspace = true }
 tauri-plugin-messenger = { workspace = true }
 tauri-plugin-misc = { workspace = true }
 tauri-plugin-notification = { workspace = true }
@@ -58,7 +51,6 @@ tauri-plugin-notify = { workspace = true }
 tauri-plugin-opener = { workspace = true }
 tauri-plugin-opener2 = { workspace = true }
 tauri-plugin-os = { workspace = true }
-tauri-plugin-overlay = { workspace = true }
 tauri-plugin-path2 = { workspace = true }
 tauri-plugin-permissions = { workspace = true }
 tauri-plugin-prevent-default = { workspace = true }
@@ -69,7 +61,6 @@ tauri-plugin-sentry = { workspace = true }
 tauri-plugin-settings = { workspace = true }
 tauri-plugin-sfx = { workspace = true }
 tauri-plugin-shell = { workspace = true }
-tauri-plugin-shortcut = { workspace = true }
 tauri-plugin-sidecar2 = { workspace = true }
 tauri-plugin-single-instance = { workspace = true }
 tauri-plugin-store = { workspace = true }
@@ -78,7 +69,6 @@ tauri-plugin-tantivy = { workspace = true }
 tauri-plugin-template = { workspace = true }
 tauri-plugin-todo = { workspace = true }
 tauri-plugin-tracing = { workspace = true }
-tauri-plugin-transcription = { workspace = true }
 tauri-plugin-tray = { workspace = true }
 tauri-plugin-updater = { workspace = true }
 tauri-plugin-updater2 = { workspace = true }

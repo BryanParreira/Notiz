@@ -1,11 +1,10 @@
 import { Trans } from "@lingui/react/macro";
-import { Loader2Icon, TrashIcon } from "lucide-react";
+import { TrashIcon } from "lucide-react";
 import { useCallback } from "react";
 
 import { DropdownMenuItem } from "@notiz/ui/components/ui/dropdown-menu";
 import { cn } from "@notiz/utils";
 
-import { useAudioPlayer } from "~/audio-player";
 import {
   captureSessionData,
   deleteSessionCascade,
@@ -14,45 +13,6 @@ import {
 import * as main from "~/store/tinybase/store/main";
 import { useTabs } from "~/store/zustand/tabs";
 import { useUndoDelete } from "~/store/zustand/undo-delete";
-import { useListener } from "~/stt/contexts";
-
-export function DeleteRecording({ sessionId }: { sessionId: string }) {
-  const { deleteRecording, isDeletingRecording } = useAudioPlayer();
-  const mode = useListener((state) => state.getSessionMode(sessionId));
-  const isDisabled =
-    isDeletingRecording ||
-    mode === "active" ||
-    mode === "finalizing" ||
-    mode === "running_batch";
-
-  const handleDeleteRecording = useCallback(() => {
-    void deleteRecording();
-  }, [deleteRecording]);
-
-  return (
-    <DropdownMenuItem
-      onClick={handleDeleteRecording}
-      disabled={isDisabled}
-      className={cn([
-        "cursor-pointer text-red-600 dark:text-red-400",
-        "hover:bg-red-50 hover:text-red-700 dark:hover:bg-red-950/50 dark:hover:text-red-300",
-      ])}
-    >
-      {isDeletingRecording ? (
-        <Loader2Icon className="animate-spin" />
-      ) : (
-        <TrashIcon />
-      )}
-      <span>
-        {isDeletingRecording ? (
-          <Trans>Deleting...</Trans>
-        ) : (
-          <Trans>Delete recording</Trans>
-        )}
-      </span>
-    </DropdownMenuItem>
-  );
-}
 
 export function DeleteNote({ sessionId }: { sessionId: string }) {
   const store = main.UI.useStore(main.STORE_ID);

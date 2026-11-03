@@ -19,8 +19,8 @@ static NOTE_WINDOW_POSITIONING_LOCK: std::sync::Mutex<()> = std::sync::Mutex::ne
 pub enum AppWindow {
     #[serde(rename = "main")]
     Main,
-    #[serde(rename = "composer")]
-    Composer,
+    #[serde(rename = "tray-panel")]
+    TrayPanel,
     #[serde(rename = "note")]
     Note(String),
 }
@@ -29,7 +29,7 @@ impl std::fmt::Display for AppWindow {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             Self::Main => write!(f, "main"),
-            Self::Composer => write!(f, "composer"),
+            Self::TrayPanel => write!(f, "tray-panel"),
             Self::Note(id) => write!(f, "note-{id}"),
         }
     }
@@ -41,7 +41,7 @@ impl std::str::FromStr for AppWindow {
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         match s {
             "main" => return Ok(Self::Main),
-            "composer" => return Ok(Self::Composer),
+            "tray-panel" => return Ok(Self::TrayPanel),
             _ => {}
         }
 
@@ -120,7 +120,7 @@ impl WindowImpl for AppWindow {
     fn title(&self) -> String {
         match self {
             Self::Main => "Notiz".into(),
-            Self::Composer => "Composer".into(),
+            Self::TrayPanel => "Notiz".into(),
             Self::Note(_) => "Note".into(),
         }
     }
@@ -146,16 +146,16 @@ impl WindowImpl for AppWindow {
                 window.set_size(LogicalSize::new(1200.0, 780.0))?;
                 window
             }
-            Self::Composer => {
+            Self::TrayPanel => {
                 let builder = self
-                    .window_builder(app, "/app/composer")
+                    .window_builder(app, "/app/tray")
                     .maximizable(false)
                     .minimizable(false)
                     .resizable(false);
                 let window = builder.build()?;
                 window.set_size(LogicalSize::new(
-                    crate::window::composer::WIDTH,
-                    crate::window::composer::HEIGHT,
+                    crate::window::tray_panel::WIDTH,
+                    crate::window::tray_panel::HEIGHT,
                 ))?;
                 window
             }

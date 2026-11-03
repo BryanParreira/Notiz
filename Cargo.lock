@@ -4819,7 +4819,7 @@ dependencies = [
 
 [[package]]
 name = "desktop"
-version = "1.3.6"
+version = "1.4.0"
 dependencies = [
  "audio-actual",
  "audio-mock",
@@ -4839,13 +4839,10 @@ dependencies = [
  "supervisor",
  "tauri",
  "tauri-build",
- "tauri-plugin-agent",
  "tauri-plugin-analytics",
- "tauri-plugin-audio-priority",
  "tauri-plugin-auth",
  "tauri-plugin-automation",
  "tauri-plugin-autostart",
- "tauri-plugin-bedrock",
  "tauri-plugin-calendar",
  "tauri-plugin-clipboard-manager",
  "tauri-plugin-db",
@@ -4853,7 +4850,6 @@ dependencies = [
  "tauri-plugin-deeplink2",
  "tauri-plugin-detect",
  "tauri-plugin-dialog",
- "tauri-plugin-dictation",
  "tauri-plugin-dock",
  "tauri-plugin-export",
  "tauri-plugin-flag",
@@ -4865,10 +4861,7 @@ dependencies = [
  "tauri-plugin-icon",
  "tauri-plugin-importer",
  "tauri-plugin-js",
- "tauri-plugin-local-llm",
- "tauri-plugin-local-stt",
  "tauri-plugin-mail",
- "tauri-plugin-mcp",
  "tauri-plugin-messenger",
  "tauri-plugin-misc",
  "tauri-plugin-notification",
@@ -4877,7 +4870,6 @@ dependencies = [
  "tauri-plugin-opener",
  "tauri-plugin-opener2",
  "tauri-plugin-os",
- "tauri-plugin-overlay",
  "tauri-plugin-path2",
  "tauri-plugin-permissions",
  "tauri-plugin-prevent-default",
@@ -4888,7 +4880,6 @@ dependencies = [
  "tauri-plugin-settings",
  "tauri-plugin-sfx",
  "tauri-plugin-shell",
- "tauri-plugin-shortcut",
  "tauri-plugin-sidecar2",
  "tauri-plugin-single-instance",
  "tauri-plugin-store",
@@ -4897,7 +4888,6 @@ dependencies = [
  "tauri-plugin-template",
  "tauri-plugin-todo",
  "tauri-plugin-tracing",
- "tauri-plugin-transcription",
  "tauri-plugin-updater",
  "tauri-plugin-updater2",
  "tauri-plugin-window-state",
@@ -18843,6 +18833,7 @@ dependencies = [
  "host",
  "intercept",
  "open",
+ "serde",
  "serde_json",
  "specta",
  "specta-typescript",

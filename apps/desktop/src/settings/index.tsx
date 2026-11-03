@@ -10,10 +10,6 @@ import {
 } from "./general";
 import { SettingsTodo } from "./todo";
 
-import { LLM } from "~/settings/ai/llm";
-import { STT } from "~/settings/ai/stt";
-import { SettingsDictation } from "~/settings/dictation";
-import { SettingsPersonalization } from "~/settings/personalization";
 import { StandardTabWrapper } from "~/shared/main";
 import { type Tab } from "~/store/zustand/tabs";
 
@@ -42,14 +38,6 @@ function SettingsView({ tab }: { tab: Extract<Tab, { type: "settings" }> }) {
         return <SettingsNotifications />;
       case "permissions":
         return <SettingsPermissions />;
-      case "personalization":
-        return <SettingsPersonalization />;
-      case "transcription":
-        return <STT />;
-      case "intelligence":
-        return <LLM />;
-      case "dictation":
-        return <SettingsDictation />;
       case "email":
         return <SettingsEmail />;
       case "calendar":

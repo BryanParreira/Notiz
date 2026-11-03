@@ -8,19 +8,16 @@ import { json2md } from "@notiz/editor/markdown";
 import {
   commands as exportCommands,
   type ExportMetadata,
-  type TranscriptItem,
 } from "@notiz/plugin-export";
 import { commands as fs2Commands } from "@notiz/plugin-fs2";
 import { commands as openerCommands } from "@notiz/plugin-opener2";
 import { cn } from "@notiz/utils";
 
-import { formatDate, formatDuration } from "./export-utils";
+import { formatDate } from "./export-utils";
 
-import { useTranscriptExportSegments } from "~/session/components/note-input/transcript/export-data";
 import { copyTextToClipboard } from "~/shared/clipboard";
 import { useSessionEvent } from "~/store/tinybase/hooks";
 import * as main from "~/store/tinybase/store/main";
-import type { EditorView } from "~/store/zustand/tabs/schema";
 
 type FileFormat = "pdf" | "txt" | "md" | "org";
 
@@ -53,22 +50,16 @@ function markdownToOrg(content: string): string {
 
 export function ExportModal({
   sessionId,
-  currentView,
   open,
   onOpenChange,
 }: {
   sessionId: string;
-  currentView: EditorView;
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }) {
   const { t } = useLingui();
   const [format, setFormat] = useState<FileFormat>("pdf");
-  const [includeMemo, setIncludeMemo] = useState(false);
-  const [includeSummary, setIncludeSummary] = useState(true);
-  const [includeTranscript, setIncludeTranscript] = useState(false);
 
-  const store = main.UI.useStore(main.STORE_ID);
   const queries = main.UI.useQueries(main.STORE_ID);
 
   const sessionTitle = main.UI.useCell(
@@ -92,14 +83,6 @@ export function ExportModal({
     "sessions",
     sessionId,
     "raw_md",
-    main.STORE_ID,
-  ) as string | undefined;
-
-  const enhancedNoteId = currentView.type === "enhanced" ? currentView.id : "";
-  const enhancedNoteContent = main.UI.useCell(
-    "enhanced_notes",
-    enhancedNoteId,
-    "content",
     main.STORE_ID,
   ) as string | undefined;
 
@@ -130,49 +113,6 @@ export function ExportModal({
     return names;
   }, [queries, sessionId]);
 
-  const { data: transcriptItems, isLoading: isTranscriptLoading } =
-    useTranscriptExportSegments(sessionId);
-
-  const transcriptIds = main.UI.useSliceRowIds(
-    main.INDEXES.transcriptBySession,
-    sessionId,
-    main.STORE_ID,
-  );
-
-  const transcriptDuration = useMemo((): string | null => {
-    if (!store || !transcriptIds || transcriptIds.length === 0) {
-      return null;
-    }
-
-    let minStartedAt: number | null = null;
-    let maxEndedAt: number | null = null;
-
-    for (const transcriptId of transcriptIds) {
-      const startedAt = store.getCell(
-        "transcripts",
-        transcriptId,
-        "started_at",
-      );
-      const endedAt = store.getCell("transcripts", transcriptId, "ended_at");
-
-      if (typeof startedAt === "number") {
-        if (minStartedAt === null || startedAt < minStartedAt) {
-          minStartedAt = startedAt;
-        }
-      }
-      if (typeof endedAt === "number") {
-        if (maxEndedAt === null || endedAt > maxEndedAt) {
-          maxEndedAt = endedAt;
-        }
-      }
-    }
-
-    if (minStartedAt !== null && maxEndedAt !== null) {
-      return formatDuration(minStartedAt, maxEndedAt);
-    }
-    return null;
-  }, [store, transcriptIds]);
-
   const getMemoMd = (): string => {
     if (!rawMd) return "";
     try {
@@ -181,26 +121,6 @@ export function ExportModal({
     } catch {
       return "";
     }
-  };
-
-  const getSummaryMd = (): string => {
-    if (!enhancedNoteContent) return "";
-    try {
-      const parsed = JSON.parse(enhancedNoteContent);
-      return json2md(parsed);
-    } catch {
-      return "";
-    }
-  };
-
-  const getTranscriptText = (): string => {
-    if (transcriptItems.length === 0) return "";
-    return transcriptItems
-      .map((item) => {
-        const speaker = item.speaker ? `${item.speaker}: ` : "";
-        return `${speaker}${item.text}`;
-      })
-      .join("\n\n");
   };
 
   const buildMdContent = (): string => {
@@ -216,34 +136,12 @@ export function ExportModal({
       sections.push(`- ${t`Participants`}: ${participantNames.join(", ")}`);
     }
 
-    if (transcriptDuration) {
-      sections.push(`- ${t`Duration`}: ${transcriptDuration}`);
-    }
-
-    if (includeMemo) {
+    {
       const memo = getMemoMd();
       if (memo) {
         sections.push("");
         sections.push(`## ${t`Memo`}`);
         sections.push(memo);
-      }
-    }
-
-    if (includeSummary) {
-      const summary = getSummaryMd();
-      if (summary) {
-        sections.push("");
-        sections.push(`## ${t`Summary`}`);
-        sections.push(summary);
-      }
-    }
-
-    if (includeTranscript) {
-      const transcript = getTranscriptText();
-      if (transcript) {
-        sections.push("");
-        sections.push(`## ${t`Transcript`}`);
-        sections.push(transcript);
       }
     }
 
@@ -264,37 +162,13 @@ export function ExportModal({
       sections.push(`${t`Participants`}: ${participantNames.join(", ")}`);
     }
 
-    if (transcriptDuration) {
-      sections.push(`${t`Duration`}: ${transcriptDuration}`);
-    }
-
-    if (includeMemo) {
+    {
       const memo = getMemoMd();
       if (memo) {
         sections.push("");
         sections.push(t`Memo`);
         sections.push("-".repeat(4));
         sections.push(markdownToText(memo));
-      }
-    }
-
-    if (includeSummary) {
-      const summary = getSummaryMd();
-      if (summary) {
-        sections.push("");
-        sections.push(t`Summary`);
-        sections.push("-".repeat(7));
-        sections.push(markdownToText(summary));
-      }
-    }
-
-    if (includeTranscript) {
-      const transcript = getTranscriptText();
-      if (transcript) {
-        sections.push("");
-        sections.push(t`Transcript`);
-        sections.push("-".repeat(10));
-        sections.push(transcript);
       }
     }
 
@@ -321,34 +195,12 @@ export function ExportModal({
       sections.push(`- ${t`Participants`} :: ${participantNames.join(", ")}`);
     }
 
-    if (transcriptDuration) {
-      sections.push(`- ${t`Duration`} :: ${transcriptDuration}`);
-    }
-
-    if (includeMemo) {
+    {
       const memo = getMemoMd();
       if (memo) {
         sections.push("");
         sections.push(`* ${t`Memo`}`);
         sections.push(markdownToOrg(memo));
-      }
-    }
-
-    if (includeSummary) {
-      const summary = getSummaryMd();
-      if (summary) {
-        sections.push("");
-        sections.push(`* ${t`Summary`}`);
-        sections.push(markdownToOrg(summary));
-      }
-    }
-
-    if (includeTranscript) {
-      const transcript = getTranscriptText();
-      if (transcript) {
-        sections.push("");
-        sections.push(`* ${t`Transcript`}`);
-        sections.push(transcript);
       }
     }
 
@@ -358,7 +210,7 @@ export function ExportModal({
   const buildPdfContent = (): {
     enhancedMd: string;
     memoMd: string | null;
-    transcript: { items: TranscriptItem[] } | null;
+    transcript: null;
     metadata: ExportMetadata | null;
   } => {
     const metadata: ExportMetadata = {
@@ -366,29 +218,13 @@ export function ExportModal({
       createdAt: sessionCreatedAt ? formatDate(sessionCreatedAt) : "",
       participants: participantNames,
       eventTitle: eventTitle || null,
-      duration: transcriptDuration,
+      duration: null,
     };
 
-    let memoMd: string | null = null;
-    if (includeMemo) {
-      const memo = getMemoMd();
-      if (memo) memoMd = memo;
-    }
-
-    const parts: string[] = [];
-
-    if (includeSummary) {
-      const summary = getSummaryMd();
-      if (summary) parts.push(summary);
-    }
-
     return {
-      enhancedMd: parts.join("\n\n"),
-      memoMd,
-      transcript:
-        includeTranscript && transcriptItems.length > 0
-          ? { items: transcriptItems }
-          : null,
+      enhancedMd: "",
+      memoMd: getMemoMd() || null,
+      transcript: null,
       metadata,
     };
   };
@@ -446,9 +282,7 @@ export function ExportModal({
     },
   });
 
-  const hasAnyContentSelected =
-    includeMemo || includeSummary || includeTranscript;
-  const isTranscriptPending = includeTranscript && isTranscriptLoading;
+  const hasAnyContentSelected = getMemoMd().length > 0;
   if (!open) {
     return null;
   }
@@ -505,70 +339,22 @@ export function ExportModal({
                 ))}
               </div>
             </div>
-
-            <div className="flex flex-col gap-2">
-              <span className="text-sm font-medium">
-                <Trans>Include</Trans>
-              </span>
-              <div className="flex justify-center gap-4">
-                {(
-                  [
-                    ["memo", <Trans>Memo</Trans>, includeMemo, setIncludeMemo],
-                    [
-                      "summary",
-                      <Trans>Summary</Trans>,
-                      includeSummary,
-                      setIncludeSummary,
-                    ],
-                    [
-                      "transcript",
-                      <Trans>Transcript</Trans>,
-                      includeTranscript,
-                      setIncludeTranscript,
-                    ],
-                  ] as const
-                ).map(([id, label, checked, setter]) => (
-                  <label
-                    key={id}
-                    className="flex cursor-pointer items-center gap-1.5 text-sm"
-                  >
-                    <input
-                      type="checkbox"
-                      checked={checked}
-                      onChange={(e) => setter(e.target.checked)}
-                      className="accent-primary"
-                    />
-                    {label}
-                  </label>
-                ))}
-              </div>
-            </div>
           </div>
 
           <div className="flex flex-col gap-2">
             <button
               onClick={() => copyMutation.mutate()}
-              disabled={
-                copyMutation.isPending ||
-                isTranscriptPending ||
-                !hasAnyContentSelected
-              }
+              disabled={copyMutation.isPending || !hasAnyContentSelected}
               className="border-border/80 hover:bg-accent h-10 w-full rounded-full border text-sm font-medium transition-all duration-200 disabled:cursor-not-allowed disabled:opacity-50"
             >
               <Trans>Copy as Markdown</Trans>
             </button>
             <button
               onClick={() => mutate(null)}
-              disabled={
-                isPending || isTranscriptPending || !hasAnyContentSelected
-              }
+              disabled={isPending || !hasAnyContentSelected}
               className="border-primary bg-primary text-primary-foreground hover:bg-primary/90 h-10 w-full rounded-full border-2 text-sm font-medium shadow-[0_4px_14px_rgba(87,83,78,0.4)] transition-all duration-200 disabled:cursor-not-allowed disabled:opacity-50"
             >
-              {isPending
-                ? t`Exporting...`
-                : isTranscriptPending
-                  ? t`Preparing transcript...`
-                  : t`Export`}
+              {isPending ? t`Exporting...` : t`Export`}
             </button>
           </div>
         </div>

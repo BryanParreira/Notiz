@@ -1,5 +1,5 @@
 import { Trans } from "@lingui/react/macro";
-import { FolderIcon, LockIcon, PlusIcon } from "lucide-react";
+import { FileTextIcon, FolderIcon, PlusIcon } from "lucide-react";
 import { type KeyboardEvent, useState } from "react";
 
 import { cn } from "@notiz/utils";
@@ -49,7 +49,7 @@ export function SidebarFolders() {
 
       <div className="scrollbar-hide flex min-h-0 flex-1 flex-col gap-0.5 overflow-y-auto">
         <FolderRow
-          icon={<LockIcon size={14} />}
+          icon={<FileTextIcon size={14} />}
           label={<Trans>All notes</Trans>}
           active={activeFolderId === ""}
           onClick={() => openFolder(null)}

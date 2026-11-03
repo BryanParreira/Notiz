@@ -28,7 +28,9 @@ export function placeholderPlugin(placeholder?: PlaceholderFunction) {
           const hasAnchor = anchor >= pos && anchor <= pos + node.nodeSize;
           const isEmpty = !node.isLeaf && node.content.size === 0;
 
-          if (hasAnchor && isEmpty) {
+          const isTitleHeading = pos === 0 && node.type.name === "heading";
+
+          if ((hasAnchor || isTitleHeading) && isEmpty) {
             const classes = ["is-empty"];
             if (isEmptyDoc) classes.push("is-editor-empty");
 

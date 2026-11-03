@@ -393,31 +393,6 @@ describe("useClassicMainTabsShortcuts", () => {
     expect(hoisted.select).not.toHaveBeenCalled();
   });
 
-  it("does not duplicate chat close when a focused target handles escape directly", () => {
-    hoisted.chatMode = "FloatingOpen";
-    hoisted.currentTab = {
-      active: true,
-      slotId: "slot-session",
-      type: "sessions",
-    };
-    const { result } = renderHook(() => useClassicMainTabsShortcuts());
-    const target = document.createElement("input");
-    target.addEventListener("keydown", (event) => {
-      event.preventDefault();
-      event.stopPropagation();
-      result.current.runEscapeShortcut();
-    });
-    document.body.append(target);
-
-    dispatchEscape(target);
-    vi.runOnlyPendingTimers();
-    target.remove();
-
-    expect(hoisted.sendEvent).toHaveBeenCalledWith({ type: "CLOSE" });
-    expect(hoisted.sendEvent).toHaveBeenCalledTimes(1);
-    expect(hoisted.openCurrent).not.toHaveBeenCalled();
-  });
-
   it("lets editor escape consumers handle the key before opening home", () => {
     hoisted.currentTab = {
       active: true,
@@ -592,59 +567,6 @@ describe("useClassicMainTabsShortcuts", () => {
     expect(hoisted.openCurrent).toHaveBeenCalledWith({ type: "empty" });
     expect(hoisted.select).not.toHaveBeenCalled();
     expect(hoisted.goBack).not.toHaveBeenCalled();
-  });
-
-  it("closes the floating chat before going home on escape", () => {
-    hoisted.chatMode = "FloatingOpen";
-    hoisted.currentTab = {
-      active: true,
-      slotId: "slot-session",
-      type: "sessions",
-    };
-
-    renderHook(() => useClassicMainTabsShortcuts());
-
-    dispatchEscape();
-    vi.runOnlyPendingTimers();
-
-    expect(hoisted.sendEvent).toHaveBeenCalledWith({ type: "CLOSE" });
-    expect(hoisted.openCurrent).not.toHaveBeenCalled();
-  });
-
-  it("does not go home when chat closes before deferred escape handling runs", () => {
-    hoisted.chatMode = "FloatingOpen";
-    hoisted.currentTab = {
-      active: true,
-      slotId: "slot-session",
-      type: "sessions",
-    };
-
-    const { rerender } = renderHook(() => useClassicMainTabsShortcuts());
-
-    dispatchEscape();
-    hoisted.chatMode = "FloatingClosed";
-    rerender();
-    vi.runOnlyPendingTimers();
-
-    expect(hoisted.sendEvent).toHaveBeenCalledWith({ type: "CLOSE" });
-    expect(hoisted.openCurrent).not.toHaveBeenCalled();
-  });
-
-  it("closes the right panel chat before going home on escape", () => {
-    hoisted.chatMode = "RightPanelOpen";
-    hoisted.currentTab = {
-      active: true,
-      slotId: "slot-session",
-      type: "sessions",
-    };
-
-    renderHook(() => useClassicMainTabsShortcuts());
-
-    dispatchEscape();
-    vi.runOnlyPendingTimers();
-
-    expect(hoisted.sendEvent).toHaveBeenCalledWith({ type: "CLOSE" });
-    expect(hoisted.openCurrent).not.toHaveBeenCalled();
   });
 
   it("opens home from a note when escape is prevented without a focused target", () => {

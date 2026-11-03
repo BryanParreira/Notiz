@@ -19,7 +19,10 @@ export type {
 
 export type TabInput = Exclude<
   WindowsTabInput,
-  { type: "extension" } | { type: "extensions" }
+  | { type: "extension" }
+  | { type: "extensions" }
+  | { type: "chat" }
+  | { type: "edit"; requestId: string }
 >;
 
 export const isTabInputSupported = (tab: WindowsTabInput): tab is TabInput => {
@@ -32,10 +35,6 @@ export type SettingsTab =
   | "data"
   | "notifications"
   | "permissions"
-  | "personalization"
-  | "transcription"
-  | "intelligence"
-  | "dictation"
   | "email"
   | "calendar"
   | "todo";
@@ -47,10 +46,6 @@ const isSettingsTab = (tab: string | null | undefined): tab is SettingsTab => {
     case "data":
     case "notifications":
     case "permissions":
-    case "personalization":
-    case "transcription":
-    case "intelligence":
-    case "dictation":
     case "email":
     case "calendar":
     case "todo":
@@ -68,9 +63,6 @@ export const normalizeSettingsTab = (
     case "data":
     case "notifications":
     case "permissions":
-    case "personalization":
-    case "transcription":
-    case "intelligence":
     case "todo":
       return tab;
     case "account":
@@ -122,7 +114,6 @@ export type Tab =
   | (BaseTab & { type: "organizations"; id: string })
   | (BaseTab & { type: "empty" })
   | (BaseTab & { type: "inbox" })
-  | (BaseTab & { type: "chat" })
   | (BaseTab & { type: "folders"; id: string | null })
   | (BaseTab & { type: "calendar" })
   | (BaseTab & {
@@ -131,7 +122,6 @@ export type Tab =
     })
   | (BaseTab & { type: "settings"; state: SettingsState })
   | (BaseTab & { type: "onboarding" })
-  | (BaseTab & { type: "edit"; requestId: string })
   | (BaseTab & {
       type: "task";
       id: string;
@@ -185,8 +175,6 @@ export const getDefaultState = (tab: TabInput): Tab => {
       return { ...base, type: "empty" };
     case "inbox":
       return { ...base, type: "inbox" };
-    case "chat":
-      return { ...base, type: "chat" };
     case "folders":
       return { ...base, type: "folders", id: tab.id };
     case "calendar":
@@ -210,8 +198,6 @@ export const getDefaultState = (tab: TabInput): Tab => {
     }
     case "onboarding":
       return { ...base, type: "onboarding" };
-    case "edit":
-      return { ...base, type: "edit", requestId: tab.requestId };
     default:
       const _exhaustive: never = tab;
       return _exhaustive;
@@ -234,8 +220,6 @@ export const uniqueIdfromTab = (tab: Tab): string => {
       return `empty-${tab.slotId}`;
     case "inbox":
       return `inbox`;
-    case "chat":
-      return `chat`;
     case "folders":
       return `folders-${tab.id ?? "all"}`;
     case "calendar":
@@ -246,8 +230,6 @@ export const uniqueIdfromTab = (tab: Tab): string => {
       return `settings`;
     case "onboarding":
       return `onboarding`;
-    case "edit":
-      return `edit-${tab.requestId}`;
     case "task":
       return `task-${tab.id}`;
     case "daily_summary":

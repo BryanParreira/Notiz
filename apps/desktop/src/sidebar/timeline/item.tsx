@@ -22,9 +22,8 @@ import {
   TimelinePrecision,
 } from "./utils";
 
-import { writeSessionContextDragData } from "~/chat/context/session-drag";
+import { writeSessionContextDragData } from "~/editor-bridge/session-drag";
 import { extractPlainText } from "~/search/contexts/engine/utils";
-import { useIsSessionEnhancing } from "~/session/hooks/useEnhancedNotes";
 import { getSessionEvent } from "~/session/utils";
 import { openStandaloneNoteWindow } from "~/session/window";
 import type { MenuItemDef } from "~/shared/hooks/useNativeContextMenu";
@@ -41,12 +40,11 @@ import { useSessionTitle } from "~/store/zustand/live-title";
 import { type TabInput, useTabs } from "~/store/zustand/tabs";
 import { useTimelineSelection } from "~/store/zustand/timeline-selection";
 import { useUndoDelete } from "~/store/zustand/undo-delete";
-import { useListener } from "~/stt/contexts";
 
 const PREVIEW_MAX_LENGTH = 120;
 
-// Many notes share generic titles, so the opening of the summary is what tells
-// them apart. The summary can repeat the title as its first line; skip it.
+// Many notes share generic titles, so the opening of the note is what tells
+// them apart. The note starts with its title as the first line; skip it.
 function getSummaryPreview(
   content: unknown,
   title: string | undefined,
@@ -517,36 +515,16 @@ const SessionItem = memo(
       main.STORE_ID,
     ) as string | undefined;
     const title = useSessionTitle(sessionId, storeTitle);
-    const enhancedNoteIds = main.UI.useSliceRowIds(
-      main.INDEXES.enhancedNotesBySession,
+    const rawMd = main.UI.useCell(
+      "sessions",
       sessionId,
-      main.STORE_ID,
-    );
-    const summaryContent = main.UI.useCell(
-      "enhanced_notes",
-      enhancedNoteIds?.[0] ?? "",
-      "content",
+      "raw_md",
       main.STORE_ID,
     );
     const preview = useMemo(
-      () => getSummaryPreview(summaryContent, title),
-      [summaryContent, title],
+      () => getSummaryPreview(rawMd, title),
+      [rawMd, title],
     );
-
-    const { sessionMode, stop, amplitude } = useListener((state) => {
-      const sessionMode = state.getSessionMode(sessionId);
-      return {
-        sessionMode,
-        stop: state.stop,
-        amplitude: sessionMode === "active" ? state.live.amplitude : null,
-      };
-    });
-    const isEnhancing = useIsSessionEnhancing(sessionId);
-    const isLive = sessionMode === "active";
-    const isFinalizing = sessionMode === "finalizing";
-    const isBatching = sessionMode === "running_batch";
-    const showSpinner =
-      !selected && !isLive && (isFinalizing || isEnhancing || isBatching);
 
     const sessionEvent = useMemo(
       () => getSessionEvent(item.data),
@@ -658,13 +636,7 @@ const SessionItem = memo(
       <ItemBase
         title={title}
         displayTime={displayTime}
-        preview={isLive ? undefined : preview}
-        isLive={isLive}
-        amplitude={Math.max(
-          0.25,
-          Math.min(Math.hypot(amplitude?.mic ?? 0, amplitude?.speaker ?? 0), 1),
-        )}
-        showSpinner={showSpinner}
+        preview={preview}
         selected={selected}
         muted={muted}
         multiSelected={multiSelected}
@@ -672,7 +644,6 @@ const SessionItem = memo(
         onDoubleClick={handleOpenStandaloneWindow}
         onCmdClick={handleCmdClick}
         onShiftClick={handleShiftClick}
-        onStop={stop}
         onDragStart={handleDragStart}
         contextMenu={contextMenu}
         selectedNodeRef={selected ? selectedNodeRef : undefined}

@@ -323,7 +323,7 @@ export type Anchor =
   | "Center";
 export type AppWindow =
   | { type: "main" }
-  | { type: "composer" }
+  | { type: "tray-panel" }
   | { type: "note"; value: string };
 export type ChangelogState = { previous: string | null; current: string };
 export type ContactsSelection =

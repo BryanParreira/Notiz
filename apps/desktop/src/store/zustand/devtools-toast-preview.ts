@@ -1,11 +1,6 @@
 import { create } from "zustand";
 
-export type DevtoolsToastPreview =
-  | "language-model"
-  | "transcription-model"
-  | "transcription-error"
-  | "download"
-  | "pro";
+export type DevtoolsToastPreview = "pro";
 
 type ActiveDevtoolsToastPreview = {
   type: DevtoolsToastPreview;

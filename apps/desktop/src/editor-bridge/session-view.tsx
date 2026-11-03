@@ -19,7 +19,6 @@ import { toTz, useTimezone } from "~/calendar/hooks";
 import { getSessionEvent } from "~/session/utils";
 import * as main from "~/store/tinybase/store/main";
 import { useTabs } from "~/store/zustand/tabs";
-import { useListener } from "~/stt/contexts";
 
 export const SessionNodeView = forwardRef<
   HTMLDivElement,
@@ -30,11 +29,6 @@ export const SessionNodeView = forwardRef<
 
   const session = main.UI.useRow("sessions", sessionId, main.STORE_ID);
   const tz = useTimezone();
-  const liveSessionId = useListener((state) => state.live.sessionId);
-  const liveStatus = useListener((state) => state.live.status);
-  const isRecording =
-    liveSessionId === sessionId &&
-    (liveStatus === "active" || liveStatus === "finalizing");
   const event = useMemo(() => getSessionEvent(session), [session]);
   const displayTime = useMemo(() => {
     if (event?.is_all_day) {
@@ -81,7 +75,7 @@ export const SessionNodeView = forwardRef<
     [openSession],
   );
 
-  const derivedChecked = !isRecording && isMeetingOver;
+  const derivedChecked = isMeetingOver;
   const explicitStatus = getOptionalTaskStatus(
     node.attrs.status,
     node.attrs.checked,
@@ -121,16 +115,7 @@ export const SessionNodeView = forwardRef<
           "cursor-pointer",
         ])}
       >
-        {isRecording ? (
-          <div
-            className="flex size-[18px] shrink-0 items-center justify-center"
-            contentEditable={false}
-          >
-            <div className="size-2.5 animate-pulse rounded-full bg-red-500" />
-          </div>
-        ) : (
-          <TaskCheckbox status={status} isInteractive onToggle={handleToggle} />
-        )}
+        <TaskCheckbox status={status} isInteractive onToggle={handleToggle} />
         <div className="flex min-w-0 flex-1 items-baseline gap-2">
           <div
             ref={nodeProps.contentDOMRef}

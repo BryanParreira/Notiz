@@ -3,7 +3,7 @@ import type { SessionMentionDropConfig } from "@notiz/editor/note";
 import {
   hasSessionContextDragData,
   readSessionMentionDragData,
-} from "~/chat/context/session-drag";
+} from "./session-drag";
 
 export const sessionMentionDropConfig = {
   has: hasSessionContextDragData,

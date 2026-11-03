@@ -7,21 +7,12 @@ import {
   size,
   useFloating,
 } from "@floating-ui/react";
-import { useMutation } from "@tanstack/react-query";
 import { useCallback, useMemo, useRef, useState } from "react";
 
 import { ParticipantChip } from "./chip";
 import { ParticipantDropdown } from "./dropdown";
-import {
-  applyExtractedContactToHuman,
-  buildEventContactExtractionContext,
-  extractEventContacts,
-} from "./event-contact-extraction";
 
-import { useLanguageModel } from "~/ai/hooks";
 import { useAutoCloser } from "~/shared/hooks/useAutoCloser";
-import { showTransientToast } from "~/sidebar/toast/transient";
-import { useSessionEvent } from "~/store/tinybase/hooks";
 import * as main from "~/store/tinybase/store/main";
 
 export function ParticipantInput({ sessionId }: { sessionId: string }) {
@@ -38,8 +29,6 @@ export function ParticipantInput({ sessionId }: { sessionId: string }) {
     deleteLastParticipant,
     resetInput,
   } = useParticipantInput(sessionId);
-  const { enhanceContact, enhancingHumanId, showEnhancementButtons } =
-    useEventContactEnhancement(sessionId);
   const placeholder =
     mappingIds.length > 0
       ? "Who else was in the meeting?"
@@ -110,14 +99,7 @@ export function ParticipantInput({ sessionId }: { sessionId: string }) {
         onClick={() => inputRef.current?.focus()}
       >
         {mappingIds.map((mappingId) => (
-          <ParticipantChip
-            key={mappingId}
-            mappingId={mappingId}
-            enhancingHumanId={enhancingHumanId}
-            onEnhanceContact={
-              showEnhancementButtons ? enhanceContact : undefined
-            }
-          />
+          <ParticipantChip key={mappingId} mappingId={mappingId} />
         ))}
 
         <input
@@ -341,94 +323,6 @@ function useParticipantInput(sessionId: string) {
     handleInputChange,
     deleteLastParticipant,
     resetInput,
-  };
-}
-
-function useEventContactEnhancement(sessionId: string) {
-  const store = main.UI.useStore(main.STORE_ID);
-  const userId = main.UI.useValue("user_id", main.STORE_ID);
-  const sessionEvent = useSessionEvent(sessionId);
-  const model = useLanguageModel("title");
-
-  const showEnhancementButtons = Boolean(
-    sessionEvent?.title?.trim() || sessionEvent?.description?.trim(),
-  );
-
-  const { isPending, mutate, variables } = useMutation({
-    mutationKey: ["event-contact-enhancement", sessionId],
-    mutationFn: async (humanId: string) => {
-      if (!store || !sessionEvent) {
-        throw new Error("Event unavailable");
-      }
-
-      const context = buildEventContactExtractionContext(
-        store,
-        sessionId,
-        sessionEvent,
-      );
-      const extraction = await extractEventContacts({ model, context });
-      const applied = applyExtractedContactToHuman(
-        store,
-        sessionId,
-        humanId,
-        extraction.contacts,
-        {
-          userId: typeof userId === "string" ? userId : undefined,
-        },
-      );
-
-      return { extraction, applied, humanId };
-    },
-    onSuccess: ({ extraction, applied, humanId }) => {
-      const changed = applied.created + applied.updated + applied.linked;
-      const toastId = `event-contact-enhancement-${humanId}`;
-
-      if (extraction.contacts.length === 0 || !applied.matched) {
-        showTransientToast({
-          id: toastId,
-          description: "No contact detail found",
-        });
-        return;
-      }
-
-      if (changed === 0) {
-        showTransientToast({
-          id: toastId,
-          description: "Contact already up to date",
-        });
-        return;
-      }
-
-      showTransientToast({
-        id: toastId,
-        description: "Contact enhanced",
-      });
-    },
-    onError: (error) => {
-      const message =
-        error instanceof Error && error.message === "Language model needed"
-          ? "Language model needed"
-          : "Could not enhance contact";
-
-      showTransientToast({
-        id: "event-contact-enhancement",
-        description: message,
-        variant: "error",
-      });
-    },
-  });
-
-  const enhanceContact = useCallback(
-    (humanId: string) => {
-      mutate(humanId);
-    },
-    [mutate],
-  );
-
-  return {
-    enhanceContact,
-    enhancingHumanId: isPending ? variables : undefined,
-    showEnhancementButtons,
   };
 }
 

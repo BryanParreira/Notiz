@@ -83,8 +83,11 @@
 
 .prosemirror-editor.session-note-editor.note-title-editor > h1:first-child,
 .prosemirror-editor.enhanced-summary-editor.note-title-editor > h1:first-child {
-  font-size: 1.5rem;
-  line-height: 1.875rem;
+  font-family: var(--font-display, inherit);
+  font-size: 2rem;
+  font-weight: 400;
+  line-height: 2.5rem;
+  margin-bottom: 1.25rem;
 }
 
 .blog-editor .prosemirror-editor {

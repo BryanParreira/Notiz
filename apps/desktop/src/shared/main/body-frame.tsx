@@ -1,4 +1,3 @@
-import { MainChatPanels } from "./chat-panels";
 import {
   MainSessionStatusBannerHost,
   SessionStatusBannerProvider,
@@ -11,7 +10,7 @@ export function MainShellBodyFrame({
 }) {
   return (
     <SessionStatusBannerProvider>
-      <MainChatPanels>{children}</MainChatPanels>
+      {children}
       <MainSessionStatusBannerHost />
     </SessionStatusBannerProvider>
   );

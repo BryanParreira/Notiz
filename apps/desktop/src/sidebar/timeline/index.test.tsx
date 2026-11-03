@@ -981,66 +981,6 @@ describe("TimelineView", () => {
     );
   });
 
-  it("hides the now indicator while an active meeting is visible", () => {
-    vi.useFakeTimers();
-    vi.setSystemTime(new Date("2024-01-15T11:15:00.000Z"));
-    mocks.currentTimeMs = Date.now();
-    mocks.smartCurrentTimeMs = Date.now();
-    mocks.liveStatus = "active";
-    mocks.liveSessionId = "session-live";
-    mocks.timelineSessionsTable = {
-      "session-live": {
-        title: "kate <> john (char)",
-        created_at: "2024-01-15T11:00:00.000Z",
-        event_json: JSON.stringify({
-          started_at: "2024-01-15T11:00:00.000Z",
-          ended_at: "2024-01-15T12:00:00.000Z",
-        }),
-      },
-    };
-
-    const { container } = render(<TimelineView />);
-
-    expect(screen.getByText("Today")).toBeTruthy();
-    expect(screen.getByTestId("timeline-item-session-live")).toBeTruthy();
-    expect(screen.queryByTestId("current-time-indicator")).toBeNull();
-    const anchor = container.querySelector(
-      "[data-sidebar-current-time-anchor]",
-    );
-    expect(anchor).toBeTruthy();
-    expect(mocks.registerAnchor).toHaveBeenCalledWith(anchor);
-  });
-
-  it("hides the now indicator while a finalizing meeting is visible", () => {
-    vi.useFakeTimers();
-    vi.setSystemTime(new Date("2024-01-15T11:15:00.000Z"));
-    mocks.currentTimeMs = Date.now();
-    mocks.smartCurrentTimeMs = Date.now();
-    mocks.liveStatus = "finalizing";
-    mocks.liveSessionId = "session-finalizing";
-    mocks.timelineSessionsTable = {
-      "session-finalizing": {
-        title: "kate <> john (char)",
-        created_at: "2024-01-15T11:00:00.000Z",
-        event_json: JSON.stringify({
-          started_at: "2024-01-15T11:00:00.000Z",
-          ended_at: "2024-01-15T12:00:00.000Z",
-        }),
-      },
-    };
-
-    const { container } = render(<TimelineView />);
-
-    expect(screen.getByText("Today")).toBeTruthy();
-    expect(screen.getByTestId("timeline-item-session-finalizing")).toBeTruthy();
-    expect(screen.queryByTestId("current-time-indicator")).toBeNull();
-    const anchor = container.querySelector(
-      "[data-sidebar-current-time-anchor]",
-    );
-    expect(anchor).toBeTruthy();
-    expect(mocks.registerAnchor).toHaveBeenCalledWith(anchor);
-  });
-
   it("places the fallback now indicator with fresh time after data refreshes", () => {
     vi.useFakeTimers();
     vi.setSystemTime(new Date("2024-01-15T23:58:00.000Z"));

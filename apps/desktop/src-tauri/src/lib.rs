@@ -1,4 +1,3 @@
-mod agents;
 mod appearance;
 mod commands;
 mod db;
@@ -83,10 +82,8 @@ pub async fn main() {
         .plugin(tauri_plugin_opener2::init())
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_analytics::init())
-        .plugin(tauri_plugin_agent::init())
         .plugin(tauri_plugin_auth::init())
         .plugin(tauri_plugin_db::init(db.clone()))
-        .plugin(tauri_plugin_bedrock::init())
         .plugin(tauri_plugin_importer::init())
         .plugin(tauri_plugin_calendar::init())
         .plugin(tauri_plugin_mail::init())
@@ -106,7 +103,6 @@ pub async fn main() {
         .plugin(tauri_plugin_path2::init())
         .plugin(tauri_plugin_export::init())
         .plugin(tauri_plugin_process::init())
-        .plugin(tauri_plugin_mcp::init())
         .plugin(tauri_plugin_messenger::init())
         .plugin(tauri_plugin_misc::init())
         .plugin(tauri_plugin_template::init())
@@ -115,7 +111,6 @@ pub async fn main() {
         .plugin(tauri_plugin_dock::init())
         .plugin(tauri_plugin_notification::init())
         .plugin(tauri_plugin_notify::init())
-        .plugin(tauri_plugin_overlay::init())
         .plugin(tauri_plugin_clipboard_manager::init())
         .plugin(tauri_plugin_store::Builder::default().build())
         .plugin(tauri_plugin_store2::init())
@@ -123,23 +118,11 @@ pub async fn main() {
         .plugin(tauri_plugin_tray::init())
         .plugin(tauri_plugin_settings::init())
         .plugin(tauri_plugin_sfx::init())
-        .plugin(tauri_plugin_shortcut::init())
-        .plugin(tauri_plugin_dictation::init())
         .plugin(tauri_plugin_windows::init())
         .plugin(tauri_plugin_js::init())
         .plugin(tauri_plugin_flag::init())
         .plugin(tauri_plugin_window_state::Builder::default().build())
-        .plugin(tauri_plugin_transcription::init())
         .plugin(tauri_plugin_tantivy::init())
-        .plugin(tauri_plugin_audio_priority::init())
-        .plugin(tauri_plugin_local_llm::init())
-        .plugin(tauri_plugin_local_stt::init(
-            tauri_plugin_local_stt::InitOptions {
-                parent_supervisor: root_supervisor_ctx
-                    .as_ref()
-                    .map(|ctx| ctx.supervisor.get_cell()),
-            },
-        ))
         .plugin(tauri_plugin_autostart::init(
             tauri_plugin_autostart::MacosLauncher::LaunchAgent,
             Some(vec!["--background"]),
@@ -206,63 +189,8 @@ pub async fn main() {
                 });
             }
 
-            {
-                use tauri_plugin_settings::SettingsPluginExt;
-                if let Ok(base) = app_handle.settings().vault_base()
-                    && let Err(e) = agents::write_agents_file(base.as_std_path())
-                {
-                    tracing::error!("failed to write AGENTS.md: {}", e);
-                }
-            }
-
             if let (Some(ctx), Some(handle)) = (&root_supervisor_ctx, root_supervisor_handle) {
                 supervisor::monitor_supervisor(handle, ctx.is_exiting.clone(), app_handle.clone());
-            }
-
-            {
-                // Prefetch the default speech-to-text models in the background.
-                // The local LLM is not prefetched: it is a multi-gigabyte
-                // download, so it is opt-in from Settings. Idempotent and
-                // silent — failures (e.g. offline) are logged, not surfaced.
-                use tauri_plugin_local_stt::LocalSttPluginExt;
-
-                let stt_app_handle = app_handle.clone();
-                tauri::async_runtime::spawn(async move {
-                    // Both, and the batch one matters most: streaming handles
-                    // the live transcript during recording, but every finished
-                    // transcript is produced by the batch model — including the
-                    // fallback when live yields nothing. Prefetching only
-                    // streaming left the model that does the real work to
-                    // download on first use, mid-transcription.
-                    for model in [
-                        tauri_plugin_local_stt::SoniqoModel::ParakeetStreaming,
-                        tauri_plugin_local_stt::SoniqoModel::ParakeetBatch,
-                    ] {
-                        let model = tauri_plugin_local_stt::LocalModel::Soniqo(model);
-                        tracing::info!("stt prefetch: checking is_model_downloaded for {model:?}");
-                        match stt_app_handle.local_stt().is_model_downloaded(&model).await {
-                            Ok(true) => {
-                                tracing::info!("stt prefetch: {model:?} already downloaded");
-                            }
-                            Ok(false) => {
-                                tracing::info!("stt prefetch: {model:?} not downloaded, starting");
-                                match stt_app_handle.local_stt().download_model(model).await {
-                                    Ok(()) => {
-                                        tracing::info!("stt prefetch: download call returned ok")
-                                    }
-                                    Err(e) => {
-                                        tracing::warn!("local STT model prefetch failed: {e}")
-                                    }
-                                }
-                            }
-                            Err(e) => {
-                                tracing::warn!(
-                                    "failed to check local STT model download state: {e}"
-                                )
-                            }
-                        }
-                    }
-                });
             }
 
             Ok(())
@@ -332,32 +260,6 @@ pub async fn main() {
                 // NSStatusItem lingers as a ghost icon in the macOS menu bar if
                 // the process exits without explicitly tearing it down first.
                 let _ = app.tray().remove_immediate();
-            }
-
-            {
-                // llama-server ships as a bundle.resources binary, not a
-                // Tauri sidecar, so it's invisible to the
-                // `ProcessMatcher::Sidecar` cleanup below — without this it
-                // outlives the app entirely as an orphaned process still
-                // holding the model in memory.
-                //
-                // Killed directly by process name rather than through
-                // `local_llm().stop_server()`: that goes through an async
-                // lock a concurrent `start_server()` call may still be
-                // holding (itself possibly mid-flight for up to ~60s waiting
-                // on the server's health check). A `block_on` there — even
-                // timeout-wrapped — still has to get scheduled on the same
-                // tokio runtime, which under load doesn't fire promptly
-                // either, so quitting during a stuck start could still hang
-                // the whole app (confirmed via a real 6.58s main-thread hang
-                // in `psynch_cvwait` at quit). Killing by name is
-                // synchronous, touches no lock, and can't hang.
-                let killed = notiz_host::kill_processes_by_matcher(
-                    notiz_host::ProcessMatcher::Name("llama-server".to_string()),
-                );
-                if killed > 0 {
-                    tracing::info!("killed {killed} llama-server process(es) on quit");
-                }
             }
 
             {

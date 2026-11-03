@@ -14,13 +14,8 @@ import { useTransientToast } from "./transient";
 import { useDismissedToasts } from "./useDismissedToasts";
 
 import { useAuth } from "~/auth";
-import { useNotifications } from "~/contexts/notifications";
-import { useConfigValues } from "~/shared/config";
 import { useMountEffect } from "~/shared/hooks/useMountEffect";
 import { useDevtoolsToastPreview } from "~/store/zustand/devtools-toast-preview";
-import { useTabs } from "~/store/zustand/tabs";
-import { useToastAction } from "~/store/zustand/toast-action";
-import { isConfiguredSttModel } from "~/stt/capabilities";
 
 type ToastAreaPlacement = "default" | "left-sidebar";
 type ToastAreaPosition = {
@@ -49,105 +44,18 @@ export function ToastArea({
   const contentOffset = useMainContentCenterOffset();
   const mainSurfaceRect = useElementRect(MAIN_SURFACE_SELECTOR);
   const mainContentPanelRect = useElementRect(MAIN_CONTENT_PANEL_SELECTOR);
-  const {
-    hasActiveDownload,
-    downloadProgress,
-    downloadingModel,
-    activeDownloads,
-    localSttStatus,
-    isLocalSttModel,
-  } = useNotifications();
-
-  const {
-    current_llm_provider,
-    current_llm_model,
-    current_stt_provider,
-    current_stt_model,
-  } = useConfigValues([
-    "current_llm_provider",
-    "current_llm_model",
-    "current_stt_provider",
-    "current_stt_model",
-  ] as const);
-  const hasLLMConfigured = !!(current_llm_provider && current_llm_model);
-  const hasSttConfigured = isConfiguredSttModel(
-    current_stt_provider,
-    current_stt_model,
-  );
-  const currentTab = useTabs((state) => state.currentTab);
   const devtoolsPreview = useDevtoolsToastPreview((state) => state.preview);
   const clearDevtoolsPreview = useDevtoolsToastPreview(
     (state) => state.clearPreview,
   );
   const transientToast = useTransientToast((state) => state.toast);
   const clearTransientToast = useTransientToast((state) => state.clearToast);
-  const isAiTranscriptionTabActive =
-    currentTab?.type === "settings" &&
-    currentTab.state?.tab === "transcription";
-  const isAiIntelligenceTabActive =
-    currentTab?.type === "settings" && currentTab.state?.tab === "intelligence";
-
-  const openNew = useTabs((state) => state.openNew);
-  const updateSettingsTabState = useTabs(
-    (state) => state.updateSettingsTabState,
-  );
-  const setToastActionTarget = useToastAction((state) => state.setTarget);
 
   const handleSignIn = useCallback(async () => {
     await auth?.signIn();
   }, [auth]);
 
-  const openAiTab = useCallback(
-    (tab: "intelligence" | "transcription") => {
-      if (currentTab?.type === "settings") {
-        updateSettingsTabState(currentTab, { tab });
-      } else {
-        openNew({ type: "settings", state: { tab } });
-      }
-    },
-    [currentTab, openNew, updateSettingsTabState],
-  );
-
-  const handleOpenLLMSettings = useCallback(() => {
-    openAiTab("intelligence");
-  }, [openAiTab]);
-
-  const handleOpenSTTSettings = useCallback(() => {
-    setToastActionTarget("stt");
-    openAiTab("transcription");
-  }, [openAiTab, setToastActionTarget]);
-
-  const registry = useMemo(
-    () =>
-      createToastRegistry({
-        hasLLMConfigured,
-        hasSttConfigured,
-        isAiTranscriptionTabActive,
-        isAiIntelligenceTabActive,
-        hasActiveDownload,
-        downloadProgress,
-        downloadingModel,
-        activeDownloads,
-        localSttStatus,
-        isLocalSttModel,
-        onOpenLLMSettings: handleOpenLLMSettings,
-        onOpenSTTSettings: handleOpenSTTSettings,
-      }),
-    [
-      hasLLMConfigured,
-      hasSttConfigured,
-      isAiTranscriptionTabActive,
-      isAiIntelligenceTabActive,
-      hasActiveDownload,
-      downloadProgress,
-      downloadingModel,
-      activeDownloads,
-      localSttStatus,
-      isLocalSttModel,
-      handleOpenLLMSettings,
-      handleOpenSTTSettings,
-    ],
-  );
+  const registry = useMemo(() => createToastRegistry(), []);
 
   const currentToast = useMemo(
     () => getToastToShow(registry, isDismissed),
@@ -160,16 +68,9 @@ export function ToastArea({
         ? createDevtoolsToastPreview({
             preview: devtoolsPreview.type,
             onSignIn: handleSignIn,
-            onOpenLLMSettings: handleOpenLLMSettings,
-            onOpenSTTSettings: handleOpenSTTSettings,
           })
         : null,
-    [
-      devtoolsPreview,
-      handleSignIn,
-      handleOpenLLMSettings,
-      handleOpenSTTSettings,
-    ],
+    [devtoolsPreview, handleSignIn],
   );
 
   const handleDismiss = useCallback(() => {

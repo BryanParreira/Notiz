@@ -3,7 +3,6 @@ import { useEffect, useRef } from "react";
 
 import { deleteSessionCascade } from "~/store/tinybase/store/deleteSession";
 import { isSessionEmpty } from "~/store/tinybase/store/sessions";
-import { listenerStore } from "~/store/zustand/listener/instance";
 import {
   restorePinnedTabsToStore,
   restoreRecentlyOpenedToStore,
@@ -29,7 +28,6 @@ type SessionTabCloseHandlerOptions = {
   store: SessionStore;
   indexes: SessionIndexes;
   invalidateSessionResource: (sessionId: string) => void;
-  getSessionMode?: (sessionId: string) => string | null | undefined;
   isSessionEmptyFn?: typeof isSessionEmpty;
   deleteSessionFn?: typeof deleteSessionCascade;
 };
@@ -61,8 +59,6 @@ export function createSessionTabCloseHandler({
   store,
   indexes,
   invalidateSessionResource,
-  getSessionMode = (sessionId) =>
-    listenerStore.getState().getSessionMode(sessionId),
   isSessionEmptyFn = isSessionEmpty,
   deleteSessionFn = deleteSessionCascade,
 }: SessionTabCloseHandlerOptions) {
@@ -72,15 +68,6 @@ export function createSessionTabCloseHandler({
     }
 
     const sessionId = tab.id;
-    const sessionMode = getSessionMode(sessionId);
-    if (
-      sessionMode === "active" ||
-      sessionMode === "finalizing" ||
-      sessionMode === "running_batch"
-    ) {
-      return;
-    }
-
     if (!isSessionEmptyFn(store, sessionId)) {
       return;
     }

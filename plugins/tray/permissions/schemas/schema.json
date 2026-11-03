@@ -295,6 +295,18 @@
       "type": "string",
       "oneOf": [
         {
+          "description": "Enables the get_tray_summary command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-get-tray-summary",
+          "markdownDescription": "Enables the get_tray_summary command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the get_tray_summary command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-get-tray-summary",
+          "markdownDescription": "Denies the get_tray_summary command without any pre-configured scope."
+        },
+        {
           "description": "Enables the set_tray_icon_visible command without any pre-configured scope.",
           "type": "string",
           "const": "allow-set-tray-icon-visible",
@@ -307,10 +319,34 @@
           "markdownDescription": "Denies the set_tray_icon_visible command without any pre-configured scope."
         },
         {
-          "description": "Default permissions for the plugin\n#### This default permission set includes:\n\n- `allow-set-tray-icon-visible`",
+          "description": "Enables the set_tray_summary command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-set-tray-summary",
+          "markdownDescription": "Enables the set_tray_summary command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the set_tray_summary command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-set-tray-summary",
+          "markdownDescription": "Denies the set_tray_summary command without any pre-configured scope."
+        },
+        {
+          "description": "Enables the tray_action command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-tray-action",
+          "markdownDescription": "Enables the tray_action command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the tray_action command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-tray-action",
+          "markdownDescription": "Denies the tray_action command without any pre-configured scope."
+        },
+        {
+          "description": "Default permissions for the plugin\n#### This default permission set includes:\n\n- `allow-set-tray-icon-visible`\n- `allow-set-tray-summary`\n- `allow-get-tray-summary`\n- `allow-tray-action`",
           "type": "string",
           "const": "default",
-          "markdownDescription": "Default permissions for the plugin\n#### This default permission set includes:\n\n- `allow-set-tray-icon-visible`"
+          "markdownDescription": "Default permissions for the plugin\n#### This default permission set includes:\n\n- `allow-set-tray-icon-visible`\n- `allow-set-tray-summary`\n- `allow-get-tray-summary`\n- `allow-tray-action`"
         }
       ]
     }

@@ -30,6 +30,7 @@ import { cn } from "@notiz/utils";
 
 import { useSync } from "./context";
 import { DayCell } from "./day-cell";
+import { gridDaysFor, TimeGrid } from "./time-grid";
 
 import {
   useCalendarData,
@@ -49,6 +50,17 @@ const VIEW_BREAKPOINTS = [
   { minWidth: 200, cols: 2 },
   { minWidth: 0, cols: 1 },
 ] as const;
+
+type ViewMode = "month" | "week" | "day";
+const VIEW_MODE_STORAGE_KEY = "notiz-calendar-view-mode";
+
+function readStoredViewMode(): ViewMode {
+  try {
+    const value = localStorage.getItem(VIEW_MODE_STORAGE_KEY);
+    if (value === "month" || value === "week" || value === "day") return value;
+  } catch {}
+  return "week";
+}
 
 const COMPACT_SCROLL_PAST_DAYS = 42;
 const COMPACT_SCROLL_FUTURE_DAYS = 42;
@@ -82,6 +94,14 @@ export function CalendarView() {
   const weekStartsOn = useWeekStartsOn();
   const weekOpts = useMemo(() => ({ weekStartsOn }), [weekStartsOn]);
   const [currentMonth, setCurrentMonth] = useState(now);
+  const [viewMode, setViewModeState] = useState<ViewMode>(readStoredViewMode);
+  const [anchor, setAnchor] = useState(() => startOfDay(now));
+  const setViewMode = useCallback((mode: ViewMode) => {
+    setViewModeState(mode);
+    try {
+      localStorage.setItem(VIEW_MODE_STORAGE_KEY, mode);
+    } catch {}
+  }, []);
   const [visibleStart, setVisibleStart] = useState(() => startOfDay(now));
   const [compactVisibleStart, setCompactVisibleStart] = useState(() =>
     startOfDay(now),
@@ -97,7 +117,9 @@ export function CalendarView() {
     scheduleSync();
   });
 
-  const isMonthView = cols === 7;
+  const isGrid = viewMode !== "month";
+  const gridDayCount = viewMode === "day" ? 1 : cols;
+  const isMonthView = !isGrid && cols === 7;
 
   const advanceCompact = useCallback(
     (direction: -1 | 1) => {
@@ -109,30 +131,44 @@ export function CalendarView() {
   );
 
   const goToPrev = useCallback(() => {
-    if (isMonthView) {
+    if (isGrid) {
+      setAnchor((a) => addDays(a, -gridDayCount));
+    } else if (isMonthView) {
       setCurrentMonth((m) => subMonths(m, 1));
     } else {
       advanceCompact(-1);
     }
-  }, [isMonthView, advanceCompact]);
+  }, [isGrid, gridDayCount, isMonthView, advanceCompact]);
 
   const goToNext = useCallback(() => {
-    if (isMonthView) {
+    if (isGrid) {
+      setAnchor((a) => addDays(a, gridDayCount));
+    } else if (isMonthView) {
       setCurrentMonth((m) => addMonths(m, 1));
     } else {
       advanceCompact(1);
     }
-  }, [isMonthView, advanceCompact]);
+  }, [isGrid, gridDayCount, isMonthView, advanceCompact]);
 
   const goToToday = useCallback(() => {
     const todayStart = startOfDay(now);
+    setAnchor(todayStart);
     compactBaseRef.current = todayStart;
     setCurrentMonth(now);
     setVisibleStart(todayStart);
     setCompactVisibleStart(todayStart);
   }, [now]);
 
+  const gridDays = useMemo(
+    () => gridDaysFor(anchor, gridDayCount, weekStartsOn),
+    [anchor, gridDayCount, weekStartsOn],
+  );
+
   const days = useMemo(() => {
+    if (isGrid) {
+      return gridDays;
+    }
+
     if (isMonthView) {
       const monthStart = startOfMonth(currentMonth);
       const monthEnd = endOfMonth(currentMonth);
@@ -145,7 +181,7 @@ export function CalendarView() {
       start: addDays(visibleStart, -COMPACT_SCROLL_PAST_DAYS),
       end: addDays(visibleStart, COMPACT_SCROLL_FUTURE_DAYS - 1),
     });
-  }, [currentMonth, isMonthView, visibleStart, weekOpts]);
+  }, [currentMonth, gridDays, isGrid, isMonthView, visibleStart, weekOpts]);
 
   const visibleRange = useMemo<CalendarSyncRange | null>(() => {
     const firstDay = days[0];
@@ -173,7 +209,48 @@ export function CalendarView() {
     weekStartsOn === 1 ? WEEKDAY_HEADERS_MON : WEEKDAY_HEADERS_SUN;
 
   useEffect(() => {
-    if (isMonthView) {
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.metaKey || event.ctrlKey || event.altKey) return;
+      const target = event.target as HTMLElement | null;
+      if (
+        target &&
+        (target.isContentEditable ||
+          ["INPUT", "TEXTAREA", "SELECT"].includes(target.tagName))
+      ) {
+        return;
+      }
+
+      switch (event.key) {
+        case "t":
+          goToToday();
+          break;
+        case "m":
+          setViewMode("month");
+          break;
+        case "w":
+          setViewMode("week");
+          break;
+        case "d":
+          setViewMode("day");
+          break;
+        case "ArrowLeft":
+          goToPrev();
+          break;
+        case "ArrowRight":
+          goToNext();
+          break;
+        default:
+          return;
+      }
+      event.preventDefault();
+    };
+
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [goToToday, goToPrev, goToNext, setViewMode]);
+
+  useEffect(() => {
+    if (isGrid || isMonthView) {
       return;
     }
 
@@ -184,7 +261,7 @@ export function CalendarView() {
     }
     compactBaseRef.current = visibleStart;
     setCompactVisibleStart(visibleStart);
-  }, [isMonthView, visibleStart, cols]);
+  }, [isGrid, isMonthView, visibleStart, cols]);
 
   const handleCompactScroll = useCallback(() => {
     const el = compactScrollRef.current;
@@ -226,11 +303,33 @@ export function CalendarView() {
       >
         <div className="flex items-center gap-2">
           <h2 className="font-display text-foreground text-xl">
-            {isMonthView
-              ? format(currentMonth, "MMMM yyyy")
-              : format(compactVisibleStart, "MMMM yyyy")}
+            {isGrid
+              ? format(gridDays[0], "MMMM yyyy")
+              : isMonthView
+                ? format(currentMonth, "MMMM yyyy")
+                : format(compactVisibleStart, "MMMM yyyy")}
           </h2>
           <CalendarSyncHeaderControls />
+        </div>
+        <div
+          data-tauri-drag-region="false"
+          className="border-border bg-card mr-2 ml-auto flex h-8 items-center rounded-full border p-0.5"
+        >
+          {(["month", "week", "day"] as const).map((mode) => (
+            <button
+              key={mode}
+              type="button"
+              onClick={() => setViewMode(mode)}
+              className={cn([
+                "h-full rounded-full px-3 text-xs capitalize transition-colors",
+                viewMode === mode
+                  ? "bg-accent text-foreground font-medium"
+                  : "text-muted-foreground hover:text-foreground",
+              ])}
+            >
+              {mode}
+            </button>
+          ))}
         </div>
         <ButtonGroup
           data-tauri-drag-region="false"
@@ -271,7 +370,9 @@ export function CalendarView() {
         </ButtonGroup>
       </div>
 
-      {isMonthView ? (
+      {isGrid ? (
+        <TimeGrid days={gridDays} calendarData={calendarData} />
+      ) : isMonthView ? (
         <>
           <div
             className="border-border grid border-b"

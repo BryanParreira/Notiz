@@ -7,18 +7,18 @@ use tauri::async_runtime::JoinHandle;
 use tauri::{
     AppHandle, Result,
     image::Image,
-    menu::{Menu, MenuItemKind, PredefinedMenuItem, Submenu},
+    menu::{MenuItemKind, PredefinedMenuItem, Submenu},
     tray::TrayIconBuilder,
 };
 
 use crate::tray_icon::{RECORDING_FRAMES, TrayIconState};
 
 use crate::menu_items::{
-    AppInfo, AppNew, HelpReportBug, HelpSuggestFeature, MenuItemHandler, TrayCheckUpdate, TrayOpen,
-    TrayQuit, TraySettings, TrayStart, TrayVersion,
+    AppInfo, AppNew, HelpReportBug, HelpSuggestFeature, MenuItemHandler, TrayCheckUpdate, TrayQuit,
+    TraySettings,
 };
 
-const TRAY_ID: &str = "notiz-tray";
+pub(crate) const TRAY_ID: &str = "notiz-tray";
 
 static IS_RECORDING: AtomicBool = AtomicBool::new(false);
 static IS_DEGRADED: AtomicBool = AtomicBool::new(false);
@@ -108,25 +108,53 @@ impl<'a, M: tauri::Manager<tauri::Wry>> Tray<'a, tauri::Wry, M> {
             return Ok(());
         }
 
-        let menu = Menu::with_items(
-            app,
-            &[
-                &TrayVersion::build(app)?,
-                &PredefinedMenuItem::separator(app)?,
-                &TrayOpen::build(app)?,
-                &TrayStart::build_with_disabled(app, false)?,
-                &PredefinedMenuItem::separator(app)?,
-                &TrayCheckUpdate::build(app)?,
-                &PredefinedMenuItem::separator(app)?,
-                &TrayQuit::build(app)?,
-            ],
-        )?;
-
         TrayIconBuilder::with_id(TRAY_ID)
             .icon(TrayIconState::Default.to_image()?)
             .icon_as_template(true)
-            .menu(&menu)
-            .show_menu_on_left_click(true)
+            .show_menu_on_left_click(false)
+            .on_tray_icon_event(|tray, event| {
+                use tauri::tray::{MouseButton, MouseButtonState, TrayIconEvent};
+
+                if let TrayIconEvent::Click {
+                    button: MouseButton::Right,
+                    button_state: MouseButtonState::Up,
+                    ..
+                } = &event
+                {
+                    use tauri::{Manager, menu::ContextMenu};
+                    let app = tray.app_handle();
+                    if let (Ok(menu), Some(window)) = (
+                        crate::summary::build_menu(app),
+                        app.get_webview_window("main"),
+                    ) {
+                        let _ = menu.popup(window.as_ref().window());
+                    }
+                }
+
+                if let TrayIconEvent::Click {
+                    button: MouseButton::Left,
+                    button_state: MouseButtonState::Up,
+                    rect,
+                    ..
+                } = event
+                {
+                    let (px, py) = match rect.position {
+                        tauri::Position::Physical(p) => (p.x as f64, p.y as f64),
+                        tauri::Position::Logical(p) => (p.x, p.y),
+                    };
+                    let (w, h) = match rect.size {
+                        tauri::Size::Physical(s) => (s.width as f64, s.height as f64),
+                        tauri::Size::Logical(s) => (s.width, s.height),
+                    };
+                    if let Err(error) = tauri_plugin_windows::tray_panel::toggle_anchored(
+                        tray.app_handle(),
+                        (px, py),
+                        (w, h),
+                    ) {
+                        tracing::error!("tray panel toggle failed: {error}");
+                    }
+                }
+            })
             .build(app)?;
 
         Ok(())
@@ -251,29 +279,14 @@ impl<'a, M: tauri::Manager<tauri::Wry>> Tray<'a, tauri::Wry, M> {
     }
 
     pub fn set_start_disabled(&self, disabled: bool) -> Result<()> {
-        let app = self.manager.app_handle().clone();
-        let app_clone = app.clone();
-        app.run_on_main_thread(move || {
-            if let Some(tray) = app_clone.tray_by_id(TRAY_ID) {
-                let menu = Menu::with_items(
-                    &app_clone,
-                    &[
-                        &TrayVersion::build(&app_clone).unwrap(),
-                        &PredefinedMenuItem::separator(&app_clone).unwrap(),
-                        &TrayOpen::build(&app_clone).unwrap(),
-                        &TrayStart::build_with_disabled(&app_clone, disabled).unwrap(),
-                        &PredefinedMenuItem::separator(&app_clone).unwrap(),
-                        &TrayCheckUpdate::build(&app_clone).unwrap(),
-                        &PredefinedMenuItem::separator(&app_clone).unwrap(),
-                        &TrayQuit::build(&app_clone).unwrap(),
-                    ],
-                );
-                if let Ok(menu) = menu {
-                    let _ = tray.set_menu(Some(menu));
-                }
-            }
-        })?;
+        crate::summary::set_start_disabled_flag(disabled);
+        crate::summary::apply_summary(self.manager.app_handle());
+        Ok(())
+    }
 
+    pub fn set_summary(&self, summary: crate::summary::TraySummary) -> Result<()> {
+        crate::summary::store_summary(summary);
+        crate::summary::apply_summary(self.manager.app_handle());
         Ok(())
     }
 }

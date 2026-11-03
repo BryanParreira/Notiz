@@ -1,6 +1,5 @@
 import type { StoreApi } from "zustand";
 
-
 import type { ChatModeState } from "./chat-mode";
 import type { LifecycleState } from "./lifecycle";
 import type { NavigationState, TabHistory } from "./navigation";
@@ -18,7 +17,6 @@ import {
 } from "./schema";
 
 import { id } from "~/shared/utils";
-import { listenerStore } from "~/store/zustand/listener/instance";
 
 const RETURN_ORIGIN_TAB_TYPES: Tab["type"][] = [
   "calendar",
@@ -69,13 +67,7 @@ export const createBasicSlice = <
       chatMode,
     );
 
-    const isCurrentTabListening =
-      currentActiveTab?.type === "sessions" &&
-      currentActiveTab.id === listenerStore.getState().live.sessionId &&
-      (listenerStore.getState().live.status === "active" ||
-        listenerStore.getState().live.status === "finalizing");
-
-    if (currentActiveTab?.pinned || isCurrentTabListening) {
+    if (currentActiveTab?.pinned) {
       set(
         withChatCollapsedForNavigation(
           openTab(tabs, tab, history, true),
@@ -94,7 +86,6 @@ export const createBasicSlice = <
     if (tab.type === "sessions") {
       addRecentlyOpened(tab.id);
     }
-
   },
   openNew: (tab, options) => {
     const { tabs, history, addRecentlyOpened, chatMode } = get();
@@ -115,7 +106,6 @@ export const createBasicSlice = <
     if (tab.type === "sessions") {
       addRecentlyOpened(tab.id);
     }
-
   },
   select: (tab) => {
     const { tabs, addRecentlyOpened, chatMode } = get();

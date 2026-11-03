@@ -11,17 +11,11 @@ const TabContentCalendar = lazy(() =>
 const TabContentChangelog = lazy(() =>
   import("~/changelog").then((m) => ({ default: m.TabContentChangelog })),
 );
-const TabContentChat = lazy(() =>
-  import("~/chat/page").then((m) => ({ default: m.TabContentChat })),
-);
 const TabContentContact = lazy(() =>
   import("~/contacts").then((m) => ({ default: m.TabContentContact })),
 );
 const TabContentHuman = lazy(() =>
   import("~/contacts/humans").then((m) => ({ default: m.TabContentHuman })),
-);
-const TabContentEdit = lazy(() =>
-  import("~/edit").then((m) => ({ default: m.TabContentEdit })),
 );
 const TabContentFolders = lazy(() =>
   import("~/folders").then((m) => ({ default: m.TabContentFolders })),
@@ -71,12 +65,6 @@ function renderLazyTab(tab: Tab) {
   }
   if (tab.type === "onboarding") {
     return <TabContentOnboarding tab={tab} />;
-  }
-  if (tab.type === "edit") {
-    return <TabContentEdit tab={tab} />;
-  }
-  if (tab.type === "chat") {
-    return <TabContentChat />;
   }
   if (tab.type === "inbox") {
     return <TabContentInbox />;

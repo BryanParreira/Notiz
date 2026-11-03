@@ -1,29 +1,13 @@
-import { Trans, useLingui } from "@lingui/react/macro";
-import { Loader2Icon, SparklesIcon, X } from "lucide-react";
+import { X } from "lucide-react";
 import { useCallback } from "react";
 
 import { Badge } from "@notiz/ui/components/ui/badge";
 import { Button } from "@notiz/ui/components/ui/button";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from "@notiz/ui/components/ui/tooltip";
 import { cn } from "@notiz/utils";
 
 import * as main from "~/store/tinybase/store/main";
-import { useTabs } from "~/store/zustand/tabs/index";
-import { parseTranscriptHints, updateTranscriptHints } from "~/stt/utils";
 
-export function ParticipantChip({
-  mappingId,
-  enhancingHumanId,
-  onEnhanceContact,
-}: {
-  mappingId: string;
-  enhancingHumanId?: string;
-  onEnhanceContact?: (humanId: string) => void;
-}) {
+export function ParticipantChip({ mappingId }: { mappingId: string }) {
   const details = useParticipantDetails(mappingId);
 
   const assignedHumanId = details?.humanId;
@@ -37,51 +21,20 @@ export function ParticipantChip({
     source,
   });
 
-  const handleClick = useCallback(() => {
-    if (assignedHumanId) {
-      useTabs.getState().openNew({
-        type: "contacts",
-        state: { selected: { type: "person", id: assignedHumanId } },
-      });
-    }
-  }, [assignedHumanId]);
-
   if (!details || source === "excluded") {
     return null;
   }
 
   const { humanName } = details;
-  const isEnhancing = enhancingHumanId === assignedHumanId;
-  const canEnhance = Boolean(onEnhanceContact && assignedHumanId);
 
   return (
     <Badge
       variant="secondary"
       className={cn([
-        "bg-foreground/10 hover:bg-foreground/15 relative flex cursor-pointer items-center gap-1 overflow-hidden px-2 py-0.5 text-xs",
-        isEnhancing && "ring-ring/20 ring-1",
+        "bg-foreground/10 relative flex items-center gap-1 overflow-hidden px-2 py-0.5 text-xs",
       ])}
-      onClick={handleClick}
     >
-      {isEnhancing && (
-        <span
-          aria-hidden="true"
-          className="animate-shimmer pointer-events-none absolute inset-0 -translate-x-full bg-linear-to-r from-transparent via-white/60 to-transparent"
-        />
-      )}
       <span className="relative z-10">{humanName || "Unknown"}</span>
-      {canEnhance && (
-        <EnhanceContactButton
-          isEnhancing={isEnhancing}
-          isDisabled={Boolean(enhancingHumanId)}
-          label={humanName || "contact"}
-          onClick={() => {
-            if (assignedHumanId) {
-              onEnhanceContact?.(assignedHumanId);
-            }
-          }}
-        />
-      )}
       <Button
         type="button"
         variant="ghost"
@@ -95,47 +48,6 @@ export function ParticipantChip({
         <X className="h-2.5 w-2.5" />
       </Button>
     </Badge>
-  );
-}
-
-function EnhanceContactButton({
-  isEnhancing,
-  isDisabled,
-  label,
-  onClick,
-}: {
-  isEnhancing: boolean;
-  isDisabled: boolean;
-  label: string;
-  onClick: () => void;
-}) {
-  const { t } = useLingui();
-  return (
-    <Tooltip delayDuration={0}>
-      <TooltipTrigger asChild>
-        <Button
-          type="button"
-          variant="ghost"
-          size="sm"
-          aria-label={t`Enhance contact ${label}`}
-          className="text-muted-foreground hover:text-foreground relative z-10 ml-0.5 h-3.5 w-3.5 p-0 hover:bg-transparent"
-          disabled={isDisabled}
-          onClick={(e) => {
-            e.stopPropagation();
-            onClick();
-          }}
-        >
-          {isEnhancing ? (
-            <Loader2Icon className="h-2.5 w-2.5 animate-spin" />
-          ) : (
-            <SparklesIcon className="h-2.5 w-2.5" />
-          )}
-        </Button>
-      </TooltipTrigger>
-      <TooltipContent side="bottom">
-        <Trans>Enhance contact</Trans>
-      </TooltipContent>
-    </Tooltip>
   );
 }
 
@@ -171,24 +83,6 @@ function useParticipantDetails(mappingId: string) {
   };
 }
 
-function parseHumanIdFromHintValue(value: unknown): string | undefined {
-  let data = value;
-  if (typeof value === "string") {
-    try {
-      data = JSON.parse(value);
-    } catch {
-      return undefined;
-    }
-  }
-
-  if (data && typeof data === "object" && "human_id" in data) {
-    const humanId = (data as Record<string, unknown>).human_id;
-    return typeof humanId === "string" ? humanId : undefined;
-  }
-
-  return undefined;
-}
-
 function useRemoveParticipant({
   mappingId,
   assignedHumanId,
@@ -206,30 +100,6 @@ function useRemoveParticipant({
   return useCallback(() => {
     if (!store) {
       return;
-    }
-
-    if (assignedHumanId && sessionId && indexes) {
-      const transcriptIds = indexes.getSliceRowIds(
-        main.INDEXES.transcriptBySession,
-        sessionId,
-      );
-
-      for (const transcriptId of transcriptIds) {
-        const hints = parseTranscriptHints(store, transcriptId);
-        if (hints.length === 0) continue;
-
-        const filteredHints = hints.filter((hint) => {
-          if (hint.type !== "user_speaker_assignment") {
-            return true;
-          }
-          const hintHumanId = parseHumanIdFromHintValue(hint.value);
-          return hintHumanId !== assignedHumanId;
-        });
-
-        if (filteredHints.length !== hints.length) {
-          updateTranscriptHints(store, transcriptId, filteredHints);
-        }
-      }
     }
 
     if (source === "auto") {

@@ -18,13 +18,7 @@ import {
   type DevtoolsToastPreview,
   useDevtoolsToastPreview,
 } from "~/store/zustand/devtools-toast-preview";
-import { showBatchCompletedNotification } from "~/store/zustand/listener/general-batch";
-import { listenerStore } from "~/store/zustand/listener/instance";
 import { useTabs } from "~/store/zustand/tabs";
-import {
-  AUTO_STOP_CONFIRM_TIMEOUT_SECONDS,
-  createAutoStopEndedNotificationKey,
-} from "~/stt/auto-stop-notification";
 
 type DevtoolsPanelAction =
   | "navigation:onboarding"
@@ -39,10 +33,6 @@ type DevtoolsPanelAction =
   | "ota:failed"
   | "ota:clear"
   | "notifications:calendar"
-  | "notifications:mic-detected"
-  | "notifications:mic-options"
-  | "notifications:auto-stop"
-  | "notifications:batch-done"
   | "notifications:clear"
   | "billing:trial-started"
   | "billing:trial-ended"
@@ -223,78 +213,6 @@ function useDevtoolsPanelActions() {
     });
   }, [store, user_id]);
 
-  const showMicDetectedNotification = useCallback(async () => {
-    await notificationCommands.showNotification({
-      key: `devtool-mic-${crypto.randomUUID()}`,
-      title: "Are you in a meeting?",
-      message: "",
-      timeout: { secs: 15, nanos: 0 },
-      source: {
-        type: "mic_detected",
-        app_names: ["Zoom"],
-        app_ids: ["us.zoom.xos"],
-        event_ids: [],
-      },
-      start_time: null,
-      participants: null,
-      event_details: null,
-      action_label: null,
-      action_variant: null,
-      options: null,
-      footer: null,
-      icon: null,
-    });
-  }, []);
-
-  const showMicOptionsNotification = useCallback(async () => {
-    await notificationCommands.showNotification({
-      key: `devtool-mic-options-${crypto.randomUUID()}`,
-      title: "Are you in a meeting?",
-      message: "",
-      timeout: { secs: 15, nanos: 0 },
-      source: {
-        type: "mic_detected",
-        app_names: ["Zoom", "Google Chrome"],
-        app_ids: ["us.zoom.xos", "com.google.Chrome"],
-        event_ids: [],
-      },
-      start_time: null,
-      participants: null,
-      event_details: null,
-      action_label: null,
-      action_variant: null,
-      options: ["Design sync", "Customer call"],
-      footer: {
-        text: "Ignore Zoom and Chrome?",
-        actionLabel: "Yes",
-        icon: { type: "bundle_id", bundle_id: "us.zoom.xos" },
-      },
-      icon: null,
-    });
-  }, []);
-
-  const showAutoStopNotification = useCallback(async () => {
-    const sessionId =
-      listenerStore.getState().live.sessionId ??
-      `devtool-${crypto.randomUUID()}`;
-
-    await notificationCommands.showNotification({
-      key: createAutoStopEndedNotificationKey(sessionId),
-      title: "Did your meeting end?",
-      message: `Notiz will stop listening in ${AUTO_STOP_CONFIRM_TIMEOUT_SECONDS} seconds.`,
-      timeout: { secs: AUTO_STOP_CONFIRM_TIMEOUT_SECONDS, nanos: 0 },
-      source: null,
-      start_time: null,
-      participants: null,
-      event_details: null,
-      action_label: "Stop",
-      action_variant: "destructive",
-      options: null,
-      footer: null,
-      icon: { type: "bundle_id", bundle_id: "com.google.Chrome" },
-    });
-  }, []);
-
   const createWithCountdown = useCallback(
     (seconds: number, meetingLink?: string) => {
       if (!store) {
@@ -343,18 +261,6 @@ function useDevtoolsPanelActions() {
         case "instruction:integration":
           showInstruction("integration");
           return;
-        case "toasts:preview:language-model":
-          void showToastPreviewInMainWindow("language-model");
-          return;
-        case "toasts:preview:transcription-model":
-          void showToastPreviewInMainWindow("transcription-model");
-          return;
-        case "toasts:preview:transcription-error":
-          void showToastPreviewInMainWindow("transcription-error");
-          return;
-        case "toasts:preview:download":
-          void showToastPreviewInMainWindow("download");
-          return;
         case "toasts:preview:pro":
           void showToastPreviewInMainWindow("pro");
           return;
@@ -378,18 +284,6 @@ function useDevtoolsPanelActions() {
           return;
         case "notifications:calendar":
           void showCalendarNotification();
-          return;
-        case "notifications:mic-detected":
-          void showMicDetectedNotification();
-          return;
-        case "notifications:mic-options":
-          void showMicOptionsNotification();
-          return;
-        case "notifications:auto-stop":
-          void showAutoStopNotification();
-          return;
-        case "notifications:batch-done":
-          void showBatchCompletedNotification("devtool", { force: true });
           return;
         case "notifications:clear":
           void notificationCommands.clearNotifications();
@@ -421,11 +315,8 @@ function useDevtoolsPanelActions() {
     },
     [
       createWithCountdown,
-      showAutoStopNotification,
       showCalendarNotification,
       showInstruction,
-      showMicDetectedNotification,
-      showMicOptionsNotification,
       showOnboarding,
       showToastPreviewInMainWindow,
       showOtaPreviewInMainWindow,
