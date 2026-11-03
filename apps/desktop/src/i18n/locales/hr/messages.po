@@ -81,7 +81,7 @@ msgstr ""
 #~ msgid "Add {0} account"
 #~ msgstr ""
 
-#: src/settings/calendar/index.tsx:271
+#: src/settings/calendar/index.tsx:272
 msgid "Add a calendar"
 msgstr ""
 
@@ -101,6 +101,7 @@ msgstr ""
 msgid "Add another inbox"
 msgstr ""
 
+#: src/calendar/components/sidebar.tsx:84
 #: src/settings/calendar/index.tsx:255
 msgid "Add calendar"
 msgstr ""
@@ -171,12 +172,12 @@ msgstr ""
 msgid "All Notes"
 msgstr ""
 
-#: src/calendar/components/sidebar.tsx:134
+#: src/calendar/components/sidebar.tsx:153
 #: src/onboarding/permissions.tsx:46
 msgid "Allow access"
 msgstr ""
 
-#: src/calendar/components/sidebar.tsx:119
+#: src/calendar/components/sidebar.tsx:138
 msgid "Allow access to show the calendars on this Mac next to your notes. Nothing leaves this device."
 msgstr ""
 
@@ -214,7 +215,7 @@ msgstr "Aplikacija"
 msgid "Appearance"
 msgstr ""
 
-#: src/calendar/components/sidebar.tsx:89
+#: src/calendar/components/sidebar.tsx:108
 msgid "Apple Calendar"
 msgstr ""
 
@@ -296,7 +297,7 @@ msgstr ""
 msgid "Calendar"
 msgstr ""
 
-#: src/calendar/components/sidebar.tsx:114
+#: src/calendar/components/sidebar.tsx:133
 msgid "Calendar access is turned off. Turn it on in System Settings to see your events here."
 msgstr ""
 
@@ -308,7 +309,7 @@ msgstr ""
 msgid "Calendar connected"
 msgstr ""
 
-#: src/calendar/components/sidebar.tsx:60
+#: src/calendar/components/sidebar.tsx:66
 msgid "Calendar links"
 msgstr ""
 
@@ -510,7 +511,7 @@ msgstr ""
 msgid "Connect your integration"
 msgstr ""
 
-#: src/calendar/components/sidebar.tsx:94
+#: src/calendar/components/sidebar.tsx:113
 msgid "Connected"
 msgstr ""
 
@@ -1439,7 +1440,7 @@ msgstr ""
 msgid "Open settings"
 msgstr ""
 
-#: src/calendar/components/sidebar.tsx:132
+#: src/calendar/components/sidebar.tsx:151
 msgid "Open System Settings"
 msgstr ""
 

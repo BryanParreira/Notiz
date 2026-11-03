@@ -38,6 +38,7 @@ import {
   useNow,
   useWeekStartsOn,
 } from "~/calendar/hooks";
+import { useCalendarNav } from "~/calendar/nav-store";
 import type { CalendarSyncRange } from "~/services/calendar";
 import { useMountEffect } from "~/shared/hooks/useMountEffect";
 
@@ -95,7 +96,8 @@ export function CalendarView() {
   const weekOpts = useMemo(() => ({ weekStartsOn }), [weekStartsOn]);
   const [currentMonth, setCurrentMonth] = useState(now);
   const [viewMode, setViewModeState] = useState<ViewMode>(readStoredViewMode);
-  const [anchor, setAnchor] = useState(() => startOfDay(now));
+  const anchor = useCalendarNav((state) => state.anchor);
+  const setAnchor = useCalendarNav((state) => state.setAnchor);
   const setViewMode = useCallback((mode: ViewMode) => {
     setViewModeState(mode);
     try {
@@ -149,6 +151,10 @@ export function CalendarView() {
       advanceCompact(1);
     }
   }, [isGrid, gridDayCount, isMonthView, advanceCompact]);
+
+  useEffect(() => {
+    setCurrentMonth(anchor);
+  }, [anchor]);
 
   const goToToday = useCallback(() => {
     const todayStart = startOfDay(now);

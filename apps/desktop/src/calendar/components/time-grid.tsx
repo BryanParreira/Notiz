@@ -87,7 +87,9 @@ function layoutDay(
 
 function EventBlock({ event }: { event: GridEvent }) {
   const calendar = useCalendar(event.calendarId);
-  const color = calendar?.color || "#888";
+  const now = useNow();
+  const color = calendar?.color || "var(--color-primary, #6b7a2f)";
+  const past = event.end < now;
 
   const startMinutes = minutesOfDay(event.start);
   const durationMinutes = Math.max(
@@ -105,8 +107,9 @@ function EventBlock({ event }: { event: GridEvent }) {
           type="button"
           onClick={(e) => e.stopPropagation()}
           className={cn([
-            "absolute overflow-hidden rounded-md border-l-[3px] px-1.5 py-0.5 text-left text-xs leading-tight",
-            "hover:brightness-95 focus-visible:outline-none",
+            "absolute overflow-hidden rounded-lg border-l-[3px] px-2 py-1 text-left text-xs leading-tight",
+            "transition-[filter,opacity] hover:brightness-95 focus-visible:outline-none",
+            past && "opacity-55",
           ])}
           style={{
             top,
@@ -114,14 +117,13 @@ function EventBlock({ event }: { event: GridEvent }) {
             left: `calc(${event.column * width}% + 1px)`,
             width: `calc(${width}% - 3px)`,
             borderColor: color,
-            backgroundColor: `color-mix(in srgb, ${color} 16%, var(--card, transparent))`,
+            backgroundColor: `color-mix(in srgb, ${color} 18%, transparent)`,
+            color: `color-mix(in srgb, ${color} 45%, #1c1917)`,
           }}
         >
-          <div className="text-foreground truncate font-medium">
-            {event.title}
-          </div>
+          <div className="truncate font-semibold">{event.title}</div>
           {height > 34 && (
-            <div className="text-muted-foreground truncate">
+            <div className="truncate opacity-75">
               {format(event.start, "h:mm")}–{format(event.end, "h:mm a")}
             </div>
           )}
@@ -269,12 +271,14 @@ export function TimeGrid({
   useEffect(() => {
     const el = scrollRef.current;
     if (!el) return;
-    const nowOffset = (minutesOfDay(now) / 60) * HOUR_HEIGHT;
-    const morning = 7 * HOUR_HEIGHT;
-    el.scrollTop =
-      now.getHours() < 7
-        ? morning
-        : Math.max(0, nowOffset - el.clientHeight * 0.4);
+    const frame = requestAnimationFrame(() => {
+      const nowOffset = (minutesOfDay(now) / 60) * HOUR_HEIGHT;
+      el.scrollTop =
+        now.getHours() < 7
+          ? 7 * HOUR_HEIGHT
+          : Math.max(0, nowOffset - el.clientHeight * 0.4);
+    });
+    return () => cancelAnimationFrame(frame);
   }, []);
 
   useEffect(() => {
@@ -286,7 +290,7 @@ export function TimeGrid({
       days.map((day) => {
         const key = format(day, "yyyy-MM-dd");
         const ids = calendarData.eventIdsByDate[key] ?? [];
-        const allDay: { id: string; title: string }[] = [];
+        const allDay: { id: string; title: string; count: number }[] = [];
         const timed: Omit<GridEvent, "column" | "columns">[] = [];
 
         for (const id of ids) {
@@ -294,7 +298,9 @@ export function TimeGrid({
           if (!row) continue;
           const title = String(row.title ?? "");
           if (row.is_all_day) {
-            allDay.push({ id, title });
+            const existing = allDay.find((item) => item.title === title);
+            if (existing) existing.count += 1;
+            else allDay.push({ id, title, count: 1 });
             continue;
           }
           const start = safeParseDate(row.started_at);
@@ -378,6 +384,11 @@ export function TimeGrid({
                       className="bg-primary/15 text-foreground truncate rounded px-1.5 py-0.5 text-left text-xs"
                     >
                       {item.title}
+                      {item.count > 1 && (
+                        <span className="text-muted-foreground ml-1">
+                          ×{item.count}
+                        </span>
+                      )}
                     </button>
                   </PopoverTrigger>
                   <PopoverContent
@@ -419,7 +430,10 @@ export function TimeGrid({
           {columns.map(({ day, events }) => (
             <div
               key={day.toISOString()}
-              className="border-border relative border-l"
+              className={cn([
+                "border-border/50 relative border-l",
+                isSameDay(day, now) && "bg-primary/[0.04]",
+              ])}
               onClick={(e) => {
                 const rect = e.currentTarget.getBoundingClientRect();
                 const minutes =
@@ -437,7 +451,7 @@ export function TimeGrid({
               {Array.from({ length: 24 }, (_, hour) => (
                 <div
                   key={hour}
-                  className="border-border/60 pointer-events-none absolute inset-x-0 border-t"
+                  className="border-border/40 pointer-events-none absolute inset-x-0 border-t"
                   style={{ top: hour * HOUR_HEIGHT }}
                 />
               ))}

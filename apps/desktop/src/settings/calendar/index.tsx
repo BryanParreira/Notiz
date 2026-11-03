@@ -267,9 +267,11 @@ export function AddCalendarLinkForm({
       }}
       className="flex flex-col gap-4"
     >
-      <h3 className="text-sm font-medium">
-        <Trans>Add a calendar</Trans>
-      </h3>
+      {!compact && (
+        <h3 className="text-sm font-medium">
+          <Trans>Add a calendar</Trans>
+        </h3>
+      )}
 
       {compact ? (
         <form.Field name="preset">

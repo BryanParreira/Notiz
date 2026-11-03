@@ -1,11 +1,13 @@
 import { Trans, useLingui } from "@lingui/react/macro";
 import { platform } from "@tauri-apps/plugin-os";
-import { useMemo } from "react";
+import { PlusIcon } from "lucide-react";
+import { useMemo, useState } from "react";
 
 import { Button } from "@notiz/ui/components/ui/button";
 
 import { AppleCalendarSelection } from "./apple/calendar-selection";
 import { TroubleShootingLink } from "./apple/permission";
+import { MiniMonth } from "./mini-month";
 import { OAuthProviderContent } from "./oauth/provider-content";
 import { PROVIDERS, type CalendarProvider } from "./shared";
 
@@ -47,8 +49,12 @@ export function CalendarSidebarContent({
     [connections],
   );
 
+  const [adding, setAdding] = useState(false);
+
   return (
     <div className="flex flex-col gap-6 pt-1 pb-6">
+      <MiniMonth />
+
       {isMacos && <AppleCalendarSection />}
 
       {connected.map((provider) => (
@@ -67,8 +73,21 @@ export function CalendarSidebarContent({
         </section>
       ))}
 
-      <section className="border-border border-t pt-5">
-        <AddCalendarLinkForm compact />
+      <section className="border-border border-t pt-3">
+        <button
+          type="button"
+          onClick={() => setAdding((open) => !open)}
+          aria-expanded={adding}
+          className="text-muted-foreground hover:text-foreground flex w-full items-center gap-2 px-1 py-1.5 text-sm transition-colors"
+        >
+          <PlusIcon className="size-4" />
+          <Trans>Add calendar</Trans>
+        </button>
+        {adding && (
+          <div className="pt-3">
+            <AddCalendarLinkForm compact />
+          </div>
+        )}
       </section>
     </div>
   );
