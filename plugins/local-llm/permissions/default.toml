@@ -2,6 +2,7 @@
 description = "Default permissions for the plugin"
 permissions = [
     "allow-models-dir",
+    "allow-recommended-model",
     "allow-is-model-downloading",
     "allow-is-model-downloaded",
     "allow-download-model",

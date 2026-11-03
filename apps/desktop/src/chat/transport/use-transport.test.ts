@@ -167,19 +167,16 @@ describe("buildToolGuidance", () => {
     const text = buildToolGuidance([]);
 
     expect(text).toContain("personal assistant");
-    expect(text).toContain("Never invent");
-    expect(text).toContain("draft an email");
-    expect(text).toContain(
-      "never say you cannot access their calendar or email",
-    );
+    expect(text).toContain("never make any up");
+    expect(text).toContain("Never say you did something you did not do");
     expect(text).not.toContain("Tool rules");
   });
 
   it("has no tool rules for calendar and email, which need no tools", () => {
     const text = buildToolGuidance(["calendar", "inbox"]);
 
-    expect(text).toContain("calendar is given below");
-    expect(text).toContain("email is given below");
+    expect(text).toContain("events are given below");
+    expect(text).toContain("emails are given below");
     expect(text).not.toContain("Tool rules");
   });
 
@@ -187,14 +184,21 @@ describe("buildToolGuidance", () => {
     const text = buildToolGuidance(["notes"]);
 
     expect(text).toContain("search_sessions");
-    expect(text).toContain("never call the same tool twice");
+    expect(text).toContain("Never call the same tool twice");
     expect(text).not.toContain("web_search");
   });
 
-  it("stays small enough for a model with a few thousand tokens", () => {
-    const all = buildToolGuidance(["calendar", "inbox", "notes", "contacts"]);
+  it("stays small enough for the model's memory, even with every group on", () => {
+    const tokens = (groups: Parameters<typeof buildToolGuidance>[0]) =>
+      buildToolGuidance(groups).length / 4;
 
-    expect(all.length / 4).toBeLessThan(750);
+    // Most messages involve one or two groups.
+    expect(tokens(["notes"])).toBeLessThan(700);
+    expect(tokens(["calendar", "inbox"])).toBeLessThan(600);
+    // The worst case still leaves most of an 8192-token window free.
+    expect(
+      tokens(["calendar", "inbox", "notes", "contacts", "events"]),
+    ).toBeLessThan(1100);
   });
 });
 

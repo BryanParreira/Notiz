@@ -3,6 +3,11 @@ import { useEffect, useMemo, useState } from "react";
 
 import { commands as templateCommands } from "@notiz/plugin-template";
 
+import {
+  buildLeanPrompt,
+  buildProfileBlock,
+  SMALL_TALK_INSTRUCTION,
+} from "./guidance";
 import { isSmallTalk, wantsCardOnly } from "./helpers";
 import { CustomChatTransport } from "./index";
 import type { DataContext, ResolvedChatContext } from "./index";
@@ -166,6 +171,8 @@ export function useTransport(
   const configuredModel = useLanguageModel("chat");
   const model = modelOverride ?? configuredModel;
   const language = useConfigValue("ai_language") || "en";
+  const userName = useConfigValue("user_name");
+  const userAbout = useConfigValue("user_about");
   const { current_llm_provider } = settings.UI.useValues(settings.STORE_ID);
   const modelIsOnDevice = ON_DEVICE_PROVIDERS.has(current_llm_provider ?? "");
 
@@ -220,7 +227,24 @@ export function useTransport(
     };
   }, [language, systemPromptOverride]);
 
-  const effectiveSystemPrompt = systemPromptOverride ?? systemPrompt;
+  const profileBlock = useMemo(
+    () => buildProfileBlock(userName, userAbout),
+    [userName, userAbout],
+  );
+  const baseSystemPrompt = systemPromptOverride ?? systemPrompt;
+  const effectiveSystemPrompt =
+    baseSystemPrompt !== undefined && profileBlock && !systemPromptOverride
+      ? `${baseSystemPrompt}\n\n${profileBlock}`
+      : baseSystemPrompt;
+  const leanPrompt = useMemo(
+    () =>
+      systemPromptOverride
+        ? undefined
+        : [buildLeanPrompt(language), profileBlock]
+            .filter(Boolean)
+            .join("\n\n"),
+    [language, profileBlock, systemPromptOverride],
+  );
   const isSystemPromptReady =
     typeof systemPromptOverride === "string" || systemPrompt !== undefined;
 
@@ -280,7 +304,7 @@ export function useTransport(
       },
       async (groups, text): Promise<DataContext | null> => {
         // A greeting gets a greeting, with none of the user's week attached.
-        if (isSmallTalk(text)) return null;
+        if (isSmallTalk(text)) return { text: SMALL_TALK_INSTRUCTION };
 
         const asksCalendar = groups.includes("calendar");
         const asksInbox = groups.includes("inbox");
@@ -337,8 +361,9 @@ export function useTransport(
 
         return parts.length > 0 ? { text: parts.join("\n\n") } : null;
       },
+      leanPrompt,
     );
-  }, [model, tools, effectiveSystemPrompt, store, modelIsOnDevice]);
+  }, [model, tools, effectiveSystemPrompt, leanPrompt, store, modelIsOnDevice]);
 
   return {
     transport,

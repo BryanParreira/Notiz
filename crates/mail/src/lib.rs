@@ -1,3 +1,4 @@
+mod apple;
 mod client;
 mod error;
 mod store;
@@ -110,6 +111,29 @@ pub async fn add_account(input: MailAccountInput) -> Result<MailAccountInfo, Err
     Ok(info)
 }
 
+/// Connects the Mail app on this Mac. No password is stored: access is the
+/// macOS Automation permission the user grants to Notiz.
+pub async fn add_apple_mail() -> Result<MailAccountInfo, Error> {
+    apple::verify().await?;
+
+    let _guard = store::LOCK.lock().await;
+    if let Some(existing) = store::list()?.iter().find(|a| apple::is_apple(&a.host)) {
+        return Ok(MailAccountInfo::from(existing));
+    }
+
+    let account = store::StoredAccount {
+        id: uuid::Uuid::new_v4().to_string(),
+        label: "Mail on this Mac".to_string(),
+        host: apple::HOST.to_string(),
+        port: 0,
+        username: String::new(),
+        password: String::new(),
+    };
+    let info = MailAccountInfo::from(&store::AccountMeta::from(&account));
+    store::add(account)?;
+    Ok(info)
+}
+
 pub async fn remove_account(id: &str) -> Result<(), Error> {
     let _guard = store::LOCK.lock().await;
     store::remove(id)?;
@@ -120,7 +144,11 @@ pub async fn remove_account(id: &str) -> Result<(), Error> {
 /// Newest messages in the inbox. The mailbox is opened read-only and message
 /// bodies are never fetched.
 pub async fn recent(account_id: &str, limit: usize) -> Result<Vec<MailMessage>, Error> {
-    client::search(find(account_id).await?, None, limit).await
+    let account = find(account_id).await?;
+    if apple::is_apple(&account.host) {
+        return apple::search(None, limit).await;
+    }
+    client::search(account, None, limit).await
 }
 
 /// Newest inbox messages sent to or from any of `addresses`.
@@ -133,13 +161,21 @@ pub async fn messages_with(
     if addresses.is_empty() {
         return Ok(Vec::new());
     }
-    client::search(find(account_id).await?, Some(addresses), limit).await
+    let account = find(account_id).await?;
+    if apple::is_apple(&account.host) {
+        return apple::search(Some(addresses), limit).await;
+    }
+    client::search(account, Some(addresses), limit).await
 }
 
 /// Reads one message for preview. The mailbox is opened read-only and the body
 /// is fetched with PEEK, so nothing is marked as read on the server.
 pub async fn read(account_id: &str, uid: u32) -> Result<MailBody, Error> {
-    client::read_message(find(account_id).await?, uid).await
+    let account = find(account_id).await?;
+    if apple::is_apple(&account.host) {
+        return apple::read_message(uid).await;
+    }
+    client::read_message(account, uid).await
 }
 
 async fn find(account_id: &str) -> Result<store::StoredAccount, Error> {

@@ -1,12 +1,17 @@
 import { Trans } from "@lingui/react/macro";
+import { useQuery } from "@tanstack/react-query";
 import { Loader2 } from "lucide-react";
 
+import { commands as localLlmCommands } from "@notiz/plugin-local-llm";
 import { Accordion } from "@notiz/ui/components/ui/accordion";
 
 import { useLlmSettings } from "./context";
 import { ProviderId, PROVIDERS } from "./shared";
 
-import { useLocalLlmModelDownload } from "~/ai/hooks/useLocalLlmModel";
+import {
+  useLocalLlmModelDownload,
+  useRecommendedLocalLlmModel,
+} from "~/ai/hooks/useLocalLlmModel";
 import { NonNotizProviderCard, StyledStreamdown } from "~/settings/ai/shared";
 
 export function ConfigureProviders() {
@@ -81,6 +86,16 @@ function LocalLlmDownloadStatus() {
     handleDownload,
     handleCancel,
   } = useLocalLlmModelDownload();
+  const recommended = useRecommendedLocalLlmModel();
+  const { data: supported } = useQuery({
+    queryKey: ["local-llm", "supported"],
+    queryFn: async () => {
+      const result = await localLlmCommands.listSupportedModel();
+      return result.status === "ok" ? result.data : [];
+    },
+    staleTime: Infinity,
+  });
+  const info = supported?.find((model) => model.key === recommended);
 
   return (
     <div className="mb-3 flex flex-col gap-2">
@@ -88,6 +103,15 @@ function LocalLlmDownloadStatus() {
         Runs fully on-device — no account, no external server to install or
         configure. The model downloads once and stays local.
       </StyledStreamdown>
+
+      {info && (
+        <p className="text-xs">
+          <span className="font-medium">{info.name}</span>
+          {" · "}
+          {(info.size_bytes / 1024 ** 3).toFixed(1)} GB
+          <span className="text-muted-foreground"> · {info.description}</span>
+        </p>
+      )}
 
       {hasError && errorMessage && (
         <p className="text-destructive text-xs">{errorMessage}</p>

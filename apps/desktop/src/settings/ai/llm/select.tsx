@@ -16,7 +16,7 @@ import { HealthStatusIndicator, useConnectionHealth } from "./health";
 import { getPreferredProviderModel } from "./selection";
 import { type Provider, PROVIDERS } from "./shared";
 
-import { DEFAULT_LOCAL_LLM_MODEL } from "~/ai/hooks/useLocalLlmModel";
+import { listLocalLlmModels } from "~/ai/hooks/useLocalLlmModel";
 import { useAuth } from "~/auth";
 import { useBillingAccess } from "~/auth/billing";
 import { providerRowId, ProviderIconSlot } from "~/settings/ai/shared";
@@ -301,16 +301,22 @@ export function getLlmProviderStatus({
   }
 
   if (provider.id === "notiz_local") {
-    const result: ListModelsResult = {
-      models: [DEFAULT_LOCAL_LLM_MODEL],
-      ignored: [],
-      metadata: {
-        [DEFAULT_LOCAL_LLM_MODEL]: {
-          input_modalities: ["text"] as InputModality[],
-        },
+    return {
+      configured: true,
+      listModels: async (): Promise<ListModelsResult> => {
+        const models = await listLocalLlmModels();
+        return {
+          models,
+          ignored: [],
+          metadata: Object.fromEntries(
+            models.map((model) => [
+              model,
+              { input_modalities: ["text"] as InputModality[] },
+            ]),
+          ),
+        };
       },
     };
-    return { configured: true, listModels: async () => result };
   }
 
   let listModelsFunc: () => Promise<ListModelsResult>;

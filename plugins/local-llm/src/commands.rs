@@ -16,6 +16,12 @@ pub async fn list_supported_model() -> Result<Vec<ModelInfo>, String> {
 
 #[tauri::command]
 #[specta::specta]
+pub async fn recommended_model() -> Result<crate::SupportedModel, String> {
+    Ok(notiz_local_llm_core::recommended_model())
+}
+
+#[tauri::command]
+#[specta::specta]
 pub async fn is_model_downloaded<R: tauri::Runtime>(
     app: tauri::AppHandle<R>,
     model: crate::SupportedModel,

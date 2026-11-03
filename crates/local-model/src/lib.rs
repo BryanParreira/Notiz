@@ -11,15 +11,37 @@ pub enum GgufLlmModel {
     Gemma3_4bQ4,
     NotizLLM,
     Qwen2p5_3bQ4,
+    Qwen3p5_4bQ4,
+    Qwen3p5_9bQ4,
 }
 
+const QWEN3P5_9B_URL: &str = "https://huggingface.co/unsloth/Qwen3.5-9B-GGUF/resolve/3885219b6810b007914f3a7950a8d1b469d598a5/Qwen3.5-9B-Q4_K_M.gguf";
+const QWEN3P5_9B_SIZE: u64 = 5680522464;
+const QWEN3P5_9B_CRC32: u32 = 245085559;
+
+const GIB: u64 = 1024 * 1024 * 1024;
+
 impl GgufLlmModel {
+    /// The fastest model that still handles the assistant's jobs well. The 4B is
+    /// about twice as quick as the 9B and leaves memory for the browser, mail and
+    /// chat apps people keep open, so the 9B is only recommended from 32 GB. It
+    /// stays selectable. `None` means the size could not be read, which gets the
+    /// smallest model rather than risking an out-of-memory stall.
+    pub fn recommended_for_ram(total_memory_bytes: Option<u64>) -> Self {
+        match total_memory_bytes {
+            Some(bytes) if bytes >= 32 * GIB => GgufLlmModel::Qwen3p5_9bQ4,
+            _ => GgufLlmModel::Qwen3p5_4bQ4,
+        }
+    }
+
     pub fn file_name(&self) -> &str {
         match self {
             GgufLlmModel::Llama3p2_3bQ4 => "llm.gguf",
             GgufLlmModel::NotizLLM => "notiz-llm.gguf",
             GgufLlmModel::Gemma3_4bQ4 => "gemma-3-4b-it-Q4_K_M.gguf",
             GgufLlmModel::Qwen2p5_3bQ4 => "qwen2.5-3b-instruct-q4_k_m.gguf",
+            GgufLlmModel::Qwen3p5_4bQ4 => "Qwen3.5-4B-Q4_K_S.gguf",
+            GgufLlmModel::Qwen3p5_9bQ4 => "Qwen3.5-9B-Q4_K_M.gguf",
         }
     }
 
@@ -40,6 +62,12 @@ impl GgufLlmModel {
             GgufLlmModel::Qwen2p5_3bQ4 => {
                 "https://github.com/BryanParreira/Notiz/releases/download/models-v1/qwen2.5-3b-instruct-q4_k_m.gguf"
             }
+            // Pinned to a Hugging Face revision so the bytes can never change
+            // under the size and checksum below. Apache-2.0.
+            GgufLlmModel::Qwen3p5_4bQ4 => {
+                "https://huggingface.co/unsloth/Qwen3.5-4B-GGUF/resolve/e87f176479d0855a907a41277aca2f8ee7a09523/Qwen3.5-4B-Q4_K_S.gguf"
+            }
+            GgufLlmModel::Qwen3p5_9bQ4 => QWEN3P5_9B_URL,
         }
     }
 
@@ -50,6 +78,8 @@ impl GgufLlmModel {
             GgufLlmModel::Gemma3_4bQ4 => 2489894016,
             // Confirmed via HF's LFS metadata for the source file.
             GgufLlmModel::Qwen2p5_3bQ4 => 2104932768,
+            GgufLlmModel::Qwen3p5_4bQ4 => 2590430368,
+            GgufLlmModel::Qwen3p5_9bQ4 => QWEN3P5_9B_SIZE,
         }
     }
 
@@ -59,6 +89,8 @@ impl GgufLlmModel {
             GgufLlmModel::NotizLLM => 4037351144,
             GgufLlmModel::Gemma3_4bQ4 => 2760830291,
             GgufLlmModel::Qwen2p5_3bQ4 => 237264834,
+            GgufLlmModel::Qwen3p5_4bQ4 => 509560013,
+            GgufLlmModel::Qwen3p5_9bQ4 => QWEN3P5_9B_CRC32,
         }
     }
 
@@ -68,6 +100,8 @@ impl GgufLlmModel {
             GgufLlmModel::NotizLLM => "NotizLLM",
             GgufLlmModel::Gemma3_4bQ4 => "Gemma 3 4B Q4",
             GgufLlmModel::Qwen2p5_3bQ4 => "Qwen 2.5 3B Q4",
+            GgufLlmModel::Qwen3p5_4bQ4 => "Qwen 3.5 4B Q4",
+            GgufLlmModel::Qwen3p5_9bQ4 => "Qwen 3.5 9B Q4",
         }
     }
 
@@ -133,6 +167,8 @@ impl LocalModel {
             LocalModel::GgufLlm(GgufLlmModel::Llama3p2_3bQ4),
             LocalModel::GgufLlm(GgufLlmModel::NotizLLM),
             LocalModel::GgufLlm(GgufLlmModel::Gemma3_4bQ4),
+            LocalModel::GgufLlm(GgufLlmModel::Qwen3p5_4bQ4),
+            LocalModel::GgufLlm(GgufLlmModel::Qwen3p5_9bQ4),
         ]);
 
         models
@@ -173,6 +209,8 @@ impl LocalModel {
             LocalModel::GgufLlm(GgufLlmModel::NotizLLM) => "llm-notiz-llm",
             LocalModel::GgufLlm(GgufLlmModel::Gemma3_4bQ4) => "llm-gemma3-4b-q4",
             LocalModel::GgufLlm(GgufLlmModel::Qwen2p5_3bQ4) => "llm-qwen2-5-3b-q4",
+            LocalModel::GgufLlm(GgufLlmModel::Qwen3p5_4bQ4) => "llm-qwen3-5-4b-q4",
+            LocalModel::GgufLlm(GgufLlmModel::Qwen3p5_9bQ4) => "llm-qwen3-5-9b-q4",
         }
     }
 
@@ -383,5 +421,30 @@ mod tests {
             .unwrap_err();
 
         assert!(error.to_string().contains("Soniqo bridge"));
+    }
+}
+
+#[cfg(test)]
+mod recommendation_tests {
+    use super::*;
+
+    #[test]
+    fn recommendation_follows_memory() {
+        assert_eq!(
+            GgufLlmModel::recommended_for_ram(Some(8 * GIB)),
+            GgufLlmModel::Qwen3p5_4bQ4
+        );
+        assert_eq!(
+            GgufLlmModel::recommended_for_ram(Some(16 * GIB)),
+            GgufLlmModel::Qwen3p5_4bQ4
+        );
+        assert_eq!(
+            GgufLlmModel::recommended_for_ram(Some(32 * GIB)),
+            GgufLlmModel::Qwen3p5_9bQ4
+        );
+        assert_eq!(
+            GgufLlmModel::recommended_for_ram(None),
+            GgufLlmModel::Qwen3p5_4bQ4
+        );
     }
 }

@@ -6,7 +6,10 @@ import { json2md, md2json, parseJsonContent } from "@notiz/editor/markdown";
 import {
   buildEditNoteTool,
   coerceNoteEditMode,
+  lastAssistantText,
+  normalizeNoteContent,
   proposeNoteText,
+  refersToPreviousReply,
   resetRecentNoteProposals,
   resolveNoteId,
 } from "./edit-note";
@@ -40,8 +43,8 @@ function setup(markdown = "# Week 1\n\ni have to study for the test") {
     },
   } as Pick<ToolDependencies, "getStore" | "getSessionId" | "openEditTab">);
 
-  const run = (input: object) =>
-    tool.execute!(input as never, {} as never) as Promise<{
+  const run = (input: object, messages?: unknown[]) =>
+    tool.execute!(input as never, { messages } as never) as Promise<{
       status: string;
       message?: string;
     }>;
@@ -74,6 +77,81 @@ describe("edit_note", () => {
     expect(store.getCell("sessions", "s1", "title")).toBe("Week 1");
     expect(proposal()?.target).toBe("note");
     expect(proposal()?.proposed).toContain("Complete assignment");
+  });
+
+  it("uses the assistant's previous reply for 'add that to my note'", async () => {
+    const { run, noteText, proposal } = setup();
+    const messages = [
+      { role: "user", content: "help me study" },
+      {
+        role: "assistant",
+        content: [
+          {
+            type: "text",
+            text: "## Plan\n- Review chapter 3\n- Practice problems",
+          },
+        ],
+      },
+      { role: "user", content: "add that to my note please" },
+      {
+        role: "assistant",
+        content: [{ type: "tool-call", toolName: "edit_note" }],
+      },
+    ];
+
+    const result = await run(
+      { mode: "append", use_previous_reply: true },
+      messages,
+    );
+
+    expect(result.status).toBe("applied");
+    expect(noteText()).toContain("Review chapter 3");
+    expect(noteText()).toContain("Practice problems");
+    expect(proposal()?.proposed).toContain("## Plan");
+  });
+
+  it("adds the whole previous reply when the user said 'add that', even if the model retyped part of it", async () => {
+    const { run, noteText } = setup();
+    const messages = [
+      {
+        role: "assistant",
+        content: "- Review chapter 3\n- Practice problems\n- Sleep early",
+      },
+      { role: "user", content: "add that to my note please" },
+    ];
+
+    await run({ mode: "append", content: "- Practice problems" }, messages);
+
+    expect(noteText()).toContain("Review chapter 3");
+    expect(noteText()).toContain("Sleep early");
+  });
+
+  it("can add the same text again later, since finished edits are not remembered", async () => {
+    const { run, noteText } = setup();
+
+    await run({ mode: "append", content: "- Water the plants" });
+    await run({ mode: "append", content: "- Water the plants" });
+
+    expect(noteText().match(/Water the plants/g)).toHaveLength(2);
+  });
+
+  it("uses the previous reply when the model sends no content at all", async () => {
+    const { run, noteText } = setup();
+
+    await run({ mode: "append" }, [
+      { role: "assistant", content: "Buy milk and eggs" },
+    ]);
+
+    expect(noteText()).toContain("Buy milk and eggs");
+  });
+
+  it("says so when there is nothing to add", async () => {
+    const { run } = setup();
+
+    const result = await run({ mode: "append", use_previous_reply: true }, []);
+
+    expect(result.status).toBe("error");
+    expect(result.message).toMatch(/nothing to add/);
   });
 
   it("changes nothing when the user declines", async () => {
@@ -219,5 +297,63 @@ describe("resolveNoteId", () => {
     expect(resolveNoteId(store as never, "planning", undefined)).toBe("def");
     expect(resolveNoteId(store as never, "unknown", undefined)).toBeUndefined();
     expect(resolveNoteId(store as never, undefined, undefined)).toBeUndefined();
+  });
+});
+
+describe("lastAssistantText", () => {
+  it("finds the latest assistant message that has words, skipping tool calls", () => {
+    expect(
+      lastAssistantText([
+        { role: "assistant", content: "older" },
+        { role: "assistant", content: [{ type: "text", text: "newer" }] },
+        { role: "assistant", content: [{ type: "tool-call", toolName: "x" }] },
+        { role: "user", content: "ok" },
+      ]),
+    ).toBe("newer");
+  });
+
+  it("returns null when the assistant has said nothing", () => {
+    expect(lastAssistantText([{ role: "user", content: "hi" }])).toBeNull();
+    expect(lastAssistantText(undefined)).toBeNull();
+  });
+});
+
+describe("normalizeNoteContent", () => {
+  it("turns written-out line breaks back into real ones", () => {
+    expect(normalizeNoteContent("- one\\n- two\\n\\t- sub")).toBe(
+      "- one\n- two\n  - sub",
+    );
+  });
+
+  it("leaves properly formatted text alone", () => {
+    expect(normalizeNoteContent("- one\n- two\n")).toBe("- one\n- two");
+    expect(normalizeNoteContent("a path like C:\\new")).toBe(
+      "a path like C:\\new",
+    );
+  });
+});
+
+describe("refersToPreviousReply", () => {
+  it("is true when the user means what was just said", () => {
+    for (const text of [
+      "add that to my note please",
+      "put this in the note",
+      "can you save it to my note?",
+      "write those down in the week 1 note",
+      "append the list to my note",
+    ]) {
+      expect(refersToPreviousReply(text)).toBe(true);
+    }
+  });
+
+  it("is false when the user gave new content or something else", () => {
+    for (const text of [
+      "add this to my note: buy milk",
+      "add milk to my note",
+      "what is in my note?",
+      "rename my note",
+    ]) {
+      expect(refersToPreviousReply(text)).toBe(false);
+    }
   });
 });

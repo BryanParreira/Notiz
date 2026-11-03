@@ -103,3 +103,30 @@ describe("direct replies", () => {
     expect(message?.metadata?.agenda?.[0].events[0].title).toBe("CIS 121");
   });
 });
+
+describe("note creation routing", () => {
+  it("offers only create_note for a new to-do note", async () => {
+    const { toolGroupsForMessage, toolNamesForGroups } =
+      await import("./helpers");
+    const groups = toolGroupsForMessage(
+      "can u create a note with a todo for the things i have to do this week",
+    );
+    expect(groups).toContain("tasks");
+    expect(groups).not.toContain("notes");
+    expect(toolNamesForGroups(groups)).toEqual(["create_note"]);
+  });
+
+  it("still uses note search for questions about past meetings", async () => {
+    const { toolGroupsForMessage } = await import("./helpers");
+    expect(toolGroupsForMessage("what did we decide in the meeting")).toContain(
+      "notes",
+    );
+  });
+
+  it("routes drafting to the writing rules", async () => {
+    const { toolGroupsForMessage } = await import("./helpers");
+    expect(toolGroupsForMessage("draft a reply to Nicole")).toContain(
+      "writing",
+    );
+  });
+});

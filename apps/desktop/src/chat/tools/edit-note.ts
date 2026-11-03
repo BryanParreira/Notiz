@@ -3,6 +3,7 @@ import { z } from "zod";
 
 import { json2md, md2json, parseJsonContent } from "@notiz/editor/markdown";
 
+import { lenientBoolean } from "./lenient";
 import type { ToolDependencies } from "./types";
 
 import { usePendingEditStore } from "~/chat/tools/pending-edit-store";
@@ -56,6 +57,46 @@ export function proposeNoteText({
   return /^#\s/.test(text) || !heading ? text : `${heading}\n\n${text}`;
 }
 
+// The most recent thing the assistant said in words, taken from the messages the
+// model is working from. "Add that to my note" means this, so the model does not
+// have to retype it (which is slow, and is where long tool calls get cut off).
+export function lastAssistantText(messages: unknown): string | null {
+  if (!Array.isArray(messages)) return null;
+
+  for (let i = messages.length - 1; i >= 0; i -= 1) {
+    const message = messages[i] as { role?: string; content?: unknown };
+    if (message?.role !== "assistant") continue;
+
+    const text = Array.isArray(message.content)
+      ? message.content
+          .flatMap((part: { type?: string; text?: string }) =>
+            part?.type === "text" && typeof part.text === "string"
+              ? [part.text]
+              : [],
+          )
+          .join("\n")
+      : typeof message.content === "string"
+        ? message.content
+        : "";
+
+    if (text.trim()) return text.trim();
+  }
+
+  return null;
+}
+
+// Small models sometimes write a line break as the two characters \n instead of
+// a real one. If the text has no real line breaks but is full of those, they
+// are turned back into line breaks.
+export function normalizeNoteContent(text: string): string {
+  const realBreaks = (text.match(/\n/g) ?? []).length;
+  const escaped = (text.match(/\\n/g) ?? []).length;
+  // One lone "\\n" could be part of a path; a model's escaped list has several.
+  if (escaped < 2 || realBreaks >= escaped) return text.trim();
+
+  return text.replace(/\\n/g, "\n").replace(/\\t/g, "  ").trim();
+}
+
 type NoteStore = NonNullable<ReturnType<ToolDependencies["getStore"]>>;
 
 // Small models fill in `sessionId` with a guess ("week 1 note", "your_note_id")
@@ -88,32 +129,58 @@ export function resolveNoteId(
   return partial;
 }
 
-// The model sometimes sends the same call twice at once. Identical calls share
-// one outcome, so the user reviews a change once and the model sees "applied"
-// both times instead of getting confused by a second answer.
-const RECENT_WINDOW_MS = 60_000;
-
+// The model sometimes sends the same call twice at once. Identical calls that
+// are in progress together share one outcome, so the user reviews a change once
+// and the model sees "applied" both times. Nothing is remembered afterwards: a
+// finished edit must never stop the same text being added again later (say,
+// after the user undid it).
 type EditResult = { status: string; message?: string };
 
-const recentProposals = new Map<
-  string,
-  { at: number; result: Promise<EditResult> }
->();
+const inFlightProposals = new Map<string, Promise<EditResult>>();
 
 export function resetRecentNoteProposals() {
-  recentProposals.clear();
+  inFlightProposals.clear();
+}
+
+// "Add that to my note" and "put this in the note" mean the assistant's last
+// reply. The model is asked to say so, but it often retypes part of it instead,
+// so the words the user wrote decide. Text after a colon is new content.
+export function refersToPreviousReply(userText: string): boolean {
+  if (/:\s*\S/.test(userText)) return false;
+
+  return /\b(add|put|save|write|copy|paste|insert|append|move)\b[^.?!]{0,30}\b(that|this|those|these|it|the above|the list|the plan)\b/i.test(
+    userText,
+  );
+}
+
+function lastUserText(messages: unknown): string {
+  if (!Array.isArray(messages)) return "";
+
+  for (let i = messages.length - 1; i >= 0; i -= 1) {
+    const message = messages[i] as { role?: string; content?: unknown };
+    if (message?.role !== "user") continue;
+
+    return Array.isArray(message.content)
+      ? message.content
+          .flatMap((part: { type?: string; text?: string }) =>
+            part?.type === "text" && typeof part.text === "string"
+              ? [part.text]
+              : [],
+          )
+          .join(" ")
+      : typeof message.content === "string"
+        ? message.content
+        : "";
+  }
+  return "";
 }
 
 export const buildEditNoteTool = (
   deps: Pick<ToolDependencies, "getStore" | "getSessionId" | "openEditTab">,
 ) =>
   tool({
-    description: `
-Add to, or rewrite, the text of the user's own note. This opens a review where the user approves or declines the change, so nothing changes until they approve.
-Use mode "append" to add content to the end of the note (the usual choice). Use "replace_all" only to rewrite the whole note; then send the complete new note.
-Write content as real markdown: one "-" bullet per line, with sub-items indented, never a list run together on one line.
-Use edit_summary instead for the AI-written summary of a meeting. Never tell the user a note was changed unless this returns status "applied". Call this once per change.
-`.trim(),
+    description:
+      `Add to, or rewrite, the user's own note after they approve it. For something you already wrote, set use_previous_reply and leave content out. Mode "append" adds to the end; "replace_all" rewrites the whole note (send the complete note). Write content as markdown, one "-" bullet per line. Call once per change.`.trim(),
     inputSchema: z.object({
       sessionId: z
         .string()
@@ -126,16 +193,23 @@ Use edit_summary instead for the AI-written summary of a meeting. Never tell the
         .describe('"append" adds to the end; "replace_all" rewrites the note'),
       content: z
         .string()
-        .min(1)
+        .optional()
         .describe(
-          "The text to add, or the complete new note for replace_all, in markdown",
+          "The text to add, or the complete new note for replace_all, in markdown. Leave out when use_previous_reply is true.",
         ),
+      use_previous_reply: lenientBoolean().describe(
+        "True to use your previous reply as the content instead of retyping it",
+      ),
     }),
-    execute: async (params: {
-      sessionId?: string;
-      mode: "append" | "replace_all";
-      content: string;
-    }) => {
+    execute: async (
+      params: {
+        sessionId?: string;
+        mode: "append" | "replace_all";
+        content?: string;
+        use_previous_reply?: boolean;
+      },
+      options?: { messages?: unknown },
+    ) => {
       const store = deps.getStore();
       const sessionId = store
         ? resolveNoteId(store, params.sessionId, deps.getSessionId())
@@ -149,6 +223,22 @@ Use edit_summary instead for the AI-written summary of a meeting. Never tell the
         };
       }
 
+      const usePrevious =
+        params.use_previous_reply === true ||
+        !params.content?.trim() ||
+        refersToPreviousReply(lastUserText(options?.messages));
+      const wanted = usePrevious
+        ? (lastAssistantText(options?.messages) ?? params.content)
+        : params.content;
+      if (!wanted) {
+        return {
+          status: "error",
+          message:
+            "There is nothing to add. Give the text to add, or ask the user what to put in the note.",
+        };
+      }
+      const content = normalizeNoteContent(wanted);
+
       const rawTitle = store.getCell("sessions", sessionId, "title");
       const title = typeof rawTitle === "string" ? rawTitle : "";
       const raw = store.getCell("sessions", sessionId, "raw_md");
@@ -160,20 +250,16 @@ Use edit_summary instead for the AI-written summary of a meeting. Never tell the
         currentMarkdown,
         title,
         mode: params.mode,
-        content: params.content,
+        content,
       });
 
       if (proposed === currentMarkdown.trimEnd()) {
         return { status: "error", message: "That would not change the note." };
       }
 
-      const proposalKey = `${sessionId}|${params.mode}|${params.content.trim()}`;
-      const now = Date.now();
-      for (const [other, entry] of recentProposals) {
-        if (now - entry.at > RECENT_WINDOW_MS) recentProposals.delete(other);
-      }
-      const shared = recentProposals.get(proposalKey);
-      if (shared) return shared.result;
+      const proposalKey = `${sessionId}|${params.mode}|${content}`;
+      const shared = inFlightProposals.get(proposalKey);
+      if (shared) return shared;
 
       const outcome = (async (): Promise<EditResult> => {
         const requestId = id();
@@ -210,11 +296,11 @@ Use edit_summary instead for the AI-written summary of a meeting. Never tell the
         return { status: "applied" };
       })();
 
-      recentProposals.set(proposalKey, { at: now, result: outcome });
-      const result = await outcome;
-      // Only a change that went through is remembered; a declined or failed one
-      // can be asked for again.
-      if (result.status !== "applied") recentProposals.delete(proposalKey);
-      return result;
+      inFlightProposals.set(proposalKey, outcome);
+      try {
+        return await outcome;
+      } finally {
+        inFlightProposals.delete(proposalKey);
+      }
     },
   });

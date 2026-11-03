@@ -8,14 +8,38 @@ import {
   type GgufLlmModel,
 } from "@notiz/plugin-local-llm";
 
-// Qwen2p5_3bQ4's download URL (a GitHub release asset in this fork) 404s —
-// the release was never published here. Llama3p2_3bQ4 is hosted on S3 and
-// confirmed reachable; same size/class of model. Switch back to Qwen once
-// that release exists.
-export const DEFAULT_LOCAL_LLM_MODEL: GgufLlmModel = "Llama3p2_3bQ4";
+// Used until the Mac's memory has been read: the smaller model is the safe
+// choice on any machine.
+const FALLBACK_LOCAL_LLM_MODEL: GgufLlmModel = "Qwen3p5_4bQ4";
+
+// Best first, so a Mac that already has a bigger model keeps using it.
+const PREFERENCE: GgufLlmModel[] = [
+  "Qwen3p5_9bQ4",
+  "Qwen3p5_4bQ4",
+  "Llama3p2_3bQ4",
+];
+
+// The model recommended for this Mac's memory when it is downloaded. Failing
+// that, one the user already has (the old default, for existing installs), so
+// an update never leaves chat without a model. Failing that, the recommendation,
+// which is what the download button then fetches.
+export async function pickLocalLlmModel(): Promise<GgufLlmModel> {
+  const recommended = await localLlmCommands.recommendedModel();
+  const wanted =
+    recommended.status === "ok" ? recommended.data : FALLBACK_LOCAL_LLM_MODEL;
+
+  const downloaded = await localLlmCommands.listDownloadedModel();
+  if (downloaded.status !== "ok") return wanted;
+  if (downloaded.data.includes(wanted)) return wanted;
+
+  const have = PREFERENCE.find((model) => downloaded.data.includes(model));
+  return have ?? wanted;
+}
 
 export const localLlmKeys = {
   all: ["local-llm"] as const,
+  default: ["local-llm", "default"] as const,
+  recommended: ["local-llm", "recommended"] as const,
   model: (model: GgufLlmModel) =>
     [...localLlmKeys.all, "model", model] as const,
   downloaded: (model: GgufLlmModel) =>
@@ -52,10 +76,48 @@ export const localLlmQueries = {
     }),
 };
 
-export function useLocalLlmModelDownload(
-  model: GgufLlmModel = DEFAULT_LOCAL_LLM_MODEL,
-) {
+async function fetchRecommendedLocalLlmModel(): Promise<GgufLlmModel> {
+  const result = await localLlmCommands.recommendedModel();
+  return result.status === "ok" ? result.data : FALLBACK_LOCAL_LLM_MODEL;
+}
+
+// The model to offer for download on this Mac, even when an older one is
+// already installed. Not the same as the one in use (see pickLocalLlmModel).
+export function useRecommendedLocalLlmModel(): GgufLlmModel | undefined {
+  return useQuery({
+    queryKey: localLlmKeys.recommended,
+    queryFn: fetchRecommendedLocalLlmModel,
+    staleTime: Infinity,
+  }).data;
+}
+
+// Every model worth showing in a picker: the recommendation first, then
+// anything already downloaded.
+export async function listLocalLlmModels(): Promise<GgufLlmModel[]> {
+  const recommended = await fetchRecommendedLocalLlmModel();
+  const downloaded = await localLlmCommands.listDownloadedModel();
+  const others =
+    downloaded.status === "ok"
+      ? PREFERENCE.filter(
+          (model) => model !== recommended && downloaded.data.includes(model),
+        )
+      : [];
+  return [recommended, ...others];
+}
+
+// Undefined until the Mac's memory has been read.
+export function useDefaultLocalLlmModel(): GgufLlmModel | undefined {
+  return useQuery({
+    queryKey: localLlmKeys.default,
+    queryFn: pickLocalLlmModel,
+    staleTime: Infinity,
+  }).data;
+}
+
+export function useLocalLlmModelDownload(modelOverride?: GgufLlmModel) {
   const queryClient = useQueryClient();
+  const recommendedModel = useRecommendedLocalLlmModel();
+  const model = modelOverride ?? recommendedModel ?? FALLBACK_LOCAL_LLM_MODEL;
   const [progress, setProgress] = useState(0);
   const [isStarting, setIsStarting] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -87,6 +149,10 @@ export function useLocalLlmModelDownload(
         void queryClient.invalidateQueries({
           queryKey: localLlmKeys.downloaded(model),
         });
+        void queryClient.invalidateQueries({ queryKey: localLlmKeys.default });
+        // A model that is already loaded keeps serving until it stops, so
+        // stop it and the next message starts the one just downloaded.
+        void localLlmCommands.stopServer();
       } else if (typeof status === "object" && "downloading" in status) {
         setErrorMessage(null);
         setIsStarting(false);

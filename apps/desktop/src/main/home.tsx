@@ -1,13 +1,18 @@
 import { Trans, useLingui } from "@lingui/react/macro";
+import { useQuery } from "@tanstack/react-query";
 import { format, isSameDay, isToday, parseISO, startOfDay } from "date-fns";
-import { ArrowUpIcon, FileTextIcon, PlusIcon } from "lucide-react";
+import { ArrowUpIcon, FileTextIcon, MailIcon, PlusIcon } from "lucide-react";
 import { useMemo, useState } from "react";
 
 import { Kbd } from "@notiz/ui/components/ui/kbd";
 import { cn } from "@notiz/utils";
 
+import { fetchInboxMessages } from "~/chat/context/inbox-data";
 import { setPendingChatPrompt } from "~/chat/pending-prompt";
 import { NotesList } from "~/folders/notes-list";
+import { selectInboxMessageOnOpen } from "~/inbox/pending-selection";
+import { AppleMailConnect } from "~/settings/email/apple-mail";
+import { useConfigValue } from "~/shared/config";
 import { StandardTabWrapper } from "~/shared/main";
 import { useNewNote } from "~/shared/useNewNote";
 import * as main from "~/store/tinybase/store/main";
@@ -78,7 +83,9 @@ export function Home() {
         </button>
         <div className="scroll-fade-y flex-1 overflow-y-auto">
           <div className="mx-auto flex w-full max-w-3xl flex-col gap-8 px-6 pt-10 pb-40">
+            <Briefing />
             <ComingUp />
+            <InboxGlance />
             <Notes />
           </div>
         </div>
@@ -159,6 +166,140 @@ function ComingUp() {
           </div>
         ))}
       </div>
+    </section>
+  );
+}
+
+const GLANCE_COUNT = 4;
+
+function useInboxGlance() {
+  return useQuery({
+    queryKey: ["home-inbox-glance"],
+    queryFn: () => fetchInboxMessages(30),
+    staleTime: 2 * 60 * 1000,
+    retry: false,
+  });
+}
+
+function greeting(now: Date) {
+  const hour = now.getHours();
+  if (hour < 5) return "Late night";
+  if (hour < 12) return "Good morning";
+  if (hour < 18) return "Good afternoon";
+  return "Good evening";
+}
+
+function Briefing() {
+  const days = useUpcomingDays();
+  const { data: inbox } = useInboxGlance();
+  const name = useConfigValue("user_name").trim();
+  const now = new Date();
+
+  const today = days.find((d) => isToday(d.day))?.events ?? [];
+  const next = today.find((e) => e.end >= now);
+  const unread = inbox?.connected
+    ? inbox.messages.filter((m) => m.unread).length
+    : 0;
+
+  const parts: string[] = [];
+  if (today.length === 0) {
+    parts.push("Nothing on your calendar today.");
+  } else if (next) {
+    const rest = today.length - 1;
+    parts.push(
+      `${today.length} ${today.length === 1 ? "event" : "events"} today. ${
+        next.start <= now ? "Now:" : "Next:"
+      } ${next.title} at ${format(next.start, "h:mm a")}${
+        rest > 0 && next.start <= now ? ` (+${rest} more)` : ""
+      }.`,
+    );
+  } else {
+    parts.push("You're done with meetings for today.");
+  }
+  if (unread > 0) {
+    parts.push(
+      `${unread > 29 ? "30+" : unread} unread ${unread === 1 ? "email" : "emails"}.`,
+    );
+  }
+
+  return (
+    <section className="flex flex-col gap-1">
+      <h1 className="font-display text-foreground text-4xl leading-tight">
+        {name ? `${greeting(now)}, ${name}` : greeting(now)}
+      </h1>
+      <p className="text-muted-foreground text-base">{parts.join(" ")}</p>
+    </section>
+  );
+}
+
+function InboxGlance() {
+  const openCurrent = useTabs((state) => state.openCurrent);
+  const { data } = useInboxGlance();
+
+  if (!data) return null;
+
+  if (!data.connected) {
+    return (
+      <section className="border-border flex flex-col gap-3 rounded-2xl border border-dashed px-5 py-4">
+        <h2 className="text-foreground flex items-center gap-2 text-sm">
+          <MailIcon className="size-4" />
+          <Trans>Bring your mail in</Trans>
+        </h2>
+        <AppleMailConnect />
+      </section>
+    );
+  }
+
+  const unread = data.messages.filter((m) => m.unread);
+  const shown = (unread.length > 0 ? unread : data.messages).slice(
+    0,
+    GLANCE_COUNT,
+  );
+  if (shown.length === 0) return null;
+
+  return (
+    <section className="flex flex-col gap-3">
+      <button
+        type="button"
+        onClick={() => openCurrent({ type: "inbox" })}
+        className="text-foreground hover:text-primary flex w-fit items-center gap-2 text-left transition-colors"
+      >
+        <h2 className="font-display text-2xl leading-none">
+          <Trans>Inbox</Trans>
+        </h2>
+        {unread.length > 0 && (
+          <span className="bg-primary text-primary-foreground rounded-full px-2 py-0.5 text-xs">
+            {unread.length > 29 ? "30+" : unread.length}
+          </span>
+        )}
+      </button>
+      <ul className="border-border bg-card divide-border divide-y divide-dashed overflow-hidden rounded-2xl border">
+        {shown.map((message) => (
+          <li key={message.id}>
+            <button
+              type="button"
+              onClick={() => {
+                selectInboxMessageOnOpen(message.id);
+                openCurrent({ type: "inbox" });
+              }}
+              className="hover:bg-accent flex w-full items-center gap-3 px-5 py-3 text-left transition-colors"
+            >
+              <span
+                className={cn([
+                  "size-1.5 shrink-0 rounded-full",
+                  message.unread ? "bg-primary" : "bg-transparent",
+                ])}
+              />
+              <span className="text-foreground w-40 shrink-0 truncate text-sm">
+                {message.fromName || message.fromEmail}
+              </span>
+              <span className="text-muted-foreground min-w-0 flex-1 truncate text-sm">
+                {message.subject || "(no subject)"}
+              </span>
+            </button>
+          </li>
+        ))}
+      </ul>
     </section>
   );
 }

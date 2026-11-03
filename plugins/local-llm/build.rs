@@ -1,5 +1,6 @@
 const COMMANDS: &[&str] = &[
     "models_dir",
+    "recommended_model",
     "is_model_downloaded",
     "is_model_downloading",
     "download_model",

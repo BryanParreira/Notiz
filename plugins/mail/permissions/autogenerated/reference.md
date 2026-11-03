@@ -6,6 +6,7 @@ Default permissions for the plugin
 
 - `allow-list-mail-accounts`
 - `allow-add-mail-account`
+- `allow-add-apple-mail-account`
 - `allow-remove-mail-account`
 - `allow-recent-mail`
 - `allow-mail-with`
@@ -19,6 +20,32 @@ Default permissions for the plugin
 <th>Description</th>
 </tr>
 
+
+<tr>
+<td>
+
+`mail:allow-add-apple-mail-account`
+
+</td>
+<td>
+
+Enables the add_apple_mail_account command without any pre-configured scope.
+
+</td>
+</tr>
+
+<tr>
+<td>
+
+`mail:deny-add-apple-mail-account`
+
+</td>
+<td>
+
+Denies the add_apple_mail_account command without any pre-configured scope.
+
+</td>
+</tr>
 
 <tr>
 <td>

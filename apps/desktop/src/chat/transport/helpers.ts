@@ -65,6 +65,11 @@ export const TOOL_GROUPS = {
     "edit_summary",
     "edit_note",
   ],
+  // Making a brand-new note or to-do list. Kept apart from "notes" so a question
+  // about past meetings does not carry the note-writing rules.
+  tasks: ["create_note"],
+  // Drafting emails and messages. No tools, only the writing rules.
+  writing: [],
   contacts: ["search_contacts"],
   // Adding an event to Apple Calendar. Offered only when the message asks for it.
   events: ["create_calendar_event"],
@@ -79,16 +84,29 @@ const GROUP_HINTS: Record<ToolGroup, RegExp> = {
     /\b(calendar|schedule|agenda|appointments?|today|tonight|tomorrow|this (?:week|weekend|month|morning|afternoon|evening)|next (?:week|month)|upcoming|coming up|monday|tuesday|wednesday|thursday|friday|saturday|sunday|busy|free (?:time|slot|on|at|today|tomorrow)|what do i have|my (?:day|week))\b/i,
   inbox: /\b(inbox|e-?mails?|mail|unread|replied|reply|sent me)\b/i,
   notes:
-    /\b(notes?|meetings?|transcripts?|summar(?:y|ies|ize|ise)|recordings?|action items?|follow[- ]?ups?|decided|discuss(?:ed|ion)?|what did (?:i|we)|did (?:i|we))\b/i,
+    /\b(notes?|transcripts?|summar(?:y|ies|ize|ise)|recordings?|action items?|follow[- ]?ups?|decided|discuss(?:ed|ion)?|what did (?:i|we)|did (?:i|we)|(?:my|our|the|last|yesterday'?s|that|this) meetings?)\b/i,
   contacts: /\b(contacts?|phone number)\b/i,
+  writing:
+    /\b(?:draft|compose|write|rewrite)\b[^.?!]{0,30}\b(?:e-?mails?|messages?|repl(?:y|ies)|letter|text)\b|\b(?:reply|respond)\b[^.?!]{0,20}\b(?:to|with)\b|\bhelp me (?:say|word|phrase)\b/i,
+  tasks:
+    /\b(?:create|make|start|new)\b[^.?!]{0,40}\b(?:notes?|to-?do(?:s| list)?|checklist|task list)\b|\b(?:to-?do|checklist)s?\b/i,
   events:
     /\b(?:add|create|schedule|book|set up|block off)\b.*\b(?:event|meeting|appointment|call|lunch|dinner|class|session|reminder|study|workout|gym)\b|\b(?:add|put)\b.*\bcalendar\b|\bschedule (?:a|an|the)\b/i,
 };
 
+const ABOUT_PAST_NOTES =
+  /\b(meetings?|transcripts?|summar(?:y|ies|ize|ise)|what did (?:i|we)|did (?:i|we))\b/i;
+
 export function toolGroupsForMessage(text: string): ToolGroup[] {
-  return (Object.keys(GROUP_HINTS) as ToolGroup[]).filter((group) =>
+  const groups = (Object.keys(GROUP_HINTS) as ToolGroup[]).filter((group) =>
     GROUP_HINTS[group].test(text),
   );
+
+  // "Make a note with a to-do list" only needs the tool that makes a note; the
+  // rules for searching past meetings would just use up the model's memory.
+  return groups.includes("tasks") && !ABOUT_PAST_NOTES.test(text)
+    ? groups.filter((group) => group !== "notes")
+    : groups;
 }
 
 // A follow-up like "and tomorrow?" has no keywords of its own, so groups whose

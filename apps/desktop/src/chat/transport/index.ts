@@ -18,6 +18,7 @@ import type { ContextRef } from "../context/entities";
 import { extractContextRefsFromMessages } from "../context/refs";
 import { describeCards, hasMessageCards } from "../message-content";
 import { CONTEXT_TEXT_FIELD } from "../tools/context-text";
+import { lastAssistantText, refersToPreviousReply } from "../tools/edit-note";
 import type { AgendaDay, EmailCard, NotizUIMessage } from "../types";
 import { buildToolGuidance } from "./guidance";
 import {
@@ -48,6 +49,7 @@ type StepLike = {
 // declined) the model must report back, not try again with different details.
 const CHANGING_TOOLS = new Set([
   "edit_note",
+  "create_note",
   "edit_summary",
   "create_calendar_event",
   "apply_session_correction",
@@ -117,6 +119,7 @@ export class CustomChatTransport implements ChatTransport<NotizUIMessage> {
       groups: ToolGroup[],
       userText: string,
     ) => Promise<DataContext | null>,
+    private leanPrompt?: string,
   ) {}
 
   // Data the app fetched for this question (calendar, email). It is slow and
@@ -135,11 +138,17 @@ export class CustomChatTransport implements ChatTransport<NotizUIMessage> {
     }
   }
 
+  // Everyday requests (calendar, email, drafting, to-dos, chat) get the short
+  // opening. The long template, written for answering from meeting notes, is only
+  // sent when a note is involved.
   private buildInstructions(
     groups: ToolGroup[],
     data: string | null,
+    needsNotes: boolean,
   ): string | undefined {
-    const parts = [this.systemPrompt, buildToolGuidance(groups), data].filter(
+    const opening =
+      this.leanPrompt && !needsNotes ? this.leanPrompt : this.systemPrompt;
+    const parts = [opening, buildToolGuidance(groups), data].filter(
       (part): part is string => !!part && part.trim().length > 0,
     );
     return parts.length > 0 ? parts.join("\n\n") : undefined;
@@ -316,6 +325,68 @@ export class CustomChatTransport implements ChatTransport<NotizUIMessage> {
     });
   }
 
+  // "Add that to my note" is the one edit the app can do without the model: the
+  // text is the previous reply. A small model retyping a long reply is slow and
+  // often breaks the tool call, so the tool runs here and only the review step
+  // is left to the user.
+  private addPreviousReplyToNote(
+    modelMessages: Awaited<ReturnType<typeof convertToModelMessages>>,
+    abortSignal: AbortSignal | undefined,
+  ): ReadableStream<UIMessageChunk> {
+    const tool = this.tools.edit_note as unknown as {
+      execute: (
+        input: unknown,
+        options: unknown,
+      ) => Promise<{ status?: string; message?: string }>;
+    };
+    const toolCallId = crypto.randomUUID();
+    const input = { mode: "append", use_previous_reply: true };
+
+    return new ReadableStream<UIMessageChunk>({
+      async start(controller) {
+        const send = (chunk: UIMessageChunk) => controller.enqueue(chunk);
+        send({
+          type: "start",
+          messageId: crypto.randomUUID(),
+          messageMetadata: { createdAt: Date.now() },
+        });
+        send({
+          type: "tool-input-available",
+          toolCallId,
+          toolName: "edit_note",
+          input,
+        });
+
+        let output: { status?: string; message?: string };
+        try {
+          output = await tool.execute(input, {
+            toolCallId,
+            messages: modelMessages,
+            abortSignal,
+          });
+        } catch (error) {
+          output = {
+            status: "error",
+            message: error instanceof Error ? error.message : String(error),
+          };
+        }
+        send({ type: "tool-output-available", toolCallId, output });
+
+        const reply =
+          output.status === "applied"
+            ? "Done. I added it to your note."
+            : output.status === "declined"
+              ? "Okay, I left your note as it was."
+              : `I couldn't change your note. ${output.message ?? ""}`.trim();
+        send({ type: "text-start", id: "note" });
+        send({ type: "text-delta", id: "note", delta: reply });
+        send({ type: "text-end", id: "note" });
+        send({ type: "finish" });
+        controller.close();
+      },
+    });
+  }
+
   sendMessages: ChatTransport<NotizUIMessage>["sendMessages"] = async (
     options,
   ) => {
@@ -352,6 +423,22 @@ export class CustomChatTransport implements ChatTransport<NotizUIMessage> {
       (name) => name in tools,
     );
 
+    if (
+      activeTools.includes("edit_note") &&
+      /\bnotes?\b/i.test(lastUserText) &&
+      refersToPreviousReply(lastUserText)
+    ) {
+      const modelMessages = await convertToModelMessages(options.messages);
+      if (lastAssistantText(modelMessages)) {
+        return this.addPreviousReplyToNote(modelMessages, options.abortSignal);
+      }
+      // Nothing to point at: asking the model only makes it invent something.
+      return this.directResponse({
+        direct: true,
+        text: 'There is nothing to add yet, because I haven\'t written anything in this chat. Ask me for something first, or tell me what to put in the note, like "add to my note: call the dentist".',
+      });
+    }
+
     const data = await this.buildData(groups, lastUserText);
     if (data.direct && (data.text || hasMessageCards({ metadata: data }))) {
       return this.directResponse(data);
@@ -361,11 +448,15 @@ export class CustomChatTransport implements ChatTransport<NotizUIMessage> {
 
     const agent = new ToolLoopAgent({
       model: this.model,
-      instructions: this.buildInstructions(groups, data.text),
+      instructions: this.buildInstructions(
+        groups,
+        data.text,
+        groups.includes("notes") || !!effectiveContextBlock,
+      ),
       tools,
       stopWhen: stepCountIs(MAX_TOOL_STEPS),
       // A model that starts rambling would otherwise fill its whole memory.
-      maxOutputTokens: 700,
+      maxOutputTokens: 1500,
       // Less randomness means fewer made-up details from a small model.
       temperature: 0.3,
       prepareStep: async ({ messages, stepNumber, steps }) => {
@@ -385,6 +476,20 @@ export class CustomChatTransport implements ChatTransport<NotizUIMessage> {
             ...windowed,
             toolChoice: "none" as const,
             activeTools: [] as never[],
+          };
+        }
+        // A small model asked for a note tends to write the list in the chat and
+        // say it made one. For that request the tool is the only sensible move,
+        // so the first step must call it.
+        if (
+          stepNumber === 0 &&
+          groups.includes("tasks") &&
+          activeTools.includes("create_note")
+        ) {
+          return {
+            ...windowed,
+            activeTools: ["create_note"] as never[],
+            toolChoice: { type: "tool", toolName: "create_note" } as never,
           };
         }
         return { ...windowed, activeTools: activeTools as never[] };

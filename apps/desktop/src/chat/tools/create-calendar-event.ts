@@ -113,25 +113,20 @@ function describeWhen(start: Date, end: Date, allDay: boolean) {
 
 type EventResult = { status: string; message?: string; when?: string };
 
-const RECENT_WINDOW_MS = 60_000;
-const recentEvents = new Map<
-  string,
-  { at: number; result: Promise<EventResult> }
->();
+// Only calls in progress together are collapsed into one; nothing is remembered
+// once an event is made, so the same event can be created again later.
+const inFlightEvents = new Map<string, Promise<EventResult>>();
 
 export function resetRecentEvents() {
-  recentEvents.clear();
+  inFlightEvents.clear();
 }
 
 export const buildCreateCalendarEventTool = (
   deps: Pick<ToolDependencies, "getStore" | "openEditTab">,
 ) =>
   tool({
-    description: `
-Add an event to the user's Apple Calendar. This opens a review that shows the event with its real date, and the user approves or declines it, so nothing is created until they approve.
-Copy the day and time from the user's own words into "day" and "time" ("tomorrow", "friday", "next monday", "Oct 28"; "3pm", "noon"). Do not work out dates yourself; the app does. Leave "time" out only for an all-day event.
-Only Apple Calendar can be written to. Existing events cannot be changed or deleted from here. Never tell the user an event was created unless this returns status "created". Call this once per event.
-`.trim(),
+    description:
+      `Add an event to the user's Apple Calendar after they approve it. Copy the day ("tomorrow", "friday") and time ("3pm", "noon") from their words; do not work out dates. Leave time out only for all-day events. Call once per event.`.trim(),
     inputSchema: z.object({
       title: z.string().min(1).describe("The event title"),
       day: z
@@ -275,12 +270,8 @@ Only Apple Calendar can be written to. Existing events cannot be changed or dele
       // Same title at the same start is the same event, however the other
       // details were guessed, so a model repeating itself creates one event.
       const key = `${params.title.trim().toLowerCase()}|${start.toISOString()}`;
-      const now = Date.now();
-      for (const [other, entry] of recentEvents) {
-        if (now - entry.at > RECENT_WINDOW_MS) recentEvents.delete(other);
-      }
-      const shared = recentEvents.get(key);
-      if (shared) return shared.result;
+      const shared = inFlightEvents.get(key);
+      if (shared) return shared;
 
       const outcome = (async (): Promise<EventResult> => {
         const proposal = [
@@ -339,10 +330,11 @@ Only Apple Calendar can be written to. Existing events cannot be changed or dele
         };
       })();
 
-      recentEvents.set(key, { at: now, result: outcome });
-      const result = await outcome;
-      // Only a created event is remembered; a declined or failed one can be asked for again.
-      if (result.status !== "created") recentEvents.delete(key);
-      return result;
+      inFlightEvents.set(key, outcome);
+      try {
+        return await outcome;
+      } finally {
+        inFlightEvents.delete(key);
+      }
     },
   });

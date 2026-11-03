@@ -154,6 +154,16 @@ export const SETTINGS_MAPPING = {
       path: ["language", "ai_language"],
       default: "" as string,
     },
+    user_name: {
+      type: "string",
+      path: ["profile", "name"],
+      default: "" as string,
+    },
+    user_about: {
+      type: "string",
+      path: ["profile", "about"],
+      default: "" as string,
+    },
     spoken_languages: {
       type: "string",
       path: ["language", "spoken_languages"],

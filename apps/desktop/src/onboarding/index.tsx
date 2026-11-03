@@ -18,7 +18,9 @@ import {
 } from "./config";
 import { FinalDescription, FinalSection, finishOnboarding } from "./final";
 import { FolderLocationSection } from "./folder-location";
+import { MailSection } from "./mail";
 import { PermissionsSection } from "./permissions";
+import { ProfileSection } from "./profile";
 import { OnboardingSection } from "./shared";
 
 import { StandaloneWindowShell } from "~/shared/window-shell";
@@ -214,6 +216,22 @@ function OnboardingScreenContent({
       <div className="scroll-fade-y relative z-10 flex-1 overflow-y-auto">
         <div className="flex flex-col gap-4 px-12 pb-16">
           <OnboardingSection
+            title={<Trans>Let's get to know each other</Trans>}
+            completedTitle={<Trans>Nice to meet you</Trans>}
+            description={
+              <Trans>
+                Your assistant will use your name and what you share here to
+                feel like yours. Everything stays on this device.
+              </Trans>
+            }
+            status={getStepStatus("profile", currentStep)}
+            onBack={goBack}
+            onNext={goNext}
+          >
+            <ProfileSection onContinue={goNext} />
+          </OnboardingSection>
+
+          <OnboardingSection
             title={<Trans>Start with permissions</Trans>}
             completedTitle={<Trans>Permissions granted</Trans>}
             description={
@@ -244,6 +262,23 @@ function OnboardingScreenContent({
             onNext={goNext}
           >
             <CalendarSection onContinue={goNext} />
+          </OnboardingSection>
+
+          <OnboardingSection
+            title={<Trans>Connect mail (optional)</Trans>}
+            description={
+              <Trans>
+                Let your assistant read your inbox to summarise it and draft
+                replies. Read-only and kept on this device. You can skip this
+                and add inboxes later in Settings.
+              </Trans>
+            }
+            completedTitle={<Trans>Mail connected</Trans>}
+            status={getStepStatus("mail", currentStep)}
+            onBack={goBack}
+            onNext={goNext}
+          >
+            <MailSection onContinue={goNext} />
           </OnboardingSection>
 
           <OnboardingSection

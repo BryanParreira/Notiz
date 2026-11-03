@@ -22,6 +22,14 @@ async addMailAccount(input: MailAccountInput) : Promise<Result<MailAccountInfo, 
     else return { status: "error", error: e  as any };
 }
 },
+async addAppleMailAccount() : Promise<Result<MailAccountInfo, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("plugin:mail|add_apple_mail_account") };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
 async removeMailAccount(id: string) : Promise<Result<null, string>> {
     try {
     return { status: "ok", data: await TAURI_INVOKE("plugin:mail|remove_mail_account", { id }) };

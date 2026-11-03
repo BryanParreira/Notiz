@@ -1,6 +1,6 @@
 import { Trans } from "@lingui/react/macro";
 import { useForm } from "@tanstack/react-form";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { MailIcon, ShieldCheckIcon, Trash2Icon } from "lucide-react";
 
 import { commands as mailCommands } from "@notiz/plugin-mail";
@@ -9,22 +9,17 @@ import { Button } from "@notiz/ui/components/ui/button";
 import { Input } from "@notiz/ui/components/ui/input";
 import { cn } from "@notiz/utils";
 
+import {
+  invalidateMail,
+  MAIL_ACCOUNTS_QUERY_KEY,
+  useMailAccounts,
+} from "./accounts";
+import { AppleMailConnect, APPLE_MAIL_HOST } from "./apple-mail";
 import { getPreset, MAIL_PRESETS } from "./presets";
 
 import { SettingsPageTitle } from "~/settings/page-title";
 
-export const MAIL_ACCOUNTS_QUERY_KEY = ["mail-accounts"] as const;
-
-export function useMailAccounts() {
-  return useQuery({
-    queryKey: MAIL_ACCOUNTS_QUERY_KEY,
-    queryFn: async () => {
-      const result = await mailCommands.listMailAccounts();
-      if (result.status === "error") throw new Error(result.error);
-      return result.data;
-    },
-  });
-}
+export { MAIL_ACCOUNTS_QUERY_KEY, useMailAccounts };
 
 export function SettingsEmail() {
   const { data: accounts = [] } = useMailAccounts();
@@ -35,8 +30,7 @@ export function SettingsEmail() {
       const result = await mailCommands.removeMailAccount(id);
       if (result.status === "error") throw new Error(result.error);
     },
-    onSuccess: () =>
-      queryClient.invalidateQueries({ queryKey: MAIL_ACCOUNTS_QUERY_KEY }),
+    onSuccess: () => invalidateMail(queryClient),
   });
 
   return (
@@ -47,13 +41,12 @@ export function SettingsEmail() {
           <ShieldCheckIcon className="mt-0.5 size-4 shrink-0" />
           <span>
             <Trans>
-              Optional and read-only. Notiz talks straight to your mail provider
-              from this device, keeps the password in your Keychain, and only
-              reads message headers to show context for your meetings. It never
-              sends, deletes or marks mail as read. The first time it reads the
-              saved password, macOS may ask you to allow it: that is your Mac
-              protecting the Keychain, and choosing Always Allow stops it from
-              asking again.
+              Optional and read-only. Use the Mail app on this Mac, or connect
+              an inbox directly: Notiz then talks straight to your mail provider
+              from this device and keeps the password in your Keychain. It never
+              sends, deletes or marks mail as read. If macOS asks to allow
+              Keychain or Mail access, that is your Mac protecting your data;
+              choosing Always Allow stops it from asking again.
             </Trans>
           </span>
         </p>
@@ -70,7 +63,9 @@ export function SettingsEmail() {
               <div className="flex min-w-0 flex-1 flex-col">
                 <span className="truncate">{account.label}</span>
                 <span className="text-muted-foreground truncate text-xs">
-                  {account.host}
+                  {account.host === APPLE_MAIL_HOST
+                    ? "Mail app on this Mac"
+                    : account.host}
                 </span>
               </div>
               <button
@@ -87,12 +82,14 @@ export function SettingsEmail() {
         </ul>
       )}
 
-      <AddAccountForm />
+      <AppleMailConnect />
+
+      <AddAccountForm hasAccounts={accounts.length > 0} />
     </div>
   );
 }
 
-function AddAccountForm() {
+function AddAccountForm({ hasAccounts }: { hasAccounts: boolean }) {
   const queryClient = useQueryClient();
 
   const add = useMutation({
@@ -112,8 +109,7 @@ function AddAccountForm() {
       });
       if (result.status === "error") throw new Error(result.error);
     },
-    onSuccess: () =>
-      queryClient.invalidateQueries({ queryKey: MAIL_ACCOUNTS_QUERY_KEY }),
+    onSuccess: () => invalidateMail(queryClient),
   });
 
   const form = useForm({
@@ -133,7 +129,11 @@ function AddAccountForm() {
       className="flex flex-col gap-4"
     >
       <h3 className="text-sm font-medium">
-        <Trans>Add an account</Trans>
+        {hasAccounts ? (
+          <Trans>Add another inbox</Trans>
+        ) : (
+          <Trans>Add an account</Trans>
+        )}
       </h3>
 
       <form.Field name="preset">

@@ -16,8 +16,9 @@ dirs = { workspace = true }
 serde = { workspace = true }
 tauri-plugin-shell = { workspace = true }
 thiserror = { workspace = true }
-tokio = { workspace = true, features = ["net", "io-util", "time", "rt"] }
+tokio = { workspace = true, features = ["net", "io-util", "time", "rt", "process"] }
 
 port_check = "0.3.0"
+sysinfo = { workspace = true, features = ["system"] }
 
 specta = { workspace = true, optional = true }

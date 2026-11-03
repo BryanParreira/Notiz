@@ -6,6 +6,7 @@ import { Button } from "@notiz/ui/components/ui/button";
 import { Textarea } from "@notiz/ui/components/ui/textarea";
 
 import { SettingsPageTitle } from "~/settings/page-title";
+import { ProfileForm } from "~/settings/profile/profile-form";
 import { useConfigValue } from "~/shared/config";
 import * as settings from "~/store/tinybase/store/settings";
 import {
@@ -25,6 +26,12 @@ export function SettingsPersonalization() {
   return (
     <div className="flex flex-col gap-8">
       <SettingsPageTitle title={<Trans>Personalization</Trans>} />
+      <div className="flex flex-col gap-3">
+        <h3 className="text-sm font-medium">
+          <Trans>About you</Trans>
+        </h3>
+        <ProfileForm submitLabel={<Trans>Save</Trans>} />
+      </div>
       <DictionarySettings terms={terms} onSave={setTerms} />
     </div>
   );

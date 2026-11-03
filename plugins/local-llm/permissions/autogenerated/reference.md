@@ -5,6 +5,7 @@ Default permissions for the plugin
 #### This default permission set includes the following:
 
 - `allow-models-dir`
+- `allow-recommended-model`
 - `allow-is-model-downloading`
 - `allow-is-model-downloaded`
 - `allow-download-model`
@@ -256,6 +257,32 @@ Enables the models_dir command without any pre-configured scope.
 <td>
 
 Denies the models_dir command without any pre-configured scope.
+
+</td>
+</tr>
+
+<tr>
+<td>
+
+`local-llm:allow-recommended-model`
+
+</td>
+<td>
+
+Enables the recommended_model command without any pre-configured scope.
+
+</td>
+</tr>
+
+<tr>
+<td>
+
+`local-llm:deny-recommended-model`
+
+</td>
+<td>
+
+Denies the recommended_model command without any pre-configured scope.
 
 </td>
 </tr>

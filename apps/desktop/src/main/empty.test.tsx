@@ -1,3 +1,4 @@
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { cleanup, render, screen } from "@testing-library/react";
 import type React from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
@@ -40,6 +41,14 @@ vi.mock("~/store/tinybase/store/sessions", () => ({
   getOrCreateSessionForEventId: vi.fn(),
 }));
 
+vi.mock("~/chat/context/inbox-data", () => ({
+  fetchInboxMessages: vi.fn(() => new Promise(() => {})),
+}));
+
+vi.mock("~/settings/email/apple-mail", () => ({
+  AppleMailConnect: () => null,
+}));
+
 vi.mock("~/folders/notes-list", () => ({
   NotesList: ({ empty }: { empty: React.ReactNode }) => <>{empty}</>,
 }));
@@ -53,14 +62,16 @@ describe("TabContentEmpty", () => {
 
   it("shows upcoming events, an empty-notes prompt and the ask bar", () => {
     render(
-      <TabContentEmpty
-        tab={{
-          type: "empty",
-          active: true,
-          slotId: "",
-          pinned: false,
-        }}
-      />,
+      <QueryClientProvider client={new QueryClient()}>
+        <TabContentEmpty
+          tab={{
+            type: "empty",
+            active: true,
+            slotId: "",
+            pinned: false,
+          }}
+        />
+      </QueryClientProvider>,
     );
 
     expect(screen.getByText("Coming up")).toBeTruthy();

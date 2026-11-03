@@ -176,6 +176,7 @@ pub(crate) fn get(id: &str) -> Result<StoredAccount, Error> {
         .ok_or(Error::AccountNotFound)?;
 
     let password = match state.passwords.get(id) {
+        _ if crate::apple::is_apple(&meta.host) => String::new(),
         Some(password) => password.clone(),
         None => {
             let password = match password_entry(id)?.get_password() {
@@ -204,9 +205,11 @@ pub(crate) fn add(account: StoredAccount) -> Result<(), Error> {
     let mut state = state();
     let mut meta = load_meta(&mut state)?;
 
-    password_entry(&account.id)?
-        .set_password(&account.password)
-        .map_err(keychain_error)?;
+    if !crate::apple::is_apple(&account.host) {
+        password_entry(&account.id)?
+            .set_password(&account.password)
+            .map_err(keychain_error)?;
+    }
 
     meta.push(AccountMeta::from(&account));
     write_meta_file(&meta)?;

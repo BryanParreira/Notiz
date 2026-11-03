@@ -3,6 +3,7 @@ description = "Default permissions for the plugin"
 permissions = [
     "allow-list-mail-accounts",
     "allow-add-mail-account",
+    "allow-add-apple-mail-account",
     "allow-remove-mail-account",
     "allow-recent-mail",
     "allow-mail-with",

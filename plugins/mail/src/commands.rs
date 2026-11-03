@@ -16,6 +16,12 @@ pub async fn add_mail_account(input: MailAccountInput) -> Result<MailAccountInfo
 
 #[tauri::command]
 #[specta::specta]
+pub async fn add_apple_mail_account() -> Result<MailAccountInfo, Error> {
+    notiz_mail::add_apple_mail().await.map_err(Into::into)
+}
+
+#[tauri::command]
+#[specta::specta]
 pub async fn remove_mail_account(id: String) -> Result<(), Error> {
     notiz_mail::remove_account(&id).await.map_err(Into::into)
 }

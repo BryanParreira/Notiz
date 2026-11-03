@@ -66,7 +66,7 @@ Use "query" to match a sender or subject. Then call read_email with an id to rea
         return {
           status: "not_connected",
           message:
-            "No email account is connected. The user can connect one in Settings > Email.",
+            "No email account is connected. The user can connect Mail on this Mac or any IMAP inbox in Settings > Email.",
           results: [],
         };
       }

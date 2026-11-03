@@ -237,7 +237,13 @@ export function ChatSession({
     status,
     error,
     setMessages: chatSetMessages,
-  } = useChat<NotizUIMessage>({ chat });
+  } = useChat<NotizUIMessage>({
+    chat,
+    // A local model streams dozens of words a second. Drawing at most every
+    // 60 ms keeps the text flowing instead of re-rendering the whole message
+    // (and its markdown) on every word.
+    experimental_throttle: 60,
+  });
 
   useEffect(() => {
     if (

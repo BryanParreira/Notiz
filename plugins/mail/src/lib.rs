@@ -11,6 +11,7 @@ fn make_specta_builder<R: tauri::Runtime>() -> tauri_specta::Builder<R> {
         .commands(tauri_specta::collect_commands![
             commands::list_mail_accounts,
             commands::add_mail_account,
+            commands::add_apple_mail_account,
             commands::remove_mail_account,
             commands::recent_mail,
             commands::mail_with,

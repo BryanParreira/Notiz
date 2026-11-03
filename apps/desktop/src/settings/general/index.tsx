@@ -1,8 +1,8 @@
 import { Trans } from "@lingui/react/macro";
 import { useForm } from "@tanstack/react-form";
+import { useQuery } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
 import { getVersion } from "@tauri-apps/api/app";
-import { useQuery } from "@tanstack/react-query";
 import { disable, enable } from "@tauri-apps/plugin-autostart";
 
 import { commands as trayCommands } from "@notiz/plugin-tray";
@@ -10,6 +10,7 @@ import { commands as windowsCommands } from "@notiz/plugin-windows";
 import type { General, GeneralStorage } from "@notiz/store";
 
 import { AppSettingsView } from "./app-settings";
+import { SettingRow } from "./app-settings";
 import {
   CORE_TRANSCRIPTION_LANGUAGE_CODES,
   getAdditionalSpokenLanguages,
@@ -23,11 +24,10 @@ import { ThemeSelector } from "./theme";
 import { TimezoneSelector } from "./timezone";
 import { WeekStartSelector } from "./week-start";
 
+import { useDesktopUpdateControl } from "~/main/update-banner";
 import { Data } from "~/settings/data";
 import { SettingsPageTitle } from "~/settings/page-title";
 import { useConfigValue, useConfigValues } from "~/shared/config";
-import { useDesktopUpdateControl } from "~/main/update-banner";
-import { SettingRow } from "./app-settings";
 import * as settings from "~/store/tinybase/store/settings";
 
 type GeneralFormValues = Omit<General, "personalization_dictionary_terms">;
@@ -301,7 +301,11 @@ function UpdatesSettings() {
     <div className="flex flex-col gap-4">
       <SettingRow
         title={<Trans>Update automatically</Trans>}
-        description={<Trans>Check for new versions and download them in the background.</Trans>}
+        description={
+          <Trans>
+            Check for new versions and download them in the background.
+          </Trans>
+        }
         checked={autoUpdate}
         onChange={setAutoUpdate}
       />

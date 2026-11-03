@@ -19,7 +19,11 @@ import {
   LOCAL_LLM_PLACEHOLDER_ORIGIN,
 } from "../local-llm-fetch";
 import { createTracedFetch, tracedFetch } from "../traced-fetch";
-import { DEFAULT_LOCAL_LLM_MODEL, localLlmQueries } from "./useLocalLlmModel";
+import {
+  localLlmQueries,
+  pickLocalLlmModel,
+  useDefaultLocalLlmModel,
+} from "./useLocalLlmModel";
 
 import { useAuth } from "~/auth";
 import { useBillingAccess } from "~/auth/billing";
@@ -100,9 +104,11 @@ export const useLLMConnection = (): LLMConnectionResult => {
   // Once the local model has been downloaded from Settings, auto-select it,
   // but only if the user hasn't configured *any* provider yet. Never
   // overrides an existing choice.
-  const isLocalModelDownloaded = useQuery(
-    localLlmQueries.isDownloaded(DEFAULT_LOCAL_LLM_MODEL),
-  ).data;
+  const defaultLocalModel = useDefaultLocalLlmModel();
+  const isLocalModelDownloaded = useQuery({
+    ...localLlmQueries.isDownloaded(defaultLocalModel ?? "Qwen3p5_4bQ4"),
+    enabled: defaultLocalModel !== undefined,
+  }).data;
   const setLlmProvider = settings.UI.useSetValueCallback(
     "current_llm_provider",
     (provider: string) => provider,
@@ -116,11 +122,12 @@ export const useLLMConnection = (): LLMConnectionResult => {
     settings.STORE_ID,
   );
   useEffect(() => {
-    if (!current_llm_provider && isLocalModelDownloaded) {
+    if (!current_llm_provider && isLocalModelDownloaded && defaultLocalModel) {
       setLlmProvider("notiz_local");
-      setLlmModel(DEFAULT_LOCAL_LLM_MODEL);
+      setLlmModel(defaultLocalModel);
     }
   }, [
+    defaultLocalModel,
     current_llm_provider,
     isLocalModelDownloaded,
     setLlmProvider,
@@ -296,7 +303,9 @@ const wrapWithThinkingMiddleware = (
 
 const localLlmFetch = createLocalLlmFetch({
   start: async () => {
-    const result = await localLlmCommands.startServer(DEFAULT_LOCAL_LLM_MODEL);
+    const result = await localLlmCommands.startServer(
+      await pickLocalLlmModel(),
+    );
     if (result.status === "error") throw new Error(String(result.error));
     return result.data;
   },

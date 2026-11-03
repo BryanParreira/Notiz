@@ -1,5 +1,6 @@
 import { CONTEXT_TEXT_FIELD } from "./context-text";
 import { buildCreateCalendarEventTool } from "./create-calendar-event";
+import { buildCreateNoteTool } from "./create-note";
 import { buildEditNoteTool } from "./edit-note";
 import { buildEditSummaryTool } from "./edit-summary";
 import { buildListInboxTool, buildReadEmailTool } from "./inbox";
@@ -81,6 +82,7 @@ export const buildChatTools = (deps: ToolDependencies) => ({
   web_search: withToolLogging("web_search", buildWebSearchTool(deps)),
   edit_summary: withToolLogging("edit_summary", buildEditSummaryTool(deps)),
   edit_note: withToolLogging("edit_note", buildEditNoteTool(deps)),
+  create_note: withToolLogging("create_note", buildCreateNoteTool(deps)),
   create_calendar_event: withToolLogging(
     "create_calendar_event",
     buildCreateCalendarEventTool(deps),
@@ -271,6 +273,15 @@ type LocalTools = {
       calendar?: string;
     };
     output: { status: string; message?: string; when?: string };
+  };
+  create_note: {
+    input: { title?: string; content: string };
+    output: {
+      status: string;
+      message?: string;
+      title?: string;
+      sessionId?: string;
+    };
   };
   edit_note: {
     input: {
