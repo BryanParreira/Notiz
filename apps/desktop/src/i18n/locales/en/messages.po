@@ -17,8 +17,8 @@ msgstr ""
 msgid "(default)"
 msgstr "(default)"
 
-#: src/inbox/index.tsx:467
-#: src/inbox/index.tsx:576
+#: src/inbox/index.tsx:475
+#: src/inbox/index.tsx:631
 msgid "(no subject)"
 msgstr "(no subject)"
 
@@ -135,6 +135,10 @@ msgstr "Add repository"
 msgid "Add spoken language"
 msgstr "Add spoken language"
 
+#: src/inbox/index.tsx:600
+msgid "Add task"
+msgstr "Add task"
+
 #: src/session/components/note-input/action-items.tsx:208
 #~ msgid "Add to Reminders"
 #~ msgstr "Add to Reminders"
@@ -159,7 +163,7 @@ msgstr "Additional spoken languages"
 msgid "AI-generated summary of all interactions and notes with this contact will appear here. This will synthesize key discussion points, action items, and relationship context across all meetings and notes."
 msgstr "AI-generated summary of all interactions and notes with this contact will appear here. This will synthesize key discussion points, action items, and relationship context across all meetings and notes."
 
-#: src/inbox/index.tsx:327
+#: src/inbox/index.tsx:335
 msgid "All"
 msgstr "All"
 
@@ -279,7 +283,7 @@ msgstr "Back"
 #~ msgid "Brief"
 #~ msgstr "Brief"
 
-#: src/main/home.tsx:245
+#: src/main/home.tsx:247
 msgid "Bring your mail in"
 msgstr "Bring your mail in"
 
@@ -293,7 +297,7 @@ msgstr "Browser handoff not working? Paste the callback link instead"
 
 #: src/settings/general/permissions.tsx:191
 #: src/sidebar/calendar.tsx:10
-#: src/sidebar/nav.tsx:66
+#: src/sidebar/nav.tsx:79
 msgid "Calendar"
 msgstr "Calendar"
 
@@ -358,7 +362,7 @@ msgstr "Check for updates"
 msgid "Checking folder..."
 msgstr "Checking folder..."
 
-#: src/inbox/index.tsx:373
+#: src/inbox/index.tsx:381
 msgid "Checking your inbox…"
 msgstr "Checking your inbox…"
 
@@ -415,7 +419,7 @@ msgstr "Close changelog"
 msgid "Closed"
 msgstr "Closed"
 
-#: src/main/home.tsx:110
+#: src/main/home.tsx:112
 msgid "Coming up"
 msgstr "Coming up"
 
@@ -475,7 +479,7 @@ msgstr "Connect"
 msgid "Connect {0}"
 msgstr "Connect {0}"
 
-#: src/inbox/index.tsx:342
+#: src/inbox/index.tsx:350
 msgid "Connect an email account to read your mail next to your notes. It is optional and read-only."
 msgstr "Connect an email account to read your mail next to your notes. It is optional and read-only."
 
@@ -487,7 +491,7 @@ msgstr "Connect an email account to read your mail next to your notes. It is opt
 msgid "Connect calendar (optional)"
 msgstr "Connect calendar (optional)"
 
-#: src/inbox/index.tsx:354
+#: src/inbox/index.tsx:362
 msgid "Connect email"
 msgstr "Connect email"
 
@@ -942,7 +946,7 @@ msgstr "Hide Deleted Events"
 #~ msgid "Hold to record. Release to paste."
 #~ msgstr "Hold to record. Release to paste."
 
-#: src/sidebar/nav.tsx:54
+#: src/sidebar/nav.tsx:61
 msgid "Home"
 msgstr "Home"
 
@@ -962,11 +966,11 @@ msgstr "How to find this link"
 msgid "Human"
 msgstr "Human"
 
-#: src/inbox/index.tsx:553
+#: src/inbox/index.tsx:591
 msgid "Images"
 msgstr "Images"
 
-#: src/inbox/index.tsx:553
+#: src/inbox/index.tsx:591
 msgid "Images off"
 msgstr "Images off"
 
@@ -990,9 +994,9 @@ msgstr "In {totalSeconds} second"
 msgid "In {totalSeconds} seconds"
 msgstr "In {totalSeconds} seconds"
 
-#: src/inbox/index.tsx:262
-#: src/main/home.tsx:267
-#: src/sidebar/nav.tsx:60
+#: src/inbox/index.tsx:270
+#: src/main/home.tsx:269
+#: src/sidebar/nav.tsx:73
 msgid "Inbox"
 msgstr "Inbox"
 
@@ -1204,8 +1208,8 @@ msgstr "Name"
 #~ msgid "New chat"
 #~ msgstr "New chat"
 
-#: src/main/home.tsx:81
-#: src/main/home.tsx:326
+#: src/main/home.tsx:82
+#: src/main/home.tsx:328
 msgid "New note"
 msgstr "New note"
 
@@ -1257,7 +1261,7 @@ msgstr "No description provided."
 #~ msgid "No draft yet."
 #~ msgstr "No draft yet."
 
-#: src/main/home.tsx:139
+#: src/main/home.tsx:141
 msgid "No events today"
 msgstr "No events today"
 
@@ -1265,7 +1269,7 @@ msgstr "No events today"
 msgid "No items today"
 msgstr "No items today"
 
-#: src/inbox/index.tsx:375
+#: src/inbox/index.tsx:383
 msgid "No mail matches your search."
 msgstr "No mail matches your search."
 
@@ -1326,7 +1330,7 @@ msgstr "Note breadcrumb"
 msgid "Notes"
 msgstr "Notes"
 
-#: src/inbox/index.tsx:379
+#: src/inbox/index.tsx:387
 msgid "Nothing in your inbox."
 msgstr "Nothing in your inbox."
 
@@ -1528,7 +1532,11 @@ msgstr "Phone"
 msgid "Previous match"
 msgstr "Previous match"
 
-#: src/inbox/index.tsx:271
+#: src/settings/general/app-settings.tsx:55
+msgid "Quick capture"
+msgstr "Quick capture"
+
+#: src/inbox/index.tsx:279
 msgid "Read-only mail from your own account. Nothing leaves this device."
 msgstr "Read-only mail from your own account. Nothing leaves this device."
 
@@ -1558,8 +1566,8 @@ msgid "Reconnect required"
 msgstr "Reconnect required"
 
 #: src/settings/general/app-settings.tsx:57
-msgid "Recording"
-msgstr "Recording"
+#~ msgid "Recording"
+#~ msgstr "Recording"
 
 #: src/calendar/components/calendar-selection.tsx:91
 msgid "Refresh calendars"
@@ -1631,7 +1639,7 @@ msgstr "Replace with..."
 msgid "Replay"
 msgstr "Replay"
 
-#: src/inbox/index.tsx:562
+#: src/inbox/index.tsx:617
 msgid "Reply"
 msgstr "Reply"
 
@@ -1711,6 +1719,10 @@ msgstr "Running locally. No account required."
 #: src/settings/personalization/index.tsx:93
 #~ msgid "Save"
 #~ msgstr "Save"
+
+#: src/inbox/index.tsx:609
+msgid "Save as note"
+msgstr "Save as note"
 
 #: src/settings/general/storage/index.tsx:198
 msgid "Save audio after meeting"
@@ -1844,7 +1856,7 @@ msgstr "Set as default"
 #~ msgid "Set up a language model in Settings to start chatting. It runs on this device."
 #~ msgstr "Set up a language model in Settings to start chatting. It runs on this device."
 
-#: src/sidebar/nav.tsx:82
+#: src/sidebar/nav.tsx:95
 #: src/sidebar/settings.tsx:82
 msgid "Settings"
 msgstr "Settings"
@@ -1955,7 +1967,7 @@ msgstr "Storage configured"
 msgid "Storage Updated"
 msgstr "Storage Updated"
 
-#: src/sidebar/nav.tsx:95
+#: src/sidebar/nav.tsx:108
 msgid "Stored on this device"
 msgstr "Stored on this device"
 
@@ -2025,15 +2037,15 @@ msgstr "The main language is always included for transcription"
 msgid "This folder is empty. Right-click any note and choose \"Move to\" to add it here."
 msgstr "This folder is empty. Right-click any note and choose \"Move to\" to add it here."
 
-#: src/inbox/index.tsx:646
+#: src/inbox/index.tsx:701
 msgid "This message has no readable text."
 msgstr "This message has no readable text."
 
-#: src/inbox/index.tsx:638
+#: src/inbox/index.tsx:693
 msgid "This message is long, so only the beginning is shown."
 msgstr "This message is long, so only the beginning is shown."
 
-#: src/inbox/index.tsx:627
+#: src/inbox/index.tsx:682
 msgid "This message is long, so some content may be missing."
 msgstr "This message is long, so some content may be missing."
 
@@ -2044,6 +2056,10 @@ msgstr "Ticket"
 #: src/settings/general/timezone.tsx:63
 msgid "Timezone"
 msgstr "Timezone"
+
+#: src/sidebar/nav.tsx:67
+msgid "Today"
+msgstr "Today"
 
 #: src/session/components/note-input/header.tsx:583
 #: src/session/components/outer-header/overflow/export-modal.tsx:245
@@ -2058,8 +2074,8 @@ msgstr "Timezone"
 #~ msgid "Transcription"
 #~ msgstr "Transcription"
 
-#: src/inbox/index.tsx:367
-#: src/inbox/index.tsx:619
+#: src/inbox/index.tsx:375
+#: src/inbox/index.tsx:674
 msgid "Try again"
 msgstr "Try again"
 
@@ -2075,11 +2091,11 @@ msgstr "Unknown date"
 msgid "Unnamed"
 msgstr "Unnamed"
 
-#: src/inbox/index.tsx:265
+#: src/inbox/index.tsx:273
 msgid "unread"
 msgstr "unread"
 
-#: src/inbox/index.tsx:327
+#: src/inbox/index.tsx:335
 msgid "Unread"
 msgstr "Unread"
 
@@ -2229,7 +2245,7 @@ msgstr "You can"
 #~ msgid "You need to sign in to use Notiz's language model"
 #~ msgstr "You need to sign in to use Notiz's language model"
 
-#: src/inbox/index.tsx:377
+#: src/inbox/index.tsx:385
 msgid "You're all caught up."
 msgstr "You're all caught up."
 
@@ -2241,7 +2257,7 @@ msgstr "Your assistant will use your name and what you share here to feel like y
 msgid "Your first name"
 msgstr "Your first name"
 
-#: src/main/home.tsx:317
+#: src/main/home.tsx:319
 msgid "Your notes live only on this device. Start your first one."
 msgstr "Your notes live only on this device. Start your first one."
 
