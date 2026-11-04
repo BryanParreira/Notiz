@@ -1,7 +1,15 @@
 import { commands as windowsCommands } from "@notiz/plugin-windows";
 
-const STORAGE_KEY = "notiz-quick-capture-hotkey";
-export const DEFAULT_CAPTURE_HOTKEY = "Control+Alt+N";
+// v2: the default moved from a three-key combo to two keys.
+const STORAGE_KEY = "notiz-quick-capture-hotkey-v2";
+export const DEFAULT_CAPTURE_HOTKEY = "Control+Space";
+
+export const CAPTURE_HOTKEY_PRESETS = [
+  "Control+Space",
+  "Alt+Space",
+  "Super+Semicolon",
+  "Control+Alt+N",
+];
 
 // Stored value: undefined = default, "" = turned off.
 export function readCaptureHotkey(): string {
@@ -27,11 +35,25 @@ const SYMBOLS: Record<string, string> = {
   Super: "⌘",
 };
 
+const KEY_LABELS: Record<string, string> = {
+  Semicolon: ";",
+  Comma: ",",
+  Period: ".",
+  Slash: "/",
+  Backquote: "`",
+  Quote: "'",
+  Minus: "-",
+  Equal: "=",
+  BracketLeft: "[",
+  BracketRight: "]",
+  Backslash: "\\",
+};
+
 export function formatHotkey(accelerator: string) {
   if (!accelerator) return "Off";
   return accelerator
     .split("+")
-    .map((part) => SYMBOLS[part] ?? part)
+    .map((part) => SYMBOLS[part] ?? KEY_LABELS[part] ?? part)
     .join(" ");
 }
 
@@ -64,6 +86,7 @@ export function acceleratorFromEvent(event: KeyboardEvent): string | null {
   if (!key && /^Key[A-Z]$/.test(code)) key = code.slice(3);
   if (!key && /^Digit[0-9]$/.test(code)) key = code.slice(5);
   if (!key && /^F([1-9]|1[0-2])$/.test(event.key)) key = event.key;
+  if (!key && code in KEY_LABELS) key = code;
   if (!key) return null;
 
   return [...modifiers, key].join("+");

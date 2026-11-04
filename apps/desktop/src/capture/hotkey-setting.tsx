@@ -6,6 +6,7 @@ import { cn } from "@notiz/utils";
 import {
   acceleratorFromEvent,
   applyCaptureHotkey,
+  CAPTURE_HOTKEY_PRESETS,
   DEFAULT_CAPTURE_HOTKEY,
   formatHotkey,
   readCaptureHotkey,
@@ -57,7 +58,8 @@ export function QuickCaptureSetting() {
         <div className="flex flex-col gap-0.5">
           <span className="text-sm font-medium">Capture shortcut</span>
           <span className="text-muted-foreground text-xs">
-            Press it anywhere to jot something down. Notes go to today's page.
+            Press it anywhere to jot something down. Pick a quick one, or record
+            any key combo (two keys is easiest).
           </span>
         </div>
         <button
@@ -75,6 +77,24 @@ export function QuickCaptureSetting() {
         >
           {recording ? "Press shortcut…" : formatHotkey(hotkey)}
         </button>
+      </div>
+      <div className="flex flex-wrap items-center gap-2">
+        <span className="text-muted-foreground text-xs">Quick picks</span>
+        {CAPTURE_HOTKEY_PRESETS.map((preset) => (
+          <button
+            key={preset}
+            type="button"
+            onClick={() => void save(preset)}
+            className={cn([
+              "rounded-full border px-3 py-1 text-xs transition-colors",
+              hotkey === preset
+                ? "border-primary text-primary"
+                : "border-border text-muted-foreground hover:text-foreground",
+            ])}
+          >
+            {formatHotkey(preset)}
+          </button>
+        ))}
       </div>
       <div className="flex items-center gap-2">
         {hotkey !== DEFAULT_CAPTURE_HOTKEY && (

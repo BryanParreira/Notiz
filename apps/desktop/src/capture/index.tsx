@@ -6,10 +6,11 @@ import { md2json } from "@notiz/editor/markdown";
 import { commands as windowsCommands } from "@notiz/plugin-windows";
 import { cn } from "@notiz/utils";
 
-import { applyCaptureHotkey, readCaptureHotkey } from "./hotkey";
+import { applyCaptureHotkey, formatHotkey, readCaptureHotkey } from "./hotkey";
 
 import { appendToDailyNote } from "~/daily/append";
 import { todayKey } from "~/daily/open-daily-tab";
+import { showTransientToast } from "~/sidebar/toast/transient";
 import * as main from "~/store/tinybase/store/main";
 import { createSession } from "~/store/tinybase/store/sessions";
 
@@ -153,9 +154,17 @@ export function CapturePanel() {
 // it keeps working after the main window is closed.
 export function QuickCaptureHotkey() {
   useEffect(() => {
-    void applyCaptureHotkey(readCaptureHotkey()).catch((error) =>
-      console.error("[capture] could not register shortcut", error),
-    );
+    const hotkey = readCaptureHotkey();
+    void applyCaptureHotkey(hotkey).catch((error) => {
+      console.error("[capture] could not register shortcut", error);
+      showTransientToast(
+        {
+          description: `Quick capture shortcut ${formatHotkey(hotkey)} is taken by another app. Choose another in Settings.`,
+          variant: "error",
+        },
+        { durationMs: 6000 },
+      );
+    });
   }, []);
 
   return null;

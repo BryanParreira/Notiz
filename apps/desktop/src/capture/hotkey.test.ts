@@ -45,7 +45,25 @@ describe("acceleratorFromEvent", () => {
   });
 });
 
+describe("two-key shortcuts", () => {
+  test("accepts a single modifier with Space", () => {
+    expect(
+      acceleratorFromEvent(key({ key: " ", code: "Space", ctrlKey: true })),
+    ).toBe("Control+Space");
+  });
+
+  test("accepts punctuation keys by their code", () => {
+    expect(
+      acceleratorFromEvent(key({ key: ";", code: "Semicolon", metaKey: true })),
+    ).toBe("Super+Semicolon");
+  });
+});
+
 describe("formatHotkey", () => {
+  test("shows punctuation as the character", () => {
+    expect(formatHotkey("Super+Semicolon")).toBe("⌘ ;");
+  });
+
   test("shows macOS symbols", () => {
     expect(formatHotkey("Control+Alt+N")).toBe("⌃ ⌥ N");
   });

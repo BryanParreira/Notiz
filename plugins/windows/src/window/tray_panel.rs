@@ -219,6 +219,7 @@ pub fn toggle_anchored(
                 .ok_or_else(|| Error::WindowNotFound(AppWindow::TrayPanel.label()))?;
 
             anchor(&app, &window, icon_position, icon_size)?;
+            super::mark_panel_shown();
             panel.show_and_make_key();
             Ok(())
         })?;

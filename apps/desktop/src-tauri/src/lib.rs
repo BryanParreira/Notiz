@@ -234,8 +234,13 @@ pub async fn main() {
     #[allow(unused_variables)]
     app.run(move |app, event| match event {
         #[cfg(target_os = "macos")]
-        tauri::RunEvent::Reopen { .. } => {
-            AppWindow::Main.show(app).unwrap();
+        tauri::RunEvent::Reopen {
+            has_visible_windows,
+            ..
+        } => {
+            if !has_visible_windows && !tauri_plugin_windows::panel_shown_recently() {
+                AppWindow::Main.show(app).unwrap();
+            }
         }
         #[cfg(target_os = "macos")]
         tauri::RunEvent::ExitRequested { api, .. } => {

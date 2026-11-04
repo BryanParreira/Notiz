@@ -126,6 +126,7 @@ pub fn toggle(app: &AppHandle<tauri::Wry>) -> Result<(), Error> {
                 .ok_or_else(|| Error::WindowNotFound(LABEL.to_string()))?;
 
             position(&app, &window)?;
+            super::mark_panel_shown();
             panel.show_and_make_key();
             let _ = app.emit_to(LABEL, OPENED_EVENT, ());
             Ok(())
