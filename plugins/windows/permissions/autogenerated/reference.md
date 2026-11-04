@@ -25,6 +25,8 @@ Default permissions for the plugin
 - `allow-live-caption-update`
 - `allow-devtools-panel-show`
 - `allow-devtools-panel-hide`
+- `allow-capture-set-hotkey`
+- `allow-capture-hide`
 
 ## Permission Table
 
@@ -34,6 +36,58 @@ Default permissions for the plugin
 <th>Description</th>
 </tr>
 
+
+<tr>
+<td>
+
+`windows:allow-capture-hide`
+
+</td>
+<td>
+
+Enables the capture_hide command without any pre-configured scope.
+
+</td>
+</tr>
+
+<tr>
+<td>
+
+`windows:deny-capture-hide`
+
+</td>
+<td>
+
+Denies the capture_hide command without any pre-configured scope.
+
+</td>
+</tr>
+
+<tr>
+<td>
+
+`windows:allow-capture-set-hotkey`
+
+</td>
+<td>
+
+Enables the capture_set_hotkey command without any pre-configured scope.
+
+</td>
+</tr>
+
+<tr>
+<td>
+
+`windows:deny-capture-set-hotkey`
+
+</td>
+<td>
+
+Denies the capture_set_hotkey command without any pre-configured scope.
+
+</td>
+</tr>
 
 <tr>
 <td>

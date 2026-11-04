@@ -19,6 +19,7 @@ import {
 } from "@notiz/plugin-windows";
 import { Toaster } from "@notiz/ui/components/ui/toast";
 
+import { QuickCaptureHotkey } from "./capture";
 import { AppI18nProvider } from "./i18n/provider";
 import { routeTree } from "./routeTree.gen";
 import { EventListeners } from "./services/event-listeners";
@@ -97,6 +98,7 @@ function AppWithTiny() {
           {isMainWindow ? <TaskManager /> : null}
           {isMainWindow ? <EventListeners /> : null}
           {isMainWindow ? <TraySync /> : null}
+          {isMainWindow ? <QuickCaptureHotkey /> : null}
           <Toaster />
         </TinyBaseProvider>
       </TinyTickProvider>

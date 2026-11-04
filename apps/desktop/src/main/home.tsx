@@ -10,6 +10,7 @@ import { cn } from "@notiz/utils";
 import { NotesList } from "~/folders/notes-list";
 import { fetchInboxMessages } from "~/inbox/data";
 import { selectInboxMessageOnOpen } from "~/inbox/pending-selection";
+import { RemindersSection } from "~/reminders";
 import { AppleMailConnect } from "~/settings/email/apple-mail";
 import { useConfigValue } from "~/shared/config";
 import { StandardTabWrapper } from "~/shared/main";
@@ -84,6 +85,7 @@ export function Home() {
           <div className="mx-auto flex w-full max-w-3xl flex-col gap-8 px-6 pt-10 pb-40">
             <Briefing />
             <ComingUp />
+            <RemindersSection day={new Date()} />
             <InboxGlance />
             <Notes />
           </div>

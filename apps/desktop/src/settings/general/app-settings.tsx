@@ -3,6 +3,8 @@ import { type ReactNode, useId } from "react";
 
 import { Switch } from "@notiz/ui/components/ui/switch";
 
+import { QuickCaptureSetting } from "~/capture/hotkey-setting";
+
 interface SettingItem {
   value: boolean;
   onChange: (value: boolean) => void;
@@ -20,10 +22,6 @@ interface AppSettingsViewProps {
 
 export function AppSettingsView({
   autostart,
-  autoStartScheduledMeetings,
-  autoStopMeetings,
-  floatingBar,
-  liveCaption,
   showAppInDock,
   showTrayIcon,
 }: AppSettingsViewProps) {
@@ -54,34 +52,9 @@ export function AppSettingsView({
 
       <section>
         <h2 className="mb-4 font-sans text-lg font-semibold">
-          <Trans>Recording</Trans>
+          <Trans>Quick capture</Trans>
         </h2>
-        <div className="flex flex-col gap-4">
-          <SettingRow
-            title="Start when meeting begins"
-            description="Automatically start listening when an event-backed note reaches its scheduled start time."
-            checked={autoStartScheduledMeetings.value}
-            onChange={autoStartScheduledMeetings.onChange}
-          />
-          <SettingRow
-            title="Stop when meeting ends"
-            description="Automatically stop listening when the meeting app releases the microphone."
-            checked={autoStopMeetings.value}
-            onChange={autoStopMeetings.onChange}
-          />
-          <SettingRow
-            title="Show floating bar"
-            description="Show the compact floating control while listening."
-            checked={floatingBar.value}
-            onChange={floatingBar.onChange}
-          />
-          <SettingRow
-            title="Show live transcript overlay"
-            description="Show the live transcript overlay by default while listening."
-            checked={liveCaption.value}
-            onChange={liveCaption.onChange}
-          />
-        </div>
+        <QuickCaptureSetting />
       </section>
     </div>
   );

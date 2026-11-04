@@ -14,6 +14,7 @@ import { Route as AppIndexRouteImport } from './routes/app/index'
 import { Route as AppTrayRouteImport } from './routes/app/tray'
 import { Route as AppOnboardingRouteImport } from './routes/app/onboarding'
 import { Route as AppInstructionRouteImport } from './routes/app/instruction'
+import { Route as AppCaptureRouteImport } from './routes/app/capture'
 import { Route as AppNoteSessionIdRouteImport } from './routes/app/note.$sessionId'
 import { Route as AppMainLayoutRouteImport } from './routes/app/main/_layout'
 import { Route as AppMainLayoutIndexRouteImport } from './routes/app/main/_layout.index'
@@ -43,6 +44,11 @@ const AppInstructionRoute = AppInstructionRouteImport.update({
   path: '/instruction',
   getParentRoute: () => AppRouteRoute,
 } as any)
+const AppCaptureRoute = AppCaptureRouteImport.update({
+  id: '/capture',
+  path: '/capture',
+  getParentRoute: () => AppRouteRoute,
+} as any)
 const AppNoteSessionIdRoute = AppNoteSessionIdRouteImport.update({
   id: '/note/$sessionId',
   path: '/note/$sessionId',
@@ -61,6 +67,7 @@ const AppMainLayoutIndexRoute = AppMainLayoutIndexRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/app': typeof AppRouteRouteWithChildren
+  '/app/capture': typeof AppCaptureRoute
   '/app/instruction': typeof AppInstructionRoute
   '/app/onboarding': typeof AppOnboardingRoute
   '/app/tray': typeof AppTrayRoute
@@ -70,6 +77,7 @@ export interface FileRoutesByFullPath {
   '/app/main/': typeof AppMainLayoutIndexRoute
 }
 export interface FileRoutesByTo {
+  '/app/capture': typeof AppCaptureRoute
   '/app/instruction': typeof AppInstructionRoute
   '/app/onboarding': typeof AppOnboardingRoute
   '/app/tray': typeof AppTrayRoute
@@ -80,6 +88,7 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/app': typeof AppRouteRouteWithChildren
+  '/app/capture': typeof AppCaptureRoute
   '/app/instruction': typeof AppInstructionRoute
   '/app/onboarding': typeof AppOnboardingRoute
   '/app/tray': typeof AppTrayRoute
@@ -92,6 +101,7 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/app'
+    | '/app/capture'
     | '/app/instruction'
     | '/app/onboarding'
     | '/app/tray'
@@ -101,6 +111,7 @@ export interface FileRouteTypes {
     | '/app/main/'
   fileRoutesByTo: FileRoutesByTo
   to:
+    | '/app/capture'
     | '/app/instruction'
     | '/app/onboarding'
     | '/app/tray'
@@ -110,6 +121,7 @@ export interface FileRouteTypes {
   id:
     | '__root__'
     | '/app'
+    | '/app/capture'
     | '/app/instruction'
     | '/app/onboarding'
     | '/app/tray'
@@ -160,6 +172,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppInstructionRouteImport
       parentRoute: typeof AppRouteRoute
     }
+    '/app/capture': {
+      id: '/app/capture'
+      path: '/capture'
+      fullPath: '/app/capture'
+      preLoaderRoute: typeof AppCaptureRouteImport
+      parentRoute: typeof AppRouteRoute
+    }
     '/app/note/$sessionId': {
       id: '/app/note/$sessionId'
       path: '/note/$sessionId'
@@ -197,6 +216,7 @@ const AppMainLayoutRouteWithChildren = AppMainLayoutRoute._addFileChildren(
 )
 
 interface AppRouteRouteChildren {
+  AppCaptureRoute: typeof AppCaptureRoute
   AppInstructionRoute: typeof AppInstructionRoute
   AppOnboardingRoute: typeof AppOnboardingRoute
   AppTrayRoute: typeof AppTrayRoute
@@ -206,6 +226,7 @@ interface AppRouteRouteChildren {
 }
 
 const AppRouteRouteChildren: AppRouteRouteChildren = {
+  AppCaptureRoute: AppCaptureRoute,
   AppInstructionRoute: AppInstructionRoute,
   AppOnboardingRoute: AppOnboardingRoute,
   AppTrayRoute: AppTrayRoute,

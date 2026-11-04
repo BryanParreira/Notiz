@@ -8,6 +8,8 @@ import { format, isThisYear, isToday, isYesterday, parseISO } from "date-fns";
 import {
   ImageIcon,
   ImageOffIcon,
+  FileTextIcon,
+  ListPlusIcon,
   MailIcon,
   RefreshCwIcon,
   ReplyIcon,
@@ -16,6 +18,7 @@ import {
 } from "lucide-react";
 import { Fragment, useEffect, useMemo, useRef, useState } from "react";
 
+import { md2json } from "@notiz/editor/markdown";
 import { commands as mailCommands } from "@notiz/plugin-mail";
 import { commands as openerCommands } from "@notiz/plugin-opener2";
 import { cn } from "@notiz/utils";
@@ -23,8 +26,13 @@ import { cn } from "@notiz/utils";
 import { EmailFrame } from "./email-frame";
 import { takePendingInboxSelection } from "./pending-selection";
 
+import { appendToDailyNote } from "~/daily/append";
+import { todayKey } from "~/daily/open-daily-tab";
 import { useMailAccounts } from "~/settings/email";
 import { StandardTabWrapper } from "~/shared/main";
+import { showTransientToast } from "~/sidebar/toast/transient";
+import * as main from "~/store/tinybase/store/main";
+import { createSession } from "~/store/tinybase/store/sessions";
 import { useTabs } from "~/store/zustand/tabs";
 
 const RECENT_LIMIT = 80;
@@ -514,6 +522,36 @@ function MessagePreview({
 
   const sender = message.fromName || message.fromEmail;
   const [loadImages, toggleImages] = useLoadImages();
+  const store = main.UI.useStore(main.STORE_ID);
+  const openNew = useTabs((state) => state.openNew);
+
+  const saveAsNote = () => {
+    if (!store) return;
+    const body = data?.text ?? htmlToText(data?.html) ?? "";
+    const markdown = `# ${message.subject || "(no subject)"}\n\n**From:** ${sender} <${message.fromEmail}>${
+      message.date
+        ? `\n\n**Date:** ${format(message.date, "MMM d, yyyy · h:mm a")}`
+        : ""
+    }\n\n${body.slice(0, 20000)}`;
+    const sessionId = createSession(store, message.subject || "(no subject)");
+    store.setCell(
+      "sessions",
+      sessionId,
+      "raw_md",
+      JSON.stringify(md2json(markdown)),
+    );
+    openNew({ type: "sessions", id: sessionId });
+  };
+
+  const addTask = () => {
+    if (!store) return;
+    appendToDailyNote(
+      store as main.Store,
+      todayKey(),
+      `- [ ] Reply to ${sender}: ${message.subject || "(no subject)"}`,
+    );
+    showTransientToast({ description: "Added to today's page" });
+  };
 
   const reply = async () => {
     const subject = /^re:/i.test(message.subject)
@@ -553,6 +591,23 @@ function MessagePreview({
             {loadImages ? <Trans>Images</Trans> : <Trans>Images off</Trans>}
           </button>
         )}
+        <button
+          type="button"
+          onClick={addTask}
+          className="text-muted-foreground hover:bg-accent hover:text-foreground flex items-center gap-2 rounded-full px-3 py-1.5 text-sm transition-colors"
+        >
+          <ListPlusIcon className="size-4" />
+          <Trans>Add task</Trans>
+        </button>
+        <button
+          type="button"
+          onClick={saveAsNote}
+          disabled={isPending}
+          className="text-muted-foreground hover:bg-accent hover:text-foreground flex items-center gap-2 rounded-full px-3 py-1.5 text-sm transition-colors disabled:opacity-50"
+        >
+          <FileTextIcon className="size-4" />
+          <Trans>Save as note</Trans>
+        </button>
         <button
           type="button"
           onClick={reply}
@@ -649,6 +704,13 @@ function MessagePreview({
       </div>
     </aside>
   );
+}
+
+function htmlToText(html: string | null | undefined) {
+  if (!html) return null;
+  // DOMParser builds an inert document: nothing in the message runs or loads.
+  const doc = new DOMParser().parseFromString(html, "text/html");
+  return doc.body.textContent?.replace(/\n{3,}/g, "\n\n").trim() ?? null;
 }
 
 // Messages are shown as plain text with clickable links. HTML is never

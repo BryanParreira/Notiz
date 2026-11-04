@@ -422,6 +422,21 @@ pub async fn devtools_panel_show() -> Result<(), String> {
 
 #[tauri::command]
 #[specta::specta]
+pub async fn capture_set_hotkey(
+    app: tauri::AppHandle<tauri::Wry>,
+    accelerator: Option<String>,
+) -> Result<(), String> {
+    crate::window::capture_panel::set_hotkey(&app, accelerator.as_deref())
+}
+
+#[tauri::command]
+#[specta::specta]
+pub async fn capture_hide(app: tauri::AppHandle<tauri::Wry>) -> Result<(), String> {
+    crate::window::capture_panel::hide(&app).map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+#[specta::specta]
 pub async fn devtools_panel_hide() -> Result<(), String> {
     crate::window::devtools_panel::hide().map_err(|e| e.to_string())?;
     Ok(())

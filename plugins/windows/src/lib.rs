@@ -112,6 +112,8 @@ fn make_specta_builder() -> tauri_specta::Builder<tauri::Wry> {
             commands::live_caption_update,
             commands::devtools_panel_show,
             commands::devtools_panel_hide,
+            commands::capture_set_hotkey,
+            commands::capture_hide,
         ])
         .error_handling(tauri_specta::ErrorHandlingMode::Result)
 }

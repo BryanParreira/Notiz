@@ -20,6 +20,8 @@ const COMMANDS: &[&str] = &[
     "live_caption_update",
     "devtools_panel_show",
     "devtools_panel_hide",
+    "capture_set_hotkey",
+    "capture_hide",
 ];
 
 fn main() {

@@ -38,6 +38,7 @@ tauri-plugin-flag = { workspace = true }
 tauri-plugin-fs-sync = { workspace = true }
 tauri-plugin-fs2 = { workspace = true }
 tauri-plugin-git = { workspace = true }
+tauri-plugin-global-shortcut = "=2.3.1"
 tauri-plugin-hooks = { workspace = true }
 tauri-plugin-http = { workspace = true }
 tauri-plugin-icon = { workspace = true }

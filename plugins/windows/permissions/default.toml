@@ -22,4 +22,6 @@ permissions = [
     "allow-live-caption-update",
     "allow-devtools-panel-show",
     "allow-devtools-panel-hide",
+    "allow-capture-set-hotkey",
+    "allow-capture-hide",
 ]

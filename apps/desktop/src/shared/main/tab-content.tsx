@@ -17,6 +17,9 @@ const TabContentContact = lazy(() =>
 const TabContentHuman = lazy(() =>
   import("~/contacts/humans").then((m) => ({ default: m.TabContentHuman })),
 );
+const TabContentDaily = lazy(() =>
+  import("~/daily").then((m) => ({ default: m.TabContentDaily })),
+);
 const TabContentFolders = lazy(() =>
   import("~/folders").then((m) => ({ default: m.TabContentFolders })),
 );
@@ -65,6 +68,9 @@ function renderLazyTab(tab: Tab) {
   }
   if (tab.type === "onboarding") {
     return <TabContentOnboarding tab={tab} />;
+  }
+  if (tab.type === "daily_summary") {
+    return <TabContentDaily tab={tab} />;
   }
   if (tab.type === "inbox") {
     return <TabContentInbox />;
