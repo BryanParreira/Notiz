@@ -89,7 +89,7 @@ function NextCard({ item, now }: { item: TrayEventItem; now: Date }) {
           className={cn([
             "rounded-full px-2 py-0.5 text-[11px] font-medium",
             live
-              ? "bg-red-500/10 text-red-600"
+              ? "bg-primary text-primary-foreground"
               : "bg-primary/10 text-foreground",
           ])}
         >
@@ -256,7 +256,7 @@ export function TrayPanel() {
   const later = summary.agenda.filter((e) => e.id !== summary.next?.id);
 
   return (
-    <div className="bg-background border-border flex h-screen flex-col overflow-hidden rounded-2xl border select-none">
+    <div className="bg-background border-border flex h-screen flex-col overflow-hidden rounded-2xl border select-none [&_button]:outline-none [&_button]:focus-visible:ring-0 [&_button]:focus-visible:outline-none">
       <div className="flex items-start justify-between px-4 pt-4 pb-3">
         <div>
           <div className="text-muted-foreground text-[11px] font-medium tracking-wider uppercase">

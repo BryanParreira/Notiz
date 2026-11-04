@@ -13,6 +13,8 @@ import {
   checkEventNotifications,
   EVENT_NOTIFICATION_INTERVAL,
   EVENT_NOTIFICATION_TASK_ID,
+  loadNotifiedEvents,
+  saveNotifiedEvents,
   type NotifiedEventsMap,
 } from "./event-notification";
 
@@ -26,7 +28,7 @@ export function TaskManager() {
   const queries = main.UI.useQueries(main.STORE_ID);
 
   const settingsStore = settings.UI.useStore(settings.STORE_ID);
-  const notifiedEventsRef = useRef<NotifiedEventsMap>(new Map());
+  const notifiedEventsRef = useRef<NotifiedEventsMap>(loadNotifiedEvents());
 
   useSetTask(CALENDAR_SYNC_TASK_ID, async () => {
     await syncCalendarEvents(
@@ -62,6 +64,7 @@ export function TaskManager() {
       settingsStore as settings.Store,
       notifiedEventsRef.current,
     );
+    saveNotifiedEvents(notifiedEventsRef.current);
   }, [store, settingsStore]);
 
   useScheduleTaskRun(EVENT_NOTIFICATION_TASK_ID, undefined, 0, {

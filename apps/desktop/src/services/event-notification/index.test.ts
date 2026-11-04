@@ -103,4 +103,48 @@ describe("checkEventNotifications", () => {
 
     expect(showNotificationMock).toHaveBeenCalledTimes(1);
   });
+
+  function storeWith(row: Record<string, unknown>) {
+    return {
+      getValue: vi.fn(() => undefined),
+      forEachRow: vi.fn((table: string, callback: (rowId: string) => void) => {
+        if (table === "events") callback("event-1");
+      }),
+      getRow: vi.fn((table: string) => (table === "events" ? row : undefined)),
+    } as unknown as main.Store;
+  }
+  const enabledSettings = {
+    getValue: vi.fn((key: string) =>
+      key === "notification_event" ? true : undefined,
+    ),
+  } as unknown as settings.Store;
+
+  test("shows the start time and expires shortly after the meeting starts", () => {
+    checkEventNotifications(
+      storeWith({
+        started_at: "2026-05-15T12:04:00.000Z",
+        title: "Standup",
+      }),
+      enabledSettings,
+      new Map(),
+    );
+
+    const payload = showNotificationMock.mock.calls[0][0];
+    expect(payload.message).toMatch(/^Starts at /);
+    expect(payload.timeout).toEqual({ secs: 4 * 60 + 60, nanos: 0 });
+  });
+
+  test("all-day events never trigger a notification", () => {
+    checkEventNotifications(
+      storeWith({
+        started_at: "2026-05-15T12:02:00.000Z",
+        title: "Holiday",
+        is_all_day: true,
+      }),
+      enabledSettings,
+      new Map(),
+    );
+
+    expect(showNotificationMock).not.toHaveBeenCalled();
+  });
 });

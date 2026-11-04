@@ -9,7 +9,29 @@ export const EVENT_NOTIFICATION_INTERVAL = 30 * 1000; // 30 sec
 const NOTIFY_WINDOW_MS = 5 * 60 * 1000; // 5 minutes before
 const NOTIFIED_EVENTS_TTL_MS = 10 * 60 * 1000; // 10 minutes TTL for cleanup
 
+const NOTIFICATION_LINGER_MS = 60 * 1000;
+const NOTIFIED_STORAGE_KEY = "notiz-notified-events";
+
 export type NotifiedEventsMap = Map<string, number>;
+
+// Kept across restarts so relaunching inside the notify window does not repeat it.
+export function loadNotifiedEvents(): NotifiedEventsMap {
+  try {
+    const raw = localStorage.getItem(NOTIFIED_STORAGE_KEY);
+    return new Map(raw ? (JSON.parse(raw) as [string, number][]) : []);
+  } catch {
+    return new Map();
+  }
+}
+
+export function saveNotifiedEvents(notifiedEvents: NotifiedEventsMap) {
+  try {
+    localStorage.setItem(
+      NOTIFIED_STORAGE_KEY,
+      JSON.stringify([...notifiedEvents]),
+    );
+  } catch {}
+}
 
 export function checkEventNotifications(
   store: main.Store,
@@ -56,7 +78,7 @@ export function checkEventNotifications(
 
   store.forEachRow("events", (eventId, _forEachCell) => {
     const event = store.getRow("events", eventId);
-    if (!event?.started_at) return;
+    if (!event?.started_at || event.is_all_day) return;
 
     const startTime = new Date(String(event.started_at));
     const timeUntilStart = startTime.getTime() - now;
@@ -86,13 +108,19 @@ export function checkEventNotifications(
 
       notifiedEvents.set(dedupeKey, now);
 
-      const minutesUntil = Math.ceil(timeUntilStart / 60000);
+      const startLabel = startTime.toLocaleTimeString([], {
+        hour: "numeric",
+        minute: "2-digit",
+      });
 
       void notificationCommands.showNotification({
         key: notificationKey,
         title: title,
-        message: `Starting in ${minutesUntil} minute${minutesUntil !== 1 ? "s" : ""}`,
-        timeout: null,
+        message: `Starts at ${startLabel}`,
+        timeout: {
+          secs: Math.ceil((timeUntilStart + NOTIFICATION_LINGER_MS) / 1000),
+          nanos: 0,
+        },
         source: { type: "calendar_event", event_id: eventId },
         start_time: Math.floor(startTime.getTime() / 1000),
         participants: null,

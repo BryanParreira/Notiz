@@ -14,7 +14,6 @@ import {
 } from "~/store/tinybase/store/sessions";
 import { useTabs } from "~/store/zustand/tabs";
 
-const TICK_MS = 30_000;
 const TITLE_MAX = 24;
 const TITLE_WINDOW_MIN = 60;
 
@@ -28,6 +27,10 @@ function countdown(minutes: number) {
   if (minutes < 1) return "now";
   if (minutes < 60) return `${minutes}m`;
   return `${Math.floor(minutes / 60)}h ${minutes % 60}m`;
+}
+
+function remaining(minutes: number) {
+  return minutes < 1 ? "ending" : `${countdown(minutes)} left`;
 }
 
 function truncate(text: string) {
@@ -51,9 +54,18 @@ export function TraySync() {
     ? inbox.messages.filter((m) => m.unread).length
     : 0;
 
+  // Ticks on the minute boundary so the countdown never lags the real clock.
   useEffect(() => {
-    const id = setInterval(() => setNow(new Date()), TICK_MS);
-    return () => clearInterval(id);
+    let timer: ReturnType<typeof setTimeout>;
+    const schedule = () => {
+      const current = new Date();
+      setNow(current);
+      const untilNextMinute =
+        60_000 - (current.getSeconds() * 1000 + current.getMilliseconds());
+      timer = setTimeout(schedule, untilNextMinute + 250);
+    };
+    schedule();
+    return () => clearTimeout(timer);
   }, []);
 
   useEffect(() => {
@@ -83,21 +95,37 @@ export function TraySync() {
       )
       .sort((a, b) => a.start.getTime() - b.start.getTime());
 
-    const first = today[0];
+    // One meeting synced from several calendars is one entry.
+    const seen = new Set<string>();
+    const unique = today.filter((e) => {
+      const key = `${e.start.getTime()}-${e.title.trim().toLowerCase()}`;
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
+
+    const first = unique[0];
     const minutesAway = first
       ? Math.ceil((first.start.getTime() - now.getTime()) / 60_000)
+      : null;
+    const minutesLeft = first
+      ? Math.max(0, Math.ceil((first.end.getTime() - now.getTime()) / 60_000))
       : null;
     const inProgress = !!first && first.start <= now;
 
     const nextLabel = first
       ? inProgress
-        ? `${first.title} · now`
+        ? `${first.title} · ${remaining(minutesLeft ?? 0)}`
         : `${first.title} · in ${countdown(minutesAway ?? 0)}`
       : null;
 
     const title =
       first && (inProgress || (minutesAway ?? Infinity) <= TITLE_WINDOW_MIN)
-        ? `${truncate(first.title)} · ${inProgress ? "now" : countdown(minutesAway ?? 0)}`
+        ? `${truncate(first.title)} · ${
+            inProgress
+              ? remaining(minutesLeft ?? 0)
+              : countdown(minutesAway ?? 0)
+          }`
         : null;
 
     const toItem = (e: (typeof today)[number], label: string) => ({
@@ -113,7 +141,7 @@ export function TraySync() {
     const summary = {
       title,
       next: first && nextLabel ? toItem(first, nextLabel) : null,
-      agenda: today.map((e) =>
+      agenda: unique.map((e) =>
         toItem(e, `${format(e.start, "h:mm a")}  ${e.title}`),
       ),
       unread,
