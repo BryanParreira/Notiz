@@ -17,8 +17,8 @@ msgstr ""
 msgid "(default)"
 msgstr ""
 
-#: src/inbox/index.tsx:711
-#: src/inbox/index.tsx:907
+#: src/inbox/index.tsx:718
+#: src/inbox/index.tsx:922
 msgid "(no subject)"
 msgstr ""
 
@@ -136,8 +136,8 @@ msgid "Add spoken language"
 msgstr "Ավելացնել խոսակցական լեզու"
 
 #: src/inbox/index.tsx:854
-msgid "Add task"
-msgstr ""
+#~ msgid "Add task"
+#~ msgstr ""
 
 #: src/session/components/note-input/action-items.tsx:208
 #~ msgid "Add to Reminders"
@@ -163,7 +163,7 @@ msgstr "Լրացուցիչ խոսակցական լեզուներ"
 msgid "AI-generated summary of all interactions and notes with this contact will appear here. This will synthesize key discussion points, action items, and relationship context across all meetings and notes."
 msgstr ""
 
-#: src/inbox/index.tsx:560
+#: src/inbox/index.tsx:567
 msgid "All"
 msgstr ""
 
@@ -362,7 +362,7 @@ msgstr ""
 msgid "Checking folder..."
 msgstr ""
 
-#: src/inbox/index.tsx:606
+#: src/inbox/index.tsx:613
 msgid "Checking your inbox…"
 msgstr ""
 
@@ -479,7 +479,7 @@ msgstr ""
 msgid "Connect {0}"
 msgstr ""
 
-#: src/inbox/index.tsx:575
+#: src/inbox/index.tsx:582
 msgid "Connect an email account to read your mail next to your notes. It is optional and read-only."
 msgstr ""
 
@@ -491,7 +491,7 @@ msgstr ""
 msgid "Connect calendar (optional)"
 msgstr ""
 
-#: src/inbox/index.tsx:587
+#: src/inbox/index.tsx:594
 msgid "Connect email"
 msgstr ""
 
@@ -594,7 +594,6 @@ msgstr "Տվյալներ"
 msgid "Date and time are required"
 msgstr ""
 
-#: src/inbox/index.tsx:885
 #: src/session/components/outer-header/overflow/delete.tsx:52
 #: src/templates/sections-editor.tsx:280
 #: src/templates/template-form.tsx:285
@@ -968,12 +967,12 @@ msgid "Human"
 msgstr ""
 
 #: src/inbox/index.tsx:845
-msgid "Images"
-msgstr ""
+#~ msgid "Images"
+#~ msgstr ""
 
 #: src/inbox/index.tsx:845
-msgid "Images off"
-msgstr ""
+#~ msgid "Images off"
+#~ msgstr ""
 
 #: src/sidebar/settings.tsx:59
 msgid "Import"
@@ -995,7 +994,7 @@ msgstr ""
 msgid "In {totalSeconds} seconds"
 msgstr ""
 
-#: src/inbox/index.tsx:432
+#: src/inbox/index.tsx:439
 #: src/main/home.tsx:282
 #: src/sidebar/nav.tsx:73
 msgid "Inbox"
@@ -1108,12 +1107,12 @@ msgid "Manage"
 msgstr ""
 
 #: src/inbox/index.tsx:876
-msgid "Mark read"
-msgstr ""
+#~ msgid "Mark read"
+#~ msgstr ""
 
 #: src/inbox/index.tsx:876
-msgid "Mark unread"
-msgstr ""
+#~ msgid "Mark unread"
+#~ msgstr ""
 
 #: src/session/components/note-input/search/bar.tsx:218
 msgid "Match case"
@@ -1282,7 +1281,7 @@ msgstr ""
 msgid "No items today"
 msgstr ""
 
-#: src/inbox/index.tsx:608
+#: src/inbox/index.tsx:615
 msgid "No mail matches your search."
 msgstr ""
 
@@ -1343,7 +1342,7 @@ msgstr ""
 msgid "Notes"
 msgstr ""
 
-#: src/inbox/index.tsx:612
+#: src/inbox/index.tsx:619
 msgid "Nothing in your inbox."
 msgstr ""
 
@@ -1549,7 +1548,7 @@ msgstr ""
 msgid "Quick capture"
 msgstr ""
 
-#: src/inbox/index.tsx:441
+#: src/inbox/index.tsx:448
 msgid "Read-only mail from your own account. Nothing leaves this device."
 msgstr ""
 
@@ -1652,7 +1651,7 @@ msgstr ""
 msgid "Replay"
 msgstr ""
 
-#: src/inbox/index.tsx:893
+#: src/inbox/index.tsx:870
 msgid "Reply"
 msgstr ""
 
@@ -1734,8 +1733,8 @@ msgstr ""
 #~ msgstr ""
 
 #: src/inbox/index.tsx:863
-msgid "Save as note"
-msgstr ""
+#~ msgid "Save as note"
+#~ msgstr ""
 
 #: src/settings/general/storage/index.tsx:198
 msgid "Save audio after meeting"
@@ -2050,15 +2049,15 @@ msgstr "Հիմնական լեզուն միշտ ներառված է տառադա�
 msgid "This folder is empty. Right-click any note and choose \"Move to\" to add it here."
 msgstr ""
 
-#: src/inbox/index.tsx:977
+#: src/inbox/index.tsx:992
 msgid "This message has no readable text."
 msgstr ""
 
-#: src/inbox/index.tsx:969
+#: src/inbox/index.tsx:984
 msgid "This message is long, so only the beginning is shown."
 msgstr ""
 
-#: src/inbox/index.tsx:958
+#: src/inbox/index.tsx:973
 msgid "This message is long, so some content may be missing."
 msgstr ""
 
@@ -2087,8 +2086,8 @@ msgstr ""
 #~ msgid "Transcription"
 #~ msgstr ""
 
-#: src/inbox/index.tsx:600
-#: src/inbox/index.tsx:950
+#: src/inbox/index.tsx:607
+#: src/inbox/index.tsx:965
 msgid "Try again"
 msgstr ""
 
@@ -2104,11 +2103,11 @@ msgstr ""
 msgid "Unnamed"
 msgstr ""
 
-#: src/inbox/index.tsx:435
+#: src/inbox/index.tsx:442
 msgid "unread"
 msgstr ""
 
-#: src/inbox/index.tsx:560
+#: src/inbox/index.tsx:567
 msgid "Unread"
 msgstr ""
 
@@ -2258,7 +2257,7 @@ msgstr ""
 #~ msgid "You need to sign in to use Notiz's language model"
 #~ msgstr ""
 
-#: src/inbox/index.tsx:610
+#: src/inbox/index.tsx:617
 msgid "You're all caught up."
 msgstr ""
 
