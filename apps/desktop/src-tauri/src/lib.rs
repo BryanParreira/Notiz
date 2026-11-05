@@ -243,12 +243,12 @@ pub async fn main() {
             }
         }
         #[cfg(target_os = "macos")]
-        tauri::RunEvent::ExitRequested { api, .. } => {
+        tauri::RunEvent::ExitRequested { api, code, .. } => {
             if let Some(ref ctx) = root_supervisor_ctx_for_run {
                 ctx.mark_exiting();
             }
 
-            if notiz_intercept::should_force_quit() {
+            if notiz_intercept::should_force_quit() || code == Some(tauri::RESTART_EXIT_CODE) {
                 return;
             }
 
