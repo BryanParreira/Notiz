@@ -19,7 +19,14 @@ import {
   SearchIcon,
   XIcon,
 } from "lucide-react";
-import { Fragment, useEffect, useMemo, useRef, useState } from "react";
+import {
+  Fragment,
+  type ReactNode,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 
 import { md2json } from "@notiz/editor/markdown";
 import { commands as mailCommands } from "@notiz/plugin-mail";
@@ -474,7 +481,7 @@ export function TabContentInbox() {
             <div
               role="tablist"
               aria-label="Inboxes"
-              className="scrollbar-hide flex shrink-0 items-center gap-1 overflow-x-auto px-8 pb-3"
+              className="flex shrink-0 flex-wrap items-center gap-1 px-8 pb-3"
             >
               {[
                 {
@@ -498,13 +505,13 @@ export function TabContentInbox() {
                   aria-selected={accountFilter === tab.id}
                   onClick={() => selectAccount(tab.id)}
                   className={cn([
-                    "flex shrink-0 items-center gap-2 rounded-full px-3.5 py-1.5 text-sm transition-colors",
+                    "flex max-w-full min-w-0 items-center gap-2 rounded-full px-3.5 py-1.5 text-sm transition-colors",
                     accountFilter === tab.id
                       ? "bg-foreground text-background font-medium"
                       : "text-muted-foreground hover:bg-accent hover:text-foreground",
                   ])}
                 >
-                  {tab.label}
+                  <span className="max-w-52 truncate">{tab.label}</span>
                   {tab.unread > 0 && (
                     <span
                       className={cn([
@@ -752,6 +759,37 @@ function Avatar({ name, className }: { name: string; className?: string }) {
   );
 }
 
+function ToolbarButton({
+  label,
+  onClick,
+  disabled,
+  danger,
+  children,
+}: {
+  label: string;
+  onClick: () => void;
+  disabled?: boolean;
+  danger?: boolean;
+  children: ReactNode;
+}) {
+  return (
+    <button
+      type="button"
+      title={label}
+      aria-label={label}
+      disabled={disabled}
+      onClick={onClick}
+      className={cn([
+        "text-muted-foreground flex size-8 shrink-0 items-center justify-center rounded-full transition-colors",
+        "hover:bg-accent disabled:opacity-50",
+        danger ? "hover:text-destructive" : "hover:text-foreground",
+      ])}
+    >
+      {children}
+    </button>
+  );
+}
+
 function MessagePreview({
   message,
   account,
@@ -822,84 +860,61 @@ function MessagePreview({
       aria-label="Message preview"
       className="border-border bg-card/50 flex h-full min-h-0 min-w-0 flex-1 flex-col border-l"
     >
-      <div className="flex shrink-0 items-center justify-end gap-1 px-4 pt-3">
-        {data?.html && (
-          <button
-            type="button"
-            onClick={toggleImages}
-            title={
-              loadImages
-                ? "Images are loaded from the sender. Click to block them."
-                : "Images are blocked. Click to load them."
-            }
-            aria-label={
-              loadImages ? "Block remote images" : "Load remote images"
-            }
-            className="text-muted-foreground hover:bg-accent hover:text-foreground flex items-center gap-2 rounded-full px-3 py-1.5 text-sm transition-colors"
-          >
-            {loadImages ? (
-              <ImageIcon className="size-4" />
-            ) : (
-              <ImageOffIcon className="size-4" />
-            )}
-            {loadImages ? <Trans>Images</Trans> : <Trans>Images off</Trans>}
-          </button>
-        )}
-        <button
-          type="button"
-          onClick={addTask}
-          className="text-muted-foreground hover:bg-accent hover:text-foreground flex items-center gap-2 rounded-full px-3 py-1.5 text-sm transition-colors"
-        >
-          <ListPlusIcon className="size-4" />
-          <Trans>Add task</Trans>
-        </button>
-        <button
-          type="button"
-          onClick={saveAsNote}
-          disabled={isPending}
-          className="text-muted-foreground hover:bg-accent hover:text-foreground flex items-center gap-2 rounded-full px-3 py-1.5 text-sm transition-colors disabled:opacity-50"
-        >
-          <FileTextIcon className="size-4" />
-          <Trans>Save as note</Trans>
-        </button>
-        <button
-          type="button"
-          onClick={onToggleSeen}
-          title="Mark as read or unread (U)"
-          className="text-muted-foreground hover:bg-accent hover:text-foreground flex items-center gap-2 rounded-full px-3 py-1.5 text-sm transition-colors"
-        >
-          {seen ? (
-            <MailIcon className="size-4" />
-          ) : (
-            <MailOpenIcon className="size-4" />
-          )}
-          {seen ? <Trans>Mark unread</Trans> : <Trans>Mark read</Trans>}
-        </button>
-        <button
-          type="button"
-          onClick={onTrash}
-          title="Move to Trash (#)"
-          className="text-muted-foreground hover:bg-accent hover:text-destructive flex items-center gap-2 rounded-full px-3 py-1.5 text-sm transition-colors"
-        >
-          <Trash2Icon className="size-4" />
-          <Trans>Delete</Trans>
-        </button>
+      <div className="flex shrink-0 items-center gap-2 px-4 pt-3">
         <button
           type="button"
           onClick={reply}
-          className="text-muted-foreground hover:bg-accent hover:text-foreground flex items-center gap-2 rounded-full px-3 py-1.5 text-sm transition-colors"
+          className="bg-primary text-primary-foreground flex items-center gap-2 rounded-full px-4 py-1.5 text-sm font-medium whitespace-nowrap transition-opacity hover:opacity-90"
         >
           <ReplyIcon className="size-4" />
           <Trans>Reply</Trans>
         </button>
-        <button
-          type="button"
-          aria-label="Close preview"
-          onClick={onClose}
-          className="text-muted-foreground hover:bg-accent hover:text-foreground rounded-full p-2 transition-colors"
-        >
-          <XIcon className="size-4" />
-        </button>
+
+        <div className="ml-auto flex items-center gap-0.5">
+          <ToolbarButton
+            label={seen ? "Mark as unread (U)" : "Mark as read (U)"}
+            onClick={onToggleSeen}
+          >
+            {seen ? (
+              <MailIcon className="size-4" />
+            ) : (
+              <MailOpenIcon className="size-4" />
+            )}
+          </ToolbarButton>
+          <ToolbarButton label="Add task to today's page" onClick={addTask}>
+            <ListPlusIcon className="size-4" />
+          </ToolbarButton>
+          <ToolbarButton
+            label="Save as note"
+            onClick={saveAsNote}
+            disabled={isPending}
+          >
+            <FileTextIcon className="size-4" />
+          </ToolbarButton>
+          {data?.html && (
+            <ToolbarButton
+              label={
+                loadImages
+                  ? "Images are on. Click to block them."
+                  : "Images are blocked. Click to load them."
+              }
+              onClick={toggleImages}
+            >
+              {loadImages ? (
+                <ImageIcon className="size-4" />
+              ) : (
+                <ImageOffIcon className="size-4" />
+              )}
+            </ToolbarButton>
+          )}
+          <ToolbarButton label="Move to Trash (#)" onClick={onTrash} danger>
+            <Trash2Icon className="size-4" />
+          </ToolbarButton>
+          <span className="bg-border mx-1 h-4 w-px" />
+          <ToolbarButton label="Close preview" onClick={onClose}>
+            <XIcon className="size-4" />
+          </ToolbarButton>
+        </div>
       </div>
 
       <div className="scroll-fade-y min-h-0 flex-1 overflow-y-auto px-8 pt-2 pb-16">
