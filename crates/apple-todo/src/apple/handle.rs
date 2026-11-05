@@ -404,6 +404,52 @@ impl Handle {
         Self::save_reminder(event_store, &reminder)
     }
 
+    pub fn update_reminder(
+        &self,
+        target: &ReminderIdentifierInput,
+        input: &crate::types::UpdateReminderInput,
+    ) -> Result<(), Error> {
+        if !Self::has_reminder_access() {
+            return Err(Error::ReminderAccessDenied);
+        }
+
+        let event_store = shared_event_store();
+        let reminder = self.find_reminder(event_store, target)?;
+        Self::ensure_reminder_is_writable(&reminder)?;
+
+        if let Some(ref title) = input.title
+            && title.trim().is_empty()
+        {
+            return Err(Error::InvalidReminderInput(
+                "reminder title cannot be empty".into(),
+            ));
+        }
+
+        unsafe {
+            if let Some(ref title) = input.title {
+                reminder.setTitle(Some(&NSString::from_str(title)));
+            }
+            if let Some(ref notes) = input.notes {
+                if notes.is_empty() {
+                    reminder.setNotes(None);
+                } else {
+                    reminder.setNotes(Some(&NSString::from_str(notes)));
+                }
+            }
+            if input.clear_due_date == Some(true) {
+                reminder.setDueDateComponents(None);
+            } else if let Some(ref due_date) = input.due_date {
+                let components = Self::build_ns_date_components(due_date)?;
+                reminder.setDueDateComponents(Some(&components));
+            }
+            if let Some(done) = input.is_completed {
+                reminder.setCompleted(done);
+            }
+        }
+
+        Self::save_reminder(event_store, &reminder)
+    }
+
     pub fn delete_reminder(&self, target: &ReminderIdentifierInput) -> Result<(), Error> {
         if !Self::has_reminder_access() {
             return Err(Error::ReminderAccessDenied);

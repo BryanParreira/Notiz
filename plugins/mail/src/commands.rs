@@ -48,6 +48,22 @@ pub async fn mail_with(
 
 #[tauri::command]
 #[specta::specta]
+pub async fn set_mail_seen(account_id: String, uid: u32, seen: bool) -> Result<(), Error> {
+    notiz_mail::set_seen(&account_id, uid, seen)
+        .await
+        .map_err(Into::into)
+}
+
+#[tauri::command]
+#[specta::specta]
+pub async fn trash_mail(account_id: String, uid: u32) -> Result<(), Error> {
+    notiz_mail::trash(&account_id, uid)
+        .await
+        .map_err(Into::into)
+}
+
+#[tauri::command]
+#[specta::specta]
 pub async fn read_mail(account_id: String, uid: u32) -> Result<MailBody, Error> {
     notiz_mail::read(&account_id, uid).await.map_err(Into::into)
 }

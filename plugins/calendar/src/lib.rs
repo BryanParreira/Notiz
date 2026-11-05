@@ -24,6 +24,8 @@ fn make_specta_builder<R: tauri::Runtime>() -> tauri_specta::Builder<R> {
             commands::list_events,
             commands::open_calendar::<tauri::Wry>,
             commands::create_event::<tauri::Wry>,
+            commands::update_event::<tauri::Wry>,
+            commands::delete_event::<tauri::Wry>,
             commands::parse_meeting_link,
         ])
         .events(tauri_specta::collect_events![CalendarChangedEvent])

@@ -11,6 +11,8 @@ Default permissions for the plugin
 - `allow-recent-mail`
 - `allow-mail-with`
 - `allow-read-mail`
+- `allow-set-mail-seen`
+- `allow-trash-mail`
 
 ## Permission Table
 
@@ -199,6 +201,58 @@ Enables the remove_mail_account command without any pre-configured scope.
 <td>
 
 Denies the remove_mail_account command without any pre-configured scope.
+
+</td>
+</tr>
+
+<tr>
+<td>
+
+`mail:allow-set-mail-seen`
+
+</td>
+<td>
+
+Enables the set_mail_seen command without any pre-configured scope.
+
+</td>
+</tr>
+
+<tr>
+<td>
+
+`mail:deny-set-mail-seen`
+
+</td>
+<td>
+
+Denies the set_mail_seen command without any pre-configured scope.
+
+</td>
+</tr>
+
+<tr>
+<td>
+
+`mail:allow-trash-mail`
+
+</td>
+<td>
+
+Enables the trash_mail command without any pre-configured scope.
+
+</td>
+</tr>
+
+<tr>
+<td>
+
+`mail:deny-trash-mail`
+
+</td>
+<td>
+
+Denies the trash_mail command without any pre-configured scope.
 
 </td>
 </tr>

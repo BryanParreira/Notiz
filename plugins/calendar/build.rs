@@ -10,6 +10,8 @@ const COMMANDS: &[&str] = &[
     "list_events",
     "open_calendar",
     "create_event",
+    "update_event",
+    "delete_event",
     "parse_meeting_link",
 ];
 

@@ -44,6 +44,17 @@ pub struct CreateEventInput {
 }
 
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize, specta::Type)]
+pub struct UpdateEventInput {
+    pub event_tracking_id: String,
+    pub title: Option<String>,
+    pub started_at: Option<String>,
+    pub ended_at: Option<String>,
+    pub is_all_day: Option<bool>,
+    pub location: Option<String>,
+    pub notes: Option<String>,
+}
+
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize, specta::Type)]
 pub struct CalendarEvent {
     pub provider: CalendarProviderType,
 

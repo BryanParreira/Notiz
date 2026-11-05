@@ -62,6 +62,14 @@ async completeTodo(target: ReminderIdentifierInput) : Promise<Result<null, strin
     else return { status: "error", error: e  as any };
 }
 },
+async updateTodo(target: ReminderIdentifierInput, input: UpdateReminderInput) : Promise<Result<null, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("plugin:todo|update_todo", { target, input }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
 async deleteTodo(target: ReminderIdentifierInput) : Promise<Result<null, string>> {
     try {
     return { status: "ok", data: await TAURI_INVOKE("plugin:todo|delete_todo", { target }) };
@@ -144,7 +152,7 @@ name: string;
  * Short identifier. GitHub: "owner/repo", Linear: team key (e.g., "ENG").
  */
 key: string | null; url: string | null }
-export type CreateReminderInput = { title: string; list_id: string | null; notes: string | null; url: string | null; priority: ReminderPriority | null; due_date: DateComponents | null; start_date: DateComponents | null }
+export type CreateReminderInput = { title: string; list_id: string | null; notes: string | null; url: string | null; priority: ReminderPriority | null; due_date: DateComponents | null; start_date: DateComponents | null; alarms: Alarm[] | null; recurrence_rules: RecurrenceRule[] | null; is_completed: boolean | null; completion_date: string | null }
 export type DateComponents = { date: string | null; time: string | null; time_zone: string | null }
 export type GeoLocation = { latitude: number; longitude: number }
 export type GitHubIssueState = "Open" | "Closed" | "Merged"
@@ -208,6 +216,7 @@ pull_request: PullRequestDetail | null;
  */
 raw: string }
 export type TodoChangedEvent = null
+export type UpdateReminderInput = { title: string | null; notes: string | null; due_date: DateComponents | null; clear_due_date: boolean | null; is_completed: boolean | null }
 export type User = { id: number; login: string; avatar_url?: string | null; html_url: string }
 export type Weekday = "Sunday" | "Monday" | "Tuesday" | "Wednesday" | "Thursday" | "Friday" | "Saturday"
 

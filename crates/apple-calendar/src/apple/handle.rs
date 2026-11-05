@@ -290,4 +290,88 @@ impl Handle {
             .when(|e| matches!(e, Error::XpcConnectionFailed))
             .call()
     }
+
+    // Recurring occurrences share one identifier, so callers must not edit or
+    // delete them through here (it would act on the whole series' first event).
+    pub fn update_event(&self, input: crate::types::UpdateEventInput) -> Result<(), Error> {
+        if !Self::has_calendar_access() {
+            return Err(Error::CalendarAccessDenied);
+        }
+
+        let event_store = shared_event_store();
+        let event =
+            unsafe { event_store.eventWithIdentifier(&NSString::from_str(&input.event_id)) }
+                .ok_or(Error::EventNotFound)?;
+
+        unsafe {
+            if let Some(ref title) = input.title {
+                event.setTitle(Some(&NSString::from_str(title)));
+            }
+            if let Some(start) = input.start_date {
+                let date = NSDate::initWithTimeIntervalSince1970(
+                    NSDate::alloc(),
+                    start.timestamp() as f64,
+                );
+                event.setStartDate(Some(&date));
+            }
+            if let Some(end) = input.end_date {
+                let date =
+                    NSDate::initWithTimeIntervalSince1970(NSDate::alloc(), end.timestamp() as f64);
+                event.setEndDate(Some(&date));
+            }
+            if let Some(all_day) = input.is_all_day {
+                event.setAllDay(all_day);
+            }
+            if let Some(ref location) = input.location {
+                if location.is_empty() {
+                    event.setLocation(None);
+                } else {
+                    event.setLocation(Some(&NSString::from_str(location)));
+                }
+            }
+            if let Some(ref notes) = input.notes {
+                if notes.is_empty() {
+                    event.setNotes(None);
+                } else {
+                    event.setNotes(Some(&NSString::from_str(notes)));
+                }
+            }
+        }
+
+        let event_store = AssertUnwindSafe(event_store);
+        let event = AssertUnwindSafe(&event);
+
+        match objc2::exception::catch(|| unsafe {
+            event_store.saveEvent_span_commit_error(&event, EKSpan::ThisEvent, true)
+        }) {
+            Ok(Ok(())) => Ok(()),
+            Ok(Err(ns_error)) => Err(Error::ObjectiveCException(
+                ns_error.localizedDescription().to_string(),
+            )),
+            Err(_) => Err(Error::XpcConnectionFailed),
+        }
+    }
+
+    pub fn delete_event(&self, event_id: &str) -> Result<(), Error> {
+        if !Self::has_calendar_access() {
+            return Err(Error::CalendarAccessDenied);
+        }
+
+        let event_store = shared_event_store();
+        let event = unsafe { event_store.eventWithIdentifier(&NSString::from_str(event_id)) }
+            .ok_or(Error::EventNotFound)?;
+
+        let event_store = AssertUnwindSafe(event_store);
+        let event = AssertUnwindSafe(&event);
+
+        match objc2::exception::catch(|| unsafe {
+            event_store.removeEvent_span_commit_error(&event, EKSpan::ThisEvent, true)
+        }) {
+            Ok(Ok(())) => Ok(()),
+            Ok(Err(ns_error)) => Err(Error::ObjectiveCException(
+                ns_error.localizedDescription().to_string(),
+            )),
+            Err(_) => Err(Error::XpcConnectionFailed),
+        }
+    }
 }

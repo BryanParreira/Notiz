@@ -237,6 +237,17 @@ impl DateComponents {
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[cfg_attr(feature = "specta", derive(specta::Type))]
+pub struct UpdateReminderInput {
+    pub title: Option<String>,
+    // An empty string clears the notes.
+    pub notes: Option<String>,
+    pub due_date: Option<DateComponents>,
+    pub clear_due_date: Option<bool>,
+    pub is_completed: Option<bool>,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[cfg_attr(feature = "specta", derive(specta::Type))]
 pub struct CreateReminderInput {
     pub title: String,
     pub list_id: Option<String>,

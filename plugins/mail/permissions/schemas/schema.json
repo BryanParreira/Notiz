@@ -379,10 +379,34 @@
           "markdownDescription": "Denies the remove_mail_account command without any pre-configured scope."
         },
         {
-          "description": "Default permissions for the plugin\n#### This default permission set includes:\n\n- `allow-list-mail-accounts`\n- `allow-add-mail-account`\n- `allow-add-apple-mail-account`\n- `allow-remove-mail-account`\n- `allow-recent-mail`\n- `allow-mail-with`\n- `allow-read-mail`",
+          "description": "Enables the set_mail_seen command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-set-mail-seen",
+          "markdownDescription": "Enables the set_mail_seen command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the set_mail_seen command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-set-mail-seen",
+          "markdownDescription": "Denies the set_mail_seen command without any pre-configured scope."
+        },
+        {
+          "description": "Enables the trash_mail command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-trash-mail",
+          "markdownDescription": "Enables the trash_mail command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the trash_mail command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-trash-mail",
+          "markdownDescription": "Denies the trash_mail command without any pre-configured scope."
+        },
+        {
+          "description": "Default permissions for the plugin\n#### This default permission set includes:\n\n- `allow-list-mail-accounts`\n- `allow-add-mail-account`\n- `allow-add-apple-mail-account`\n- `allow-remove-mail-account`\n- `allow-recent-mail`\n- `allow-mail-with`\n- `allow-read-mail`\n- `allow-set-mail-seen`\n- `allow-trash-mail`",
           "type": "string",
           "const": "default",
-          "markdownDescription": "Default permissions for the plugin\n#### This default permission set includes:\n\n- `allow-list-mail-accounts`\n- `allow-add-mail-account`\n- `allow-add-apple-mail-account`\n- `allow-remove-mail-account`\n- `allow-recent-mail`\n- `allow-mail-with`\n- `allow-read-mail`"
+          "markdownDescription": "Default permissions for the plugin\n#### This default permission set includes:\n\n- `allow-list-mail-accounts`\n- `allow-add-mail-account`\n- `allow-add-apple-mail-account`\n- `allow-remove-mail-account`\n- `allow-recent-mail`\n- `allow-mail-with`\n- `allow-read-mail`\n- `allow-set-mail-seen`\n- `allow-trash-mail`"
         }
       ]
     }

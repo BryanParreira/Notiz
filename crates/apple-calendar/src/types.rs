@@ -22,6 +22,19 @@ pub struct CreateEventInput {
     pub url: Option<String>,
 }
 
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[cfg_attr(feature = "specta", derive(specta::Type))]
+pub struct UpdateEventInput {
+    pub event_id: String,
+    pub title: Option<String>,
+    pub start_date: Option<DateTime<Utc>>,
+    pub end_date: Option<DateTime<Utc>>,
+    pub is_all_day: Option<bool>,
+    // An empty string clears the field.
+    pub location: Option<String>,
+    pub notes: Option<String>,
+}
+
 macro_rules! common_derives {
     ($item:item) => {
         #[derive(Debug, Clone, PartialEq, Serialize, Deserialize, schemars::JsonSchema)]

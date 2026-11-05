@@ -8,6 +8,7 @@ permissions = [
     "allow-read-path",
     "allow-create-todo",
     "allow-complete-todo",
+    "allow-update-todo",
     "allow-delete-todo",
     "allow-linear-list-teams",
     "allow-linear-list-tickets",

@@ -11,6 +11,9 @@ import {
   FileTextIcon,
   ListPlusIcon,
   MailIcon,
+  MailOpenIcon,
+  PenLineIcon,
+  Trash2Icon,
   RefreshCwIcon,
   ReplyIcon,
   SearchIcon,
@@ -20,9 +23,9 @@ import { Fragment, useEffect, useMemo, useRef, useState } from "react";
 
 import { md2json } from "@notiz/editor/markdown";
 import { commands as mailCommands } from "@notiz/plugin-mail";
-import { commands as openerCommands } from "@notiz/plugin-opener2";
 import { cn } from "@notiz/utils";
 
+import { openCompose, quoteForReply, replySubject } from "./compose";
 import { EmailFrame, openExternalLink } from "./email-frame";
 import { takePendingInboxSelection } from "./pending-selection";
 
@@ -38,6 +41,7 @@ import { useTabs } from "~/store/zustand/tabs";
 const RECENT_LIMIT = 80;
 const ACCOUNT_STORAGE_KEY = "notiz-mail-account";
 const READ_STORAGE_KEY = "notiz-mail-opened";
+const UNREAD_STORAGE_KEY = "notiz-mail-marked-unread";
 const READ_STORAGE_MAX = 5000;
 
 function loadAccountFilter(): string {
@@ -48,20 +52,20 @@ function loadAccountFilter(): string {
   }
 }
 
-function loadOpenedKeys(): Set<string> {
+function loadOpenedKeys(storageKey = READ_STORAGE_KEY): Set<string> {
   try {
-    const raw = localStorage.getItem(READ_STORAGE_KEY);
+    const raw = localStorage.getItem(storageKey);
     return new Set(raw ? (JSON.parse(raw) as string[]) : []);
   } catch {
     return new Set();
   }
 }
 
-function saveOpenedKeys(keys: Set<string>) {
+function saveOpenedKeys(keys: Set<string>, storageKey = READ_STORAGE_KEY) {
   try {
     // Oldest first, so trimming drops the emails opened longest ago.
     localStorage.setItem(
-      READ_STORAGE_KEY,
+      storageKey,
       JSON.stringify([...keys].slice(-READ_STORAGE_MAX)),
     );
   } catch {}
@@ -187,6 +191,40 @@ export function TabContentInbox() {
   useEffect(() => {
     saveOpenedKeys(readKeys);
   }, [readKeys]);
+  // Emails the user marked unread again, so opening one earlier does not win.
+  const [unreadKeys, setUnreadKeys] = useState<Set<string>>(() =>
+    loadOpenedKeys(UNREAD_STORAGE_KEY),
+  );
+  useEffect(() => {
+    saveOpenedKeys(unreadKeys, UNREAD_STORAGE_KEY);
+  }, [unreadKeys]);
+  // Emails moved to Trash disappear at once, before the next refresh.
+  const [trashedKeys, setTrashedKeys] = useState<Set<string>>(() => new Set());
+  const queryClient = useQueryClient();
+
+  const isSeen = (message: InboxMessage) =>
+    !unreadKeys.has(message.key) && (message.seen || readKeys.has(message.key));
+
+  const setSeenState = (message: InboxMessage, seen: boolean) => {
+    const flip = (set: Set<string>, add: boolean) => {
+      const next = new Set(set);
+      if (add) next.add(message.key);
+      else next.delete(message.key);
+      return next;
+    };
+    setReadKeys((prev) => flip(prev, seen));
+    setUnreadKeys((prev) => flip(prev, !seen));
+    void mailCommands
+      .setMailSeen(message.accountId, message.uid, seen)
+      .then((result) => {
+        if (result.status === "error") {
+          showTransientToast({
+            description: "Could not update the message on your mail server.",
+            variant: "error",
+          });
+        }
+      });
+  };
 
   const [storedAccount, setStoredAccount] = useState(loadAccountFilter);
   // A removed account falls back to the combined view.
@@ -208,12 +246,13 @@ export function TabContentInbox() {
   const unreadByAccount = useMemo(() => {
     const counts = new Map<string, number>();
     for (const m of messages) {
-      if (!(m.seen || readKeys.has(m.key))) {
+      if (trashedKeys.has(m.key)) continue;
+      if (!(m.seen || readKeys.has(m.key)) || unreadKeys.has(m.key)) {
         counts.set(m.accountId, (counts.get(m.accountId) ?? 0) + 1);
       }
     }
     return counts;
-  }, [messages, readKeys]);
+  }, [messages, readKeys, unreadKeys, trashedKeys]);
   const unreadCount =
     accountFilter === "all"
       ? [...unreadByAccount.values()].reduce((sum, n) => sum + n, 0)
@@ -226,11 +265,12 @@ export function TabContentInbox() {
   const visible = useMemo(() => {
     const needle = query.trim().toLowerCase();
     return messages.filter((message) => {
+      if (trashedKeys.has(message.key)) return false;
       if (accountFilter !== "all" && message.accountId !== accountFilter) {
         return false;
       }
       if (message.key === selectedKey) return true;
-      if (unreadOnly && (message.seen || readKeys.has(message.key))) {
+      if (unreadOnly && isSeen(message)) {
         return false;
       }
       if (!needle) return true;
@@ -238,7 +278,16 @@ export function TabContentInbox() {
         .toLowerCase()
         .includes(needle);
     });
-  }, [messages, accountFilter, query, unreadOnly, readKeys, selectedKey]);
+  }, [
+    messages,
+    accountFilter,
+    query,
+    unreadOnly,
+    readKeys,
+    unreadKeys,
+    trashedKeys,
+    selectedKey,
+  ]);
 
   const groups = useMemo(() => {
     const result: { label: string; messages: InboxMessage[] }[] = [];
@@ -253,8 +302,34 @@ export function TabContentInbox() {
 
   const select = (message: InboxMessage) => {
     setSelectedKey(message.key);
-    setReadKeys((prev) => new Set(prev).add(message.key));
+    if (!isSeen(message)) setSeenState(message, true);
   };
+
+  const trash = async (message: InboxMessage) => {
+    const index = visible.findIndex((m) => m.key === message.key);
+    const next = visible[index + 1] ?? visible[index - 1] ?? null;
+    setTrashedKeys((prev) => new Set(prev).add(message.key));
+    setSelectedKey(next?.key ?? null);
+
+    const result = await mailCommands.trashMail(message.accountId, message.uid);
+    if (result.status === "error") {
+      setTrashedKeys((prev) => {
+        const restored = new Set(prev);
+        restored.delete(message.key);
+        return restored;
+      });
+      showTransientToast({
+        description: `Could not move to Trash: ${result.error}`,
+        variant: "error",
+      });
+      return;
+    }
+    showTransientToast({ description: "Moved to Trash" });
+    void queryClient.invalidateQueries({ queryKey: ["mail-recent"] });
+  };
+
+  const composeAccount =
+    accounts.find((a) => a.id === accountFilter) ?? accounts[0];
 
   // An email opened from Home is picked once the list has loaded.
   useEffect(() => {
@@ -263,7 +338,8 @@ export function TabContentInbox() {
     const key = takePendingInboxSelection();
     if (key && messages.some((message) => message.key === key)) {
       setSelectedKey(key);
-      setReadKeys((prev) => new Set(prev).add(key));
+      const pending = messages.find((message) => message.key === key);
+      if (pending && !isSeen(pending)) setSeenState(pending, true);
     }
   }, [isFetching, messages]);
 
@@ -297,6 +373,22 @@ export function TabContentInbox() {
 
       if (e.key === "Escape") {
         setSelectedKey(null);
+        return;
+      }
+
+      if (selected && (e.key === "#" || e.key === "Delete")) {
+        e.preventDefault();
+        void trash(selected);
+        return;
+      }
+      if (selected && e.key === "u") {
+        e.preventDefault();
+        setSeenState(selected, !isSeen(selected));
+        return;
+      }
+      if (e.key === "c") {
+        e.preventDefault();
+        void openCompose(composeAccount, {});
         return;
       }
 
@@ -353,6 +445,17 @@ export function TabContentInbox() {
                 </p>
               )}
             </div>
+            {accounts.length > 0 && (
+              <button
+                type="button"
+                aria-label="New email"
+                title="New email (C)"
+                onClick={() => void openCompose(composeAccount, {})}
+                className="text-muted-foreground hover:bg-accent hover:text-foreground shrink-0 rounded-full p-2 transition-colors"
+              >
+                <PenLineIcon className="size-4" />
+              </button>
+            )}
             {accounts.length > 0 && (
               <button
                 type="button"
@@ -523,7 +626,7 @@ export function TabContentInbox() {
                       key={message.key}
                       message={message}
                       selected={message.key === selectedKey}
-                      seen={message.seen || readKeys.has(message.key)}
+                      seen={isSeen(message)}
                       accountLabel={
                         accountFilter === "all" && accounts.length > 1
                           ? accountLabels.get(message.accountId)
@@ -541,6 +644,10 @@ export function TabContentInbox() {
         {selected && (
           <MessagePreview
             message={selected}
+            account={accounts.find((a) => a.id === selected.accountId)}
+            seen={isSeen(selected)}
+            onToggleSeen={() => setSeenState(selected, !isSeen(selected))}
+            onTrash={() => void trash(selected)}
             onClose={() => setSelectedKey(null)}
           />
         )}
@@ -647,9 +754,17 @@ function Avatar({ name, className }: { name: string; className?: string }) {
 
 function MessagePreview({
   message,
+  account,
+  seen,
+  onToggleSeen,
+  onTrash,
   onClose,
 }: {
   message: InboxMessage;
+  account?: { host: string; username: string };
+  seen: boolean;
+  onToggleSeen: () => void;
+  onTrash: () => void;
   onClose: () => void;
 }) {
   const { data, isPending, error, refetch } = useQuery(
@@ -689,14 +804,17 @@ function MessagePreview({
     showTransientToast({ description: "Added to today's page" });
   };
 
-  const reply = async () => {
-    const subject = /^re:/i.test(message.subject)
-      ? message.subject
-      : `Re: ${message.subject}`;
-    await openerCommands.openUrl(
-      `mailto:${encodeURIComponent(message.fromEmail)}?subject=${encodeURIComponent(subject)}`,
-      null,
-    );
+  const reply = () => {
+    const original = data?.text ?? htmlToText(data?.html) ?? "";
+    void openCompose(account, {
+      to: message.fromEmail,
+      subject: replySubject(message.subject),
+      body: quoteForReply(
+        `${sender} <${message.fromEmail}>`,
+        message.date,
+        original,
+      ),
+    });
   };
 
   return (
@@ -743,6 +861,28 @@ function MessagePreview({
         >
           <FileTextIcon className="size-4" />
           <Trans>Save as note</Trans>
+        </button>
+        <button
+          type="button"
+          onClick={onToggleSeen}
+          title="Mark as read or unread (U)"
+          className="text-muted-foreground hover:bg-accent hover:text-foreground flex items-center gap-2 rounded-full px-3 py-1.5 text-sm transition-colors"
+        >
+          {seen ? (
+            <MailIcon className="size-4" />
+          ) : (
+            <MailOpenIcon className="size-4" />
+          )}
+          {seen ? <Trans>Mark unread</Trans> : <Trans>Mark read</Trans>}
+        </button>
+        <button
+          type="button"
+          onClick={onTrash}
+          title="Move to Trash (#)"
+          className="text-muted-foreground hover:bg-accent hover:text-destructive flex items-center gap-2 rounded-full px-3 py-1.5 text-sm transition-colors"
+        >
+          <Trash2Icon className="size-4" />
+          <Trans>Delete</Trans>
         </button>
         <button
           type="button"

@@ -6,6 +6,7 @@ const COMMANDS: &[&str] = &[
     "read_path",
     "create_todo",
     "complete_todo",
+    "update_todo",
     "delete_todo",
     "linear_list_teams",
     "linear_list_tickets",

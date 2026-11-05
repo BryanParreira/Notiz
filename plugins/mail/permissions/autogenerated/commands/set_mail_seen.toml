@@ -1,0 +1,13 @@
+# Automatically generated - DO NOT EDIT!
+
+"$schema" = "../../schemas/schema.json"
+
+[[permission]]
+identifier = "allow-set-mail-seen"
+description = "Enables the set_mail_seen command without any pre-configured scope."
+commands.allow = ["set_mail_seen"]
+
+[[permission]]
+identifier = "deny-set-mail-seen"
+description = "Denies the set_mail_seen command without any pre-configured scope."
+commands.deny = ["set_mail_seen"]

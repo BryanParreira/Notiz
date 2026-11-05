@@ -1,5 +1,5 @@
 import { format } from "date-fns";
-import { useCallback, useMemo } from "react";
+import { useCallback, useMemo, useState } from "react";
 
 import { Button } from "@notiz/ui/components/ui/button";
 import {
@@ -9,6 +9,8 @@ import {
   PopoverTrigger,
 } from "@notiz/ui/components/ui/popover";
 import { cn } from "@notiz/utils";
+
+import { EditEventForm, EventActions } from "./event-actions";
 
 import { toTz, useCalendar, useTimezone } from "~/calendar/hooks";
 import { EventDisplay } from "~/session/components/outer-header/metadata";
@@ -157,6 +159,7 @@ export function EventChip({ eventId }: { eventId: string }) {
 
 export function EventPopoverContent({ eventId }: { eventId: string }) {
   const event = useEvent(eventId);
+  const [editing, setEditing] = useState(false);
   const store = main.UI.useStore(main.STORE_ID);
   const openNew = useTabs((state) => state.openNew);
 
@@ -181,6 +184,10 @@ export function EventPopoverContent({ eventId }: { eventId: string }) {
   // start notes for the event, or reopen the ones already taken.
   const hasNotes = store ? !!findSessionByEventId(store, eventId) : false;
 
+  if (editing) {
+    return <EditEventForm eventId={eventId} onDone={() => setEditing(false)} />;
+  }
+
   return (
     <div className="flex flex-col gap-3 p-4">
       <EventDisplay event={event} />
@@ -191,6 +198,7 @@ export function EventPopoverContent({ eventId }: { eventId: string }) {
       >
         {hasNotes ? "Open notes" : "Take notes"}
       </Button>
+      <EventActions eventId={eventId} onEdit={() => setEditing(true)} />
     </div>
   );
 }

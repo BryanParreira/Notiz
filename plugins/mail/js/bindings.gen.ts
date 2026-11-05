@@ -61,6 +61,22 @@ async readMail(accountId: string, uid: number) : Promise<Result<MailBody, string
     if(e instanceof Error) throw e;
     else return { status: "error", error: e  as any };
 }
+},
+async setMailSeen(accountId: string, uid: number, seen: boolean) : Promise<Result<null, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("plugin:mail|set_mail_seen", { accountId, uid, seen }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async trashMail(accountId: string, uid: number) : Promise<Result<null, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("plugin:mail|trash_mail", { accountId, uid }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
 }
 }
 

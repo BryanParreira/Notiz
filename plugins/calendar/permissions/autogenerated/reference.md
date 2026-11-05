@@ -15,6 +15,8 @@ Default permissions for the plugin
 - `allow-list-events`
 - `allow-open-calendar`
 - `allow-create-event`
+- `allow-update-event`
+- `allow-delete-event`
 - `allow-parse-meeting-link`
 
 ## Permission Table
@@ -126,6 +128,32 @@ Enables the create_event command without any pre-configured scope.
 <td>
 
 Denies the create_event command without any pre-configured scope.
+
+</td>
+</tr>
+
+<tr>
+<td>
+
+`calendar:allow-delete-event`
+
+</td>
+<td>
+
+Enables the delete_event command without any pre-configured scope.
+
+</td>
+</tr>
+
+<tr>
+<td>
+
+`calendar:deny-delete-event`
+
+</td>
+<td>
+
+Denies the delete_event command without any pre-configured scope.
 
 </td>
 </tr>
@@ -334,6 +362,32 @@ Enables the parse_meeting_link command without any pre-configured scope.
 <td>
 
 Denies the parse_meeting_link command without any pre-configured scope.
+
+</td>
+</tr>
+
+<tr>
+<td>
+
+`calendar:allow-update-event`
+
+</td>
+<td>
+
+Enables the update_event command without any pre-configured scope.
+
+</td>
+</tr>
+
+<tr>
+<td>
+
+`calendar:deny-update-event`
+
+</td>
+<td>
+
+Denies the update_event command without any pre-configured scope.
 
 </td>
 </tr>

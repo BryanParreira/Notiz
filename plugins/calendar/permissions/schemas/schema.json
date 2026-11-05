@@ -343,6 +343,18 @@
           "markdownDescription": "Denies the create_event command without any pre-configured scope."
         },
         {
+          "description": "Enables the delete_event command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-delete-event",
+          "markdownDescription": "Enables the delete_event command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the delete_event command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-delete-event",
+          "markdownDescription": "Denies the delete_event command without any pre-configured scope."
+        },
+        {
           "description": "Enables the disconnect_account command without any pre-configured scope.",
           "type": "string",
           "const": "allow-disconnect-account",
@@ -439,10 +451,22 @@
           "markdownDescription": "Denies the parse_meeting_link command without any pre-configured scope."
         },
         {
-          "description": "Default permissions for the plugin\n#### This default permission set includes:\n\n- `allow-available-providers`\n- `allow-is-provider-enabled`\n- `allow-list-connection-ids`\n- `allow-list-accounts`\n- `allow-connect-account`\n- `allow-add-ics-account`\n- `allow-disconnect-account`\n- `allow-list-calendars`\n- `allow-list-events`\n- `allow-open-calendar`\n- `allow-create-event`\n- `allow-parse-meeting-link`",
+          "description": "Enables the update_event command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-update-event",
+          "markdownDescription": "Enables the update_event command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the update_event command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-update-event",
+          "markdownDescription": "Denies the update_event command without any pre-configured scope."
+        },
+        {
+          "description": "Default permissions for the plugin\n#### This default permission set includes:\n\n- `allow-available-providers`\n- `allow-is-provider-enabled`\n- `allow-list-connection-ids`\n- `allow-list-accounts`\n- `allow-connect-account`\n- `allow-add-ics-account`\n- `allow-disconnect-account`\n- `allow-list-calendars`\n- `allow-list-events`\n- `allow-open-calendar`\n- `allow-create-event`\n- `allow-update-event`\n- `allow-delete-event`\n- `allow-parse-meeting-link`",
           "type": "string",
           "const": "default",
-          "markdownDescription": "Default permissions for the plugin\n#### This default permission set includes:\n\n- `allow-available-providers`\n- `allow-is-provider-enabled`\n- `allow-list-connection-ids`\n- `allow-list-accounts`\n- `allow-connect-account`\n- `allow-add-ics-account`\n- `allow-disconnect-account`\n- `allow-list-calendars`\n- `allow-list-events`\n- `allow-open-calendar`\n- `allow-create-event`\n- `allow-parse-meeting-link`"
+          "markdownDescription": "Default permissions for the plugin\n#### This default permission set includes:\n\n- `allow-available-providers`\n- `allow-is-provider-enabled`\n- `allow-list-connection-ids`\n- `allow-list-accounts`\n- `allow-connect-account`\n- `allow-add-ics-account`\n- `allow-disconnect-account`\n- `allow-list-calendars`\n- `allow-list-events`\n- `allow-open-calendar`\n- `allow-create-event`\n- `allow-update-event`\n- `allow-delete-event`\n- `allow-parse-meeting-link`"
         }
       ]
     }

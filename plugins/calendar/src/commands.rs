@@ -1,5 +1,6 @@
 use notiz_calendar_interface::{
     CalendarEvent, CalendarListItem, CalendarProviderType, CreateEventInput, EventFilter,
+    UpdateEventInput,
 };
 use tauri_plugin_permissions::PermissionsPluginExt;
 
@@ -109,6 +110,26 @@ pub fn open_calendar<R: tauri::Runtime>(
     provider: CalendarProviderType,
 ) -> Result<(), Error> {
     notiz_calendar::open_calendar(provider).map_err(Into::into)
+}
+
+#[tauri::command]
+#[specta::specta]
+pub fn update_event<R: tauri::Runtime>(
+    _app: tauri::AppHandle<R>,
+    provider: CalendarProviderType,
+    input: UpdateEventInput,
+) -> Result<(), Error> {
+    notiz_calendar::update_event(provider, input).map_err(Into::into)
+}
+
+#[tauri::command]
+#[specta::specta]
+pub fn delete_event<R: tauri::Runtime>(
+    _app: tauri::AppHandle<R>,
+    provider: CalendarProviderType,
+    event_tracking_id: String,
+) -> Result<(), Error> {
+    notiz_calendar::delete_event(provider, &event_tracking_id).map_err(Into::into)
 }
 
 #[tauri::command]

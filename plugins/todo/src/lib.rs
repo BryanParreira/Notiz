@@ -25,6 +25,7 @@ fn make_specta_builder<R: tauri::Runtime>() -> tauri_specta::Builder<R> {
             commands::read_path::<tauri::Wry>,
             commands::create_todo,
             commands::complete_todo,
+            commands::update_todo,
             commands::delete_todo,
             commands::linear_list_teams::<tauri::Wry>,
             commands::linear_list_tickets::<tauri::Wry>,

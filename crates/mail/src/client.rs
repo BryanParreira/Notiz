@@ -262,6 +262,93 @@ pub(crate) async fn read_message(account: StoredAccount, uid: u32) -> Result<Mai
     .await
 }
 
+/// Sets or clears the read flag. The server keeps the flag, so Apple Mail and
+/// other devices agree with Notiz.
+pub(crate) async fn set_seen(account: StoredAccount, uid: u32, seen: bool) -> Result<(), Error> {
+    run_blocking(move || {
+        with_session(&account, |session| {
+            session
+                .select("INBOX")
+                .map_err(|e| Error::Imap(e.to_string()))?;
+            let change = if seen {
+                "+FLAGS.SILENT (\\Seen)"
+            } else {
+                "-FLAGS.SILENT (\\Seen)"
+            };
+            session
+                .uid_store(uid.to_string(), change)
+                .map_err(|e| Error::Imap(e.to_string()))?;
+            Ok(())
+        })
+    })
+    .await
+}
+
+const TRASH_NAMES: &[&str] = &[
+    "trash",
+    "[gmail]/trash",
+    "[google mail]/trash",
+    "[gmail]/bin",
+    "deleted items",
+    "deleted messages",
+    "bin",
+];
+
+/// Moves a message to the account's Trash. Nothing is erased: the message stays
+/// recoverable from Trash.
+pub(crate) async fn trash(account: StoredAccount, uid: u32) -> Result<(), Error> {
+    run_blocking(move || {
+        with_session(&account, |session| {
+            session
+                .select("INBOX")
+                .map_err(|e| Error::Imap(e.to_string()))?;
+
+            let trash = {
+                let names = session
+                    .list(Some(""), Some("*"))
+                    .map_err(|e| Error::Imap(e.to_string()))?;
+                names
+                    .iter()
+                    .find(|n| {
+                        // The attribute type is not re-exported, so match it by name.
+                        n.attributes().iter().any(|a| format!("{a:?}") == "Trash")
+                    })
+                    .or_else(|| {
+                        names
+                            .iter()
+                            .find(|n| TRASH_NAMES.contains(&n.name().to_lowercase().as_str()))
+                    })
+                    .map(|n| n.name().to_string())
+            }
+            .ok_or_else(|| Error::Imap("this account has no Trash folder".to_string()))?;
+
+            let has_move = session
+                .capabilities()
+                .map(|caps| caps.has_str("MOVE"))
+                .unwrap_or(false);
+            let uid = uid.to_string();
+
+            if has_move {
+                session
+                    .uid_mv(&uid, &trash)
+                    .map_err(|e| Error::Imap(e.to_string()))?;
+            } else {
+                session
+                    .uid_copy(&uid, &trash)
+                    .map_err(|e| Error::Imap(e.to_string()))?;
+                session
+                    .uid_store(&uid, "+FLAGS.SILENT (\\Deleted)")
+                    .map_err(|e| Error::Imap(e.to_string()))?;
+                session
+                    .uid_expunge(&uid)
+                    .map_err(|e| Error::Imap(e.to_string()))?;
+            }
+            Ok(())
+        })
+    })
+    .await
+}
+
 pub(crate) fn parse_message(raw: &[u8]) -> MailBody {
     let mut body = MailBody {
         uid: 0,

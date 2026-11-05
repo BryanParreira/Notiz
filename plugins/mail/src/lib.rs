@@ -16,6 +16,8 @@ fn make_specta_builder<R: tauri::Runtime>() -> tauri_specta::Builder<R> {
             commands::recent_mail,
             commands::mail_with,
             commands::read_mail,
+            commands::set_mail_seen,
+            commands::trash_mail,
         ])
         .error_handling(tauri_specta::ErrorHandlingMode::Result)
 }

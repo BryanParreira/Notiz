@@ -89,6 +89,22 @@ async createEvent(provider: CalendarProviderType, input: CreateEventInput) : Pro
     else return { status: "error", error: e  as any };
 }
 },
+async updateEvent(provider: CalendarProviderType, input: UpdateEventInput) : Promise<Result<null, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("plugin:calendar|update_event", { provider, input }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async deleteEvent(provider: CalendarProviderType, eventTrackingId: string) : Promise<Result<null, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("plugin:calendar|delete_event", { provider, eventTrackingId }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
 async parseMeetingLink(text: string) : Promise<string | null> {
     return await TAURI_INVOKE("plugin:calendar|parse_meeting_link", { text });
 }
@@ -198,6 +214,7 @@ email: string | null;
 is_current_user: boolean }
 export type EventStatus = "confirmed" | "tentative" | "cancelled"
 export type ProviderConnectionIds = { provider: CalendarProviderType; connection_ids: string[] }
+export type UpdateEventInput = { event_tracking_id: string; title: string | null; started_at: string | null; ended_at: string | null; is_all_day: boolean | null; location: string | null; notes: string | null }
 
 /** tauri-specta globals **/
 

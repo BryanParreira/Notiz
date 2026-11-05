@@ -6,6 +6,8 @@ const COMMANDS: &[&str] = &[
     "recent_mail",
     "mail_with",
     "read_mail",
+    "set_mail_seen",
+    "trash_mail",
 ];
 
 fn main() {

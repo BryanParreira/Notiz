@@ -10,6 +10,7 @@ pub mod runtime;
 pub use error::Error;
 pub use notiz_calendar_interface::{
     CalendarEvent, CalendarListItem, CalendarProviderType, CreateEventInput, EventFilter,
+    UpdateEventInput,
 };
 
 pub fn start(runtime: impl runtime::CalendarRuntime) {
@@ -413,6 +414,67 @@ fn list_apple_events(
         .map_err(|e| Error::Apple(e.to_string()))
 }
 
+pub fn update_event(provider: CalendarProviderType, input: UpdateEventInput) -> Result<(), Error> {
+    match provider {
+        CalendarProviderType::Apple => update_apple_event(input),
+        _ => Err(Error::UnsupportedOperation {
+            operation: "update_event",
+            provider,
+        }),
+    }
+}
+
+pub fn delete_event(provider: CalendarProviderType, event_tracking_id: &str) -> Result<(), Error> {
+    match provider {
+        CalendarProviderType::Apple => delete_apple_event(event_tracking_id),
+        _ => Err(Error::UnsupportedOperation {
+            operation: "delete_event",
+            provider,
+        }),
+    }
+}
+
+// Apple event ids for recurring events end in ":YYYY-MM-DD"; the identifier
+// EventKit knows is the part before it.
+fn apple_event_id(tracking_id: &str) -> &str {
+    tracking_id.split(':').next().unwrap_or(tracking_id)
+}
+
+#[cfg(target_os = "macos")]
+fn update_apple_event(input: UpdateEventInput) -> Result<(), Error> {
+    let handle = notiz_apple_calendar::Handle::new();
+
+    let start_date = input
+        .started_at
+        .as_deref()
+        .map(|v| parse_datetime(v, "started_at"))
+        .transpose()?;
+    let end_date = input
+        .ended_at
+        .as_deref()
+        .map(|v| parse_datetime(v, "ended_at"))
+        .transpose()?;
+
+    handle
+        .update_event(notiz_apple_calendar::types::UpdateEventInput {
+            event_id: apple_event_id(&input.event_tracking_id).to_string(),
+            title: input.title,
+            start_date,
+            end_date,
+            is_all_day: input.is_all_day,
+            location: input.location,
+            notes: input.notes,
+        })
+        .map_err(|e| Error::Apple(e.to_string()))
+}
+
+#[cfg(target_os = "macos")]
+fn delete_apple_event(tracking_id: &str) -> Result<(), Error> {
+    notiz_apple_calendar::Handle::new()
+        .delete_event(apple_event_id(tracking_id))
+        .map_err(|e| Error::Apple(e.to_string()))
+}
+
 #[cfg(target_os = "macos")]
 fn create_apple_event(input: CreateEventInput) -> Result<String, Error> {
     let handle = notiz_apple_calendar::Handle::new();
@@ -464,6 +526,20 @@ fn list_apple_calendars() -> Result<Vec<notiz_apple_calendar::types::AppleCalend
 fn list_apple_events(
     _filter: EventFilter,
 ) -> Result<Vec<notiz_apple_calendar::types::AppleEvent>, Error> {
+    Err(Error::ProviderUnavailable {
+        provider: CalendarProviderType::Apple,
+    })
+}
+
+#[cfg(not(target_os = "macos"))]
+fn update_apple_event(_input: UpdateEventInput) -> Result<(), Error> {
+    Err(Error::ProviderUnavailable {
+        provider: CalendarProviderType::Apple,
+    })
+}
+
+#[cfg(not(target_os = "macos"))]
+fn delete_apple_event(_tracking_id: &str) -> Result<(), Error> {
     Err(Error::ProviderUnavailable {
         provider: CalendarProviderType::Apple,
     })

@@ -1,5 +1,6 @@
 use notiz_apple_todo::types::{
     CreateReminderInput, Reminder, ReminderFilter, ReminderIdentifierInput, ReminderList,
+    UpdateReminderInput,
 };
 use notiz_ticket_interface::{CollectionPage, TicketPage};
 
@@ -175,6 +176,25 @@ pub fn create_todo(input: CreateReminderInput) -> Result<String, Error> {
     #[cfg(not(target_os = "macos"))]
     {
         let _ = input;
+        Err(Error::UnsupportedPlatform)
+    }
+}
+
+#[tauri::command]
+#[specta::specta]
+pub fn update_todo(
+    target: ReminderIdentifierInput,
+    input: UpdateReminderInput,
+) -> Result<(), Error> {
+    #[cfg(target_os = "macos")]
+    {
+        let handle = notiz_apple_todo::Handle;
+        handle.update_reminder(&target, &input).map_err(Into::into)
+    }
+
+    #[cfg(not(target_os = "macos"))]
+    {
+        let _ = (target, input);
         Err(Error::UnsupportedPlatform)
     }
 }

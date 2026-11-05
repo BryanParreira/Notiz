@@ -107,6 +107,29 @@ end tell"#
     )
 }
 
+pub(crate) async fn set_seen(id: u32, seen: bool) -> Result<(), Error> {
+    run(format!(
+        r#"tell application "Mail"
+  set m to first message of inbox whose id is {id}
+  set read status of m to {seen}
+end tell"#
+    ))
+    .await
+    .map(|_| ())
+}
+
+// Mail moves a deleted message to the account's Trash, so it stays recoverable.
+pub(crate) async fn trash(id: u32) -> Result<(), Error> {
+    run(format!(
+        r#"tell application "Mail"
+  set m to first message of inbox whose id is {id}
+  delete m
+end tell"#
+    ))
+    .await
+    .map(|_| ())
+}
+
 pub(crate) fn parse_sender(raw: &str) -> (String, String) {
     let raw = raw.trim();
     if let (Some(open), Some(close)) = (raw.rfind('<'), raw.rfind('>'))

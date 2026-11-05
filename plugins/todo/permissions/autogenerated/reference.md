@@ -11,6 +11,7 @@ Default permissions for the plugin
 - `allow-read-path`
 - `allow-create-todo`
 - `allow-complete-todo`
+- `allow-update-todo`
 - `allow-delete-todo`
 - `allow-linear-list-teams`
 - `allow-linear-list-tickets`
@@ -360,6 +361,32 @@ Enables the request_full_access command without any pre-configured scope.
 <td>
 
 Denies the request_full_access command without any pre-configured scope.
+
+</td>
+</tr>
+
+<tr>
+<td>
+
+`todo:allow-update-todo`
+
+</td>
+<td>
+
+Enables the update_todo command without any pre-configured scope.
+
+</td>
+</tr>
+
+<tr>
+<td>
+
+`todo:deny-update-todo`
+
+</td>
+<td>
+
+Denies the update_todo command without any pre-configured scope.
 
 </td>
 </tr>

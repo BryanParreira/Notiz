@@ -178,6 +178,24 @@ pub async fn read(account_id: &str, uid: u32) -> Result<MailBody, Error> {
     client::read_message(account, uid).await
 }
 
+/// Marks a message read or unread on the server.
+pub async fn set_seen(account_id: &str, uid: u32, seen: bool) -> Result<(), Error> {
+    let account = find(account_id).await?;
+    if apple::is_apple(&account.host) {
+        return apple::set_seen(uid, seen).await;
+    }
+    client::set_seen(account, uid, seen).await
+}
+
+/// Moves a message to the account's Trash.
+pub async fn trash(account_id: &str, uid: u32) -> Result<(), Error> {
+    let account = find(account_id).await?;
+    if apple::is_apple(&account.host) {
+        return apple::trash(uid).await;
+    }
+    client::trash(account, uid).await
+}
+
 async fn find(account_id: &str) -> Result<store::StoredAccount, Error> {
     store::get(account_id)
 }
