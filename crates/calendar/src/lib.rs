@@ -435,9 +435,45 @@ pub fn delete_event(provider: CalendarProviderType, event_tracking_id: &str) -> 
 }
 
 // Apple event ids for recurring events end in ":YYYY-MM-DD"; the identifier
-// EventKit knows is the part before it.
+// EventKit knows is the part before it. Real identifiers can contain colons
+// themselves (Google and Exchange accounts), so only a trailing date is cut.
 fn apple_event_id(tracking_id: &str) -> &str {
-    tracking_id.split(':').next().unwrap_or(tracking_id)
+    if let Some((id, suffix)) = tracking_id.rsplit_once(':') {
+        let bytes = suffix.as_bytes();
+        let is_date = bytes.len() == 10
+            && bytes.iter().enumerate().all(|(i, b)| match i {
+                4 | 7 => *b == b'-',
+                _ => b.is_ascii_digit(),
+            });
+        if is_date {
+            return id;
+        }
+    }
+    tracking_id
+}
+
+#[cfg(test)]
+mod apple_event_id_tests {
+    use super::apple_event_id;
+
+    #[test]
+    fn keeps_plain_identifiers() {
+        assert_eq!(apple_event_id("A1B2C3D4-E5F6"), "A1B2C3D4-E5F6");
+    }
+
+    #[test]
+    fn keeps_identifiers_that_contain_colons() {
+        assert_eq!(
+            apple_event_id("3F2A9C1E-77D4:5B6E0A12-9C3D"),
+            "3F2A9C1E-77D4:5B6E0A12-9C3D"
+        );
+    }
+
+    #[test]
+    fn removes_only_a_trailing_occurrence_date() {
+        assert_eq!(apple_event_id("ABC123:2026-11-05"), "ABC123");
+        assert_eq!(apple_event_id("A:B:2026-11-05"), "A:B");
+    }
 }
 
 #[cfg(target_os = "macos")]

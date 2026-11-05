@@ -10,6 +10,27 @@ import { useSync } from "./context";
 import { showTransientToast } from "~/sidebar/toast/transient";
 import * as main from "~/store/tinybase/store/main";
 
+// Turns the native error into something a person can act on.
+export function friendlyCalendarError(raw: string): string {
+  const text = raw.toLowerCase();
+  if (text.includes("event not found")) {
+    return "Notiz can't find that event any more. Refresh the calendar and try again.";
+  }
+  if (text.includes("access denied") || text.includes("permission")) {
+    return "Notiz needs full Calendar access. Turn it on in System Settings > Privacy & Security > Calendars.";
+  }
+  if (
+    text.includes("doesn't allow") ||
+    text.includes("does not allow") ||
+    text.includes("read-only") ||
+    text.includes("read only") ||
+    text.includes("modif")
+  ) {
+    return "This calendar is read-only (for example a subscribed or shared calendar), so its events can't be changed here.";
+  }
+  return raw;
+}
+
 const inputClass =
   "border-border bg-background text-foreground w-full rounded-lg border px-3 py-1.5 text-sm outline-none focus:border-primary/50";
 
@@ -68,7 +89,7 @@ export function EventActions({
     setBusy(false);
     if (result.status === "error") {
       showTransientToast({
-        description: `Could not delete the event: ${result.error}`,
+        description: friendlyCalendarError(String(result.error)),
         variant: "error",
       });
       return;
@@ -176,7 +197,7 @@ export function EditEventForm({
 
     if (result.status === "error") {
       showTransientToast({
-        description: `Could not save the event: ${result.error}`,
+        description: friendlyCalendarError(String(result.error)),
         variant: "error",
       });
       return;
