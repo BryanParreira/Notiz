@@ -3,6 +3,18 @@ import { create } from "zustand";
 import type { ToastType } from "./types";
 
 const DEFAULT_TRANSIENT_TOAST_DURATION_MS = 2400;
+const READABLE_TOAST_DURATION_MS = 9000;
+const SHORT_TOAST_MAX_LENGTH = 36;
+
+// Errors and longer messages stay long enough to actually be read.
+function defaultDuration(toast: { variant?: string; description?: unknown }) {
+  const long =
+    typeof toast.description === "string" &&
+    toast.description.length > SHORT_TOAST_MAX_LENGTH;
+  return toast.variant === "error" || long
+    ? READABLE_TOAST_DURATION_MS
+    : DEFAULT_TRANSIENT_TOAST_DURATION_MS;
+}
 
 type TransientToastInput = Omit<ToastType, "dismissible" | "id"> & {
   dismissible?: boolean;
@@ -43,12 +55,15 @@ export const useTransientToast = create<TransientToastState>((set, get) => ({
 
     set({ toast: nextToast });
 
-    dismissTimer = setTimeout(() => {
-      if (get().toast?.key === key) {
-        set({ toast: null });
-      }
-      dismissTimer = null;
-    }, options?.durationMs ?? DEFAULT_TRANSIENT_TOAST_DURATION_MS);
+    dismissTimer = setTimeout(
+      () => {
+        if (get().toast?.key === key) {
+          set({ toast: null });
+        }
+        dismissTimer = null;
+      },
+      options?.durationMs ?? defaultDuration(toast),
+    );
   },
   clearToast: (key) => {
     if (key && get().toast?.key !== key) {

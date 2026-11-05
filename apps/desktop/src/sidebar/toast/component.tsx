@@ -11,13 +11,17 @@ export function Toast({
 }) {
   const actions = getActions(toast, onDismiss);
   const progress = getProgress(toast);
+  // A longer message wraps in full instead of being cut off with an ellipsis.
+  const long =
+    typeof toast.description === "string" && toast.description.length > 36;
 
   return (
     <div className="overflow-visible p-1">
       <div
         className={cn([
           "relative z-50 inline-flex max-w-[calc(100vw-24px)] items-center gap-3 py-1.5 pr-1.5 pl-4",
-          "bg-card text-card-foreground rounded-full",
+          "bg-card text-card-foreground",
+          long ? "rounded-2xl py-2.5" : "rounded-full",
           "border shadow-lg backdrop-blur-none",
           toast.variant === "error"
             ? "border-alert-border shadow-red-100 dark:shadow-red-950/30"
@@ -28,7 +32,8 @@ export function Toast({
 
         <div
           className={cn([
-            "max-w-50 truncate text-sm",
+            "text-sm",
+            long ? "max-w-sm leading-snug break-words" : "max-w-50 truncate",
             toast.variant === "error"
               ? "text-alert-foreground"
               : "text-muted-foreground",

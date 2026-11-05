@@ -68,6 +68,7 @@ export function EventActions({
   const { trackingId, canEdit, isRecurringApple } = useEditableEvent(eventId);
   const [confirming, setConfirming] = useState(false);
   const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   if (isRecurringApple) {
     return (
@@ -85,13 +86,11 @@ export function EventActions({
 
   const remove = async () => {
     setBusy(true);
+    setError(null);
     const result = await calendarCommands.deleteEvent("apple", trackingId);
     setBusy(false);
     if (result.status === "error") {
-      showTransientToast({
-        description: friendlyCalendarError(String(result.error)),
-        variant: "error",
-      });
+      setError(friendlyCalendarError(String(result.error)));
       return;
     }
     store?.delRow("events", eventId);
@@ -102,6 +101,11 @@ export function EventActions({
   if (confirming) {
     return (
       <div className="flex flex-col gap-2">
+        {error && (
+          <p className="text-destructive text-xs leading-snug break-words">
+            {error}
+          </p>
+        )}
         <p className="text-muted-foreground text-center text-xs">
           Delete this event from Apple Calendar?
         </p>
@@ -130,25 +134,32 @@ export function EventActions({
   }
 
   return (
-    <div className="flex gap-2">
-      <Button
-        size="sm"
-        variant="outline"
-        className="flex-1 gap-1.5 rounded-full"
-        onClick={onEdit}
-      >
-        <PencilIcon className="size-3.5" />
-        Edit
-      </Button>
-      <Button
-        size="sm"
-        variant="outline"
-        className="hover:text-destructive flex-1 gap-1.5 rounded-full"
-        onClick={() => setConfirming(true)}
-      >
-        <Trash2Icon className="size-3.5" />
-        Delete
-      </Button>
+    <div className="flex flex-col gap-2">
+      {error && (
+        <p className="text-destructive text-xs leading-snug break-words">
+          {error}
+        </p>
+      )}
+      <div className="flex gap-2">
+        <Button
+          size="sm"
+          variant="outline"
+          className="flex-1 gap-1.5 rounded-full"
+          onClick={onEdit}
+        >
+          <PencilIcon className="size-3.5" />
+          Edit
+        </Button>
+        <Button
+          size="sm"
+          variant="outline"
+          className="hover:text-destructive flex-1 gap-1.5 rounded-full"
+          onClick={() => setConfirming(true)}
+        >
+          <Trash2Icon className="size-3.5" />
+          Delete
+        </Button>
+      </div>
     </div>
   );
 }
@@ -173,6 +184,7 @@ export function EditEventForm({
   const [location, setLocation] = useState(String(row.location ?? ""));
   const [notes, setNotes] = useState(String(row.description ?? ""));
   const [saving, setSaving] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
 
   const startedAt = new Date(`${day}T${startTime}`);
   const endedAt = new Date(`${day}T${endTime}`);
@@ -184,6 +196,7 @@ export function EditEventForm({
 
   const save = async () => {
     setSaving(true);
+    setSaveError(null);
     const result = await calendarCommands.updateEvent("apple", {
       event_tracking_id: trackingId,
       title: title.trim(),
@@ -196,10 +209,7 @@ export function EditEventForm({
     setSaving(false);
 
     if (result.status === "error") {
-      showTransientToast({
-        description: friendlyCalendarError(String(result.error)),
-        variant: "error",
-      });
+      setSaveError(friendlyCalendarError(String(result.error)));
       return;
     }
 
@@ -270,6 +280,11 @@ export function EditEventForm({
         rows={3}
         className={`${inputClass} resize-none`}
       />
+      {saveError && (
+        <p className="text-destructive text-xs leading-snug break-words">
+          {saveError}
+        </p>
+      )}
       {!valid && title.trim() && (
         <p className="text-destructive text-xs">
           End time must be after the start.
