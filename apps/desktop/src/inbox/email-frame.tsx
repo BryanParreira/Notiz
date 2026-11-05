@@ -3,6 +3,8 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { commands as openerCommands } from "@notiz/plugin-opener2";
 
+import { showTransientToast } from "~/sidebar/toast/transient";
+
 // A second line of defence behind the sanitizer: even if markup slipped
 // through, the frame can neither run scripts nor contact anything except image
 // servers, and only when images are switched on.
@@ -13,6 +15,39 @@ function framePolicy(loadImages: boolean) {
     "style-src 'unsafe-inline'",
     "font-src data:",
   ].join("; ");
+}
+
+const OPENABLE_LINK = /^(https?:|mailto:|tel:)/i;
+
+export function isOpenableHref(href: string) {
+  return OPENABLE_LINK.test(href.trim());
+}
+
+// The link under a click, whether the click landed on the link or on an
+// element or text inside it.
+export function resolveLinkHref(target: EventTarget | null): string | null {
+  const node = target as Node | null;
+  const element =
+    node && node.nodeType === 1
+      ? (node as Element)
+      : (node?.parentElement ?? null);
+  const link = element?.closest?.("a[href], area[href]");
+  return link ? (link.getAttribute("href") ?? "") : null;
+}
+
+export async function openExternalLink(href: string) {
+  const url = href.trim();
+  if (!isOpenableHref(url)) return;
+  try {
+    const result = await openerCommands.openUrl(url, null);
+    if (result.status === "error") throw new Error(String(result.error));
+  } catch (error) {
+    console.error("[inbox] could not open link", error);
+    showTransientToast({
+      description: "Could not open the link in your browser.",
+      variant: "error",
+    });
+  }
 }
 
 export function sanitizeEmailHtml(html: string): string {
@@ -85,16 +120,17 @@ export function EmailFrame({
 
     measure();
 
-    // Links open in the user's browser, never inside the frame.
-    doc.addEventListener("click", async (event) => {
-      const link = (event.target as Element | null)?.closest?.("a[href]");
-      if (!link) return;
+    // Links open in the user's default browser, never inside the frame. The
+    // capture phase and auxclick also cover middle-click and Cmd-click.
+    const onLink = (event: Event) => {
+      const href = resolveLinkHref(event.target);
+      if (href === null) return;
       event.preventDefault();
-      const href = link.getAttribute("href") ?? "";
-      if (/^(https?:|mailto:)/i.test(href)) {
-        await openerCommands.openUrl(href, null);
-      }
-    });
+      event.stopPropagation();
+      void openExternalLink(href);
+    };
+    doc.addEventListener("click", onLink, true);
+    doc.addEventListener("auxclick", onLink, true);
 
     if (doc.body && typeof ResizeObserver !== "undefined") {
       new ResizeObserver(measure).observe(doc.body);

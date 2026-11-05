@@ -1,6 +1,13 @@
 import { Trans } from "@lingui/react/macro";
 import { useQuery } from "@tanstack/react-query";
-import { format, isSameDay, isToday, parseISO, startOfDay } from "date-fns";
+import {
+  addDays,
+  format,
+  isSameDay,
+  isToday,
+  parseISO,
+  startOfDay,
+} from "date-fns";
 import { FileTextIcon, MailIcon, PlusIcon } from "lucide-react";
 import { useMemo } from "react";
 
@@ -19,8 +26,6 @@ import * as main from "~/store/tinybase/store/main";
 import { getOrCreateSessionForEventId } from "~/store/tinybase/store/sessions";
 import { useTabs } from "~/store/zustand/tabs";
 
-const MAX_UPCOMING_DAYS = 3;
-
 type UpcomingDay = {
   day: Date;
   events: { id: string; title: string; start: Date; end: Date }[];
@@ -37,6 +42,10 @@ function useUpcomingDays(): UpcomingDay[] {
 
   return useMemo(() => {
     const now = new Date();
+    const today = startOfDay(now);
+    const tomorrow = addDays(today, 1);
+    const seen = new Set<string>();
+
     const upcoming = Object.entries(events)
       .map(([id, row]) => ({
         id,
@@ -48,19 +57,19 @@ function useUpcomingDays(): UpcomingDay[] {
         (e): e is { id: string; title: string; start: Date; end: Date } =>
           !!e.start && !!e.end && e.end >= now,
       )
-      .sort((a, b) => a.start.getTime() - b.start.getTime());
+      .sort((a, b) => a.start.getTime() - b.start.getTime())
+      // One meeting synced from several calendars is one entry.
+      .filter((e) => {
+        const key = `${e.start.getTime()}-${e.title.trim().toLowerCase()}`;
+        if (seen.has(key)) return false;
+        seen.add(key);
+        return true;
+      });
 
-    const days: UpcomingDay[] = [{ day: startOfDay(now), events: [] }];
-    for (const event of upcoming) {
-      const eventDay = startOfDay(event.start);
-      const last = days[days.length - 1];
-      if (isSameDay(last.day, eventDay)) {
-        last.events.push(event);
-      } else if (days.length < MAX_UPCOMING_DAYS + 1) {
-        days.push({ day: eventDay, events: [event] });
-      }
-    }
-    return days;
+    return [today, tomorrow].map((day) => ({
+      day,
+      events: upcoming.filter((e) => isSameDay(e.start, day)),
+    }));
   }, [events]);
 }
 
@@ -138,7 +147,11 @@ function ComingUp() {
                 <div className="flex items-center gap-3">
                   <span className="bg-border h-8 w-0.5 rounded-full" />
                   <span className="text-muted-foreground text-lg">
-                    <Trans>No events today</Trans>
+                    {isToday(day) ? (
+                      <Trans>No events today</Trans>
+                    ) : (
+                      <Trans>No events tomorrow</Trans>
+                    )}
                   </span>
                 </div>
               ) : (

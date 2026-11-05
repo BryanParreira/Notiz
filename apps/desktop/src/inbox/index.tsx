@@ -23,7 +23,7 @@ import { commands as mailCommands } from "@notiz/plugin-mail";
 import { commands as openerCommands } from "@notiz/plugin-opener2";
 import { cn } from "@notiz/utils";
 
-import { EmailFrame } from "./email-frame";
+import { EmailFrame, openExternalLink } from "./email-frame";
 import { takePendingInboxSelection } from "./pending-selection";
 
 import { appendToDailyNote } from "~/daily/append";
@@ -36,6 +36,36 @@ import { createSession } from "~/store/tinybase/store/sessions";
 import { useTabs } from "~/store/zustand/tabs";
 
 const RECENT_LIMIT = 80;
+const ACCOUNT_STORAGE_KEY = "notiz-mail-account";
+const READ_STORAGE_KEY = "notiz-mail-opened";
+const READ_STORAGE_MAX = 5000;
+
+function loadAccountFilter(): string {
+  try {
+    return localStorage.getItem(ACCOUNT_STORAGE_KEY) ?? "all";
+  } catch {
+    return "all";
+  }
+}
+
+function loadOpenedKeys(): Set<string> {
+  try {
+    const raw = localStorage.getItem(READ_STORAGE_KEY);
+    return new Set(raw ? (JSON.parse(raw) as string[]) : []);
+  } catch {
+    return new Set();
+  }
+}
+
+function saveOpenedKeys(keys: Set<string>) {
+  try {
+    // Oldest first, so trimming drops the emails opened longest ago.
+    localStorage.setItem(
+      READ_STORAGE_KEY,
+      JSON.stringify([...keys].slice(-READ_STORAGE_MAX)),
+    );
+  } catch {}
+}
 const TWO_MINUTES_MS = 2 * 60 * 1000;
 const URL_PATTERN = /(https?:\/\/[^\s<>"')\]]+)/g;
 
@@ -153,19 +183,52 @@ export function TabContentInbox() {
 
   const listRef = useRef<HTMLDivElement>(null);
   const [selectedKey, setSelectedKey] = useState<string | null>(null);
-  const [readKeys, setReadKeys] = useState<Set<string>>(() => new Set());
+  const [readKeys, setReadKeys] = useState<Set<string>>(loadOpenedKeys);
+  useEffect(() => {
+    saveOpenedKeys(readKeys);
+  }, [readKeys]);
+
+  const [storedAccount, setStoredAccount] = useState(loadAccountFilter);
+  // A removed account falls back to the combined view.
+  const accountFilter = accounts.some((a) => a.id === storedAccount)
+    ? storedAccount
+    : "all";
+  const selectAccount = (id: string) => {
+    setStoredAccount(id);
+    setSelectedKey(null);
+    try {
+      localStorage.setItem(ACCOUNT_STORAGE_KEY, id);
+    } catch {}
+  };
   const [query, setQuery] = useState("");
   const [unreadOnly, setUnreadOnly] = useState(false);
 
   const selected = messages.find((m) => m.key === selectedKey) ?? null;
 
-  const isSeen = (message: InboxMessage) =>
-    message.seen || readKeys.has(message.key);
-  const unreadCount = messages.filter((m) => !isSeen(m)).length;
+  const unreadByAccount = useMemo(() => {
+    const counts = new Map<string, number>();
+    for (const m of messages) {
+      if (!(m.seen || readKeys.has(m.key))) {
+        counts.set(m.accountId, (counts.get(m.accountId) ?? 0) + 1);
+      }
+    }
+    return counts;
+  }, [messages, readKeys]);
+  const unreadCount =
+    accountFilter === "all"
+      ? [...unreadByAccount.values()].reduce((sum, n) => sum + n, 0)
+      : (unreadByAccount.get(accountFilter) ?? 0);
+  const accountLabels = useMemo(
+    () => new Map(accounts.map((a) => [a.id, a.label || a.username])),
+    [accounts],
+  );
 
   const visible = useMemo(() => {
     const needle = query.trim().toLowerCase();
     return messages.filter((message) => {
+      if (accountFilter !== "all" && message.accountId !== accountFilter) {
+        return false;
+      }
       if (message.key === selectedKey) return true;
       if (unreadOnly && (message.seen || readKeys.has(message.key))) {
         return false;
@@ -175,7 +238,7 @@ export function TabContentInbox() {
         .toLowerCase()
         .includes(needle);
     });
-  }, [messages, query, unreadOnly, readKeys, selectedKey]);
+  }, [messages, accountFilter, query, unreadOnly, readKeys, selectedKey]);
 
   const groups = useMemo(() => {
     const result: { label: string; messages: InboxMessage[] }[] = [];
@@ -234,6 +297,13 @@ export function TabContentInbox() {
 
       if (e.key === "Escape") {
         setSelectedKey(null);
+        return;
+      }
+
+      if (/^[1-9]$/.test(e.key) && accounts.length > 1) {
+        const index = Number(e.key) - 1;
+        if (index === 0) selectAccount("all");
+        else if (accounts[index - 1]) selectAccount(accounts[index - 1].id);
         return;
       }
 
@@ -296,6 +366,58 @@ export function TabContentInbox() {
               </button>
             )}
           </header>
+
+          {accounts.length > 1 && (
+            <div
+              role="tablist"
+              aria-label="Inboxes"
+              className="scrollbar-hide flex shrink-0 items-center gap-1 overflow-x-auto px-8 pb-3"
+            >
+              {[
+                {
+                  id: "all",
+                  label: "All inboxes",
+                  unread: [...unreadByAccount.values()].reduce(
+                    (s, n) => s + n,
+                    0,
+                  ),
+                },
+                ...accounts.map((a) => ({
+                  id: a.id,
+                  label: a.label || a.username,
+                  unread: unreadByAccount.get(a.id) ?? 0,
+                })),
+              ].map((tab) => (
+                <button
+                  key={tab.id}
+                  type="button"
+                  role="tab"
+                  aria-selected={accountFilter === tab.id}
+                  onClick={() => selectAccount(tab.id)}
+                  className={cn([
+                    "flex shrink-0 items-center gap-2 rounded-full px-3.5 py-1.5 text-sm transition-colors",
+                    accountFilter === tab.id
+                      ? "bg-foreground text-background font-medium"
+                      : "text-muted-foreground hover:bg-accent hover:text-foreground",
+                  ])}
+                >
+                  {tab.label}
+                  {tab.unread > 0 && (
+                    <span
+                      className={cn([
+                        "rounded-full px-1.5 text-[11px] leading-4 tabular-nums",
+                        accountFilter === tab.id
+                          ? "bg-background/20"
+                          : "bg-primary text-primary-foreground",
+                      ])}
+                    >
+                      {tab.unread}
+                    </span>
+                  )}
+                </button>
+              ))}
+            </div>
+          )}
 
           {accounts.length > 0 && messages.length > 0 && (
             <div className="flex shrink-0 items-center gap-2 px-8 pb-3">
@@ -402,6 +524,11 @@ export function TabContentInbox() {
                       message={message}
                       selected={message.key === selectedKey}
                       seen={message.seen || readKeys.has(message.key)}
+                      accountLabel={
+                        accountFilter === "all" && accounts.length > 1
+                          ? accountLabels.get(message.accountId)
+                          : undefined
+                      }
                       onSelect={() => select(message)}
                     />
                   ))}
@@ -426,11 +553,13 @@ function MessageRow({
   message,
   selected,
   seen,
+  accountLabel,
   onSelect,
 }: {
   message: InboxMessage;
   selected: boolean;
   seen: boolean;
+  accountLabel?: string;
   onSelect: () => void;
 }) {
   const sender = message.fromName || message.fromEmail;
@@ -475,8 +604,15 @@ function MessageRow({
           {message.subject || <Trans>(no subject)</Trans>}
         </span>
       </span>
-      <span className="text-muted-foreground shrink-0 text-xs">
-        {rowDate(message.date)}
+      <span className="flex shrink-0 flex-col items-end gap-0.5">
+        <span className="text-muted-foreground text-xs">
+          {rowDate(message.date)}
+        </span>
+        {accountLabel && (
+          <span className="text-muted-foreground/70 max-w-24 truncate text-[10px]">
+            {accountLabel}
+          </span>
+        )}
       </span>
     </button>
   );
@@ -725,9 +861,7 @@ function MessageText({ text }: { text: string }) {
           <button
             key={index}
             type="button"
-            onClick={async () => {
-              await openerCommands.openUrl(part, null);
-            }}
+            onClick={() => void openExternalLink(part)}
             className="text-primary hover:underline"
           >
             {part}
