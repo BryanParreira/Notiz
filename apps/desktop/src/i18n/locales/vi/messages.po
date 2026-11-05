@@ -17,8 +17,8 @@ msgstr ""
 msgid "(default)"
 msgstr ""
 
-#: src/inbox/index.tsx:475
-#: src/inbox/index.tsx:631
+#: src/inbox/index.tsx:711
+#: src/inbox/index.tsx:907
 msgid "(no subject)"
 msgstr ""
 
@@ -135,7 +135,7 @@ msgstr ""
 msgid "Add spoken language"
 msgstr "Thêm ngôn ngữ nói"
 
-#: src/inbox/index.tsx:600
+#: src/inbox/index.tsx:854
 msgid "Add task"
 msgstr ""
 
@@ -163,7 +163,7 @@ msgstr "Ngôn ngữ nói bổ sung"
 msgid "AI-generated summary of all interactions and notes with this contact will appear here. This will synthesize key discussion points, action items, and relationship context across all meetings and notes."
 msgstr ""
 
-#: src/inbox/index.tsx:335
+#: src/inbox/index.tsx:560
 msgid "All"
 msgstr ""
 
@@ -283,7 +283,7 @@ msgstr ""
 #~ msgid "Brief"
 #~ msgstr ""
 
-#: src/main/home.tsx:247
+#: src/main/home.tsx:260
 msgid "Bring your mail in"
 msgstr ""
 
@@ -362,7 +362,7 @@ msgstr ""
 msgid "Checking folder..."
 msgstr ""
 
-#: src/inbox/index.tsx:381
+#: src/inbox/index.tsx:606
 msgid "Checking your inbox…"
 msgstr ""
 
@@ -419,7 +419,7 @@ msgstr ""
 msgid "Closed"
 msgstr ""
 
-#: src/main/home.tsx:112
+#: src/main/home.tsx:121
 msgid "Coming up"
 msgstr ""
 
@@ -479,7 +479,7 @@ msgstr ""
 msgid "Connect {0}"
 msgstr ""
 
-#: src/inbox/index.tsx:350
+#: src/inbox/index.tsx:575
 msgid "Connect an email account to read your mail next to your notes. It is optional and read-only."
 msgstr ""
 
@@ -491,7 +491,7 @@ msgstr ""
 msgid "Connect calendar (optional)"
 msgstr ""
 
-#: src/inbox/index.tsx:362
+#: src/inbox/index.tsx:587
 msgid "Connect email"
 msgstr ""
 
@@ -594,6 +594,7 @@ msgstr "Dữ liệu"
 msgid "Date and time are required"
 msgstr ""
 
+#: src/inbox/index.tsx:885
 #: src/session/components/outer-header/overflow/delete.tsx:52
 #: src/templates/sections-editor.tsx:280
 #: src/templates/template-form.tsx:285
@@ -966,11 +967,11 @@ msgstr ""
 msgid "Human"
 msgstr ""
 
-#: src/inbox/index.tsx:591
+#: src/inbox/index.tsx:845
 msgid "Images"
 msgstr ""
 
-#: src/inbox/index.tsx:591
+#: src/inbox/index.tsx:845
 msgid "Images off"
 msgstr ""
 
@@ -994,8 +995,8 @@ msgstr ""
 msgid "In {totalSeconds} seconds"
 msgstr ""
 
-#: src/inbox/index.tsx:270
-#: src/main/home.tsx:269
+#: src/inbox/index.tsx:432
+#: src/main/home.tsx:282
 #: src/sidebar/nav.tsx:73
 msgid "Inbox"
 msgstr ""
@@ -1106,6 +1107,14 @@ msgstr "Ngôn ngữ chính"
 msgid "Manage"
 msgstr ""
 
+#: src/inbox/index.tsx:876
+msgid "Mark read"
+msgstr ""
+
+#: src/inbox/index.tsx:876
+msgid "Mark unread"
+msgstr ""
+
 #: src/session/components/note-input/search/bar.tsx:218
 msgid "Match case"
 msgstr ""
@@ -1208,8 +1217,8 @@ msgstr ""
 #~ msgid "New chat"
 #~ msgstr ""
 
-#: src/main/home.tsx:82
-#: src/main/home.tsx:328
+#: src/main/home.tsx:91
+#: src/main/home.tsx:341
 msgid "New note"
 msgstr ""
 
@@ -1261,15 +1270,19 @@ msgstr ""
 #~ msgid "No draft yet."
 #~ msgstr ""
 
-#: src/main/home.tsx:141
+#: src/main/home.tsx:151
 msgid "No events today"
+msgstr ""
+
+#: src/main/home.tsx:153
+msgid "No events tomorrow"
 msgstr ""
 
 #: src/sidebar/timeline/index.tsx:947
 msgid "No items today"
 msgstr ""
 
-#: src/inbox/index.tsx:383
+#: src/inbox/index.tsx:608
 msgid "No mail matches your search."
 msgstr ""
 
@@ -1330,7 +1343,7 @@ msgstr ""
 msgid "Notes"
 msgstr ""
 
-#: src/inbox/index.tsx:387
+#: src/inbox/index.tsx:612
 msgid "Nothing in your inbox."
 msgstr ""
 
@@ -1536,7 +1549,7 @@ msgstr ""
 msgid "Quick capture"
 msgstr ""
 
-#: src/inbox/index.tsx:279
+#: src/inbox/index.tsx:441
 msgid "Read-only mail from your own account. Nothing leaves this device."
 msgstr ""
 
@@ -1639,7 +1652,7 @@ msgstr ""
 msgid "Replay"
 msgstr ""
 
-#: src/inbox/index.tsx:617
+#: src/inbox/index.tsx:893
 msgid "Reply"
 msgstr ""
 
@@ -1720,7 +1733,7 @@ msgstr ""
 #~ msgid "Save"
 #~ msgstr ""
 
-#: src/inbox/index.tsx:609
+#: src/inbox/index.tsx:863
 msgid "Save as note"
 msgstr ""
 
@@ -2037,15 +2050,15 @@ msgstr "Ngôn ngữ chính luôn được đưa vào để phiên âm"
 msgid "This folder is empty. Right-click any note and choose \"Move to\" to add it here."
 msgstr ""
 
-#: src/inbox/index.tsx:701
+#: src/inbox/index.tsx:977
 msgid "This message has no readable text."
 msgstr ""
 
-#: src/inbox/index.tsx:693
+#: src/inbox/index.tsx:969
 msgid "This message is long, so only the beginning is shown."
 msgstr ""
 
-#: src/inbox/index.tsx:682
+#: src/inbox/index.tsx:958
 msgid "This message is long, so some content may be missing."
 msgstr ""
 
@@ -2074,8 +2087,8 @@ msgstr ""
 #~ msgid "Transcription"
 #~ msgstr ""
 
-#: src/inbox/index.tsx:375
-#: src/inbox/index.tsx:674
+#: src/inbox/index.tsx:600
+#: src/inbox/index.tsx:950
 msgid "Try again"
 msgstr ""
 
@@ -2091,11 +2104,11 @@ msgstr ""
 msgid "Unnamed"
 msgstr ""
 
-#: src/inbox/index.tsx:273
+#: src/inbox/index.tsx:435
 msgid "unread"
 msgstr ""
 
-#: src/inbox/index.tsx:335
+#: src/inbox/index.tsx:560
 msgid "Unread"
 msgstr ""
 
@@ -2245,7 +2258,7 @@ msgstr ""
 #~ msgid "You need to sign in to use Notiz's language model"
 #~ msgstr ""
 
-#: src/inbox/index.tsx:385
+#: src/inbox/index.tsx:610
 msgid "You're all caught up."
 msgstr ""
 
@@ -2257,7 +2270,7 @@ msgstr ""
 msgid "Your first name"
 msgstr ""
 
-#: src/main/home.tsx:319
+#: src/main/home.tsx:332
 msgid "Your notes live only on this device. Start your first one."
 msgstr ""
 
