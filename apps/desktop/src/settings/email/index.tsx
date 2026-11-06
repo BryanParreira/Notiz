@@ -41,12 +41,12 @@ export function SettingsEmail() {
           <ShieldCheckIcon className="mt-0.5 size-4 shrink-0" />
           <span>
             <Trans>
-              Optional and read-only. Use the Mail app on this Mac, or connect
-              an inbox directly: Notiz then talks straight to your mail provider
-              from this device and keeps the password in your Keychain. It never
-              sends, deletes or marks mail as read. If macOS asks to allow
-              Keychain or Mail access, that is your Mac protecting your data;
-              choosing Always Allow stops it from asking again.
+              Optional. Connect an inbox directly and Notiz talks straight to
+              your mail provider from this device, keeping the password in your
+              Keychain, without opening any other app. Using the Mail app on
+              this Mac also works, but it has to open Mail in the background. If
+              macOS asks to allow Keychain access, choosing Always Allow stops
+              it from asking again.
             </Trans>
           </span>
         </p>
@@ -64,7 +64,7 @@ export function SettingsEmail() {
                 <span className="truncate">{account.label}</span>
                 <span className="text-muted-foreground truncate text-xs">
                   {account.host === APPLE_MAIL_HOST
-                    ? "Mail app on this Mac"
+                    ? "Mail app on this Mac (opens Mail in the background; add the account below to avoid that)"
                     : account.host}
                 </span>
               </div>

@@ -59,8 +59,9 @@ export function AppleMailConnect({
       <p className="text-muted-foreground mt-2 text-xs">
         <Trans>
           Reads your Mail app inbox, every account you have added there. macOS
-          will ask once to let Notiz control Mail. Read-only; no password is
-          stored.
+          will ask once to let Notiz control Mail. Mail opens in the background
+          while Notiz reads it; to avoid that, add the account directly below
+          instead.
         </Trans>
       </p>
       {connect.isError && (
