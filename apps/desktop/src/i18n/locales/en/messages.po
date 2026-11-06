@@ -1473,8 +1473,12 @@ msgstr "Open System Settings"
 #~ msgstr "Optional and read-only. Notiz talks straight to your mail provider from this device, keeps the password in your Keychain, and only reads message headers to show context for your meetings. It never sends, deletes or marks mail as read. The first time it reads the saved password, macOS may ask you to allow it: that is your Mac protecting the Keychain, and choosing Always Allow stops it from asking again."
 
 #: src/settings/email/index.tsx:43
-msgid "Optional and read-only. Use the Mail app on this Mac, or connect an inbox directly: Notiz then talks straight to your mail provider from this device and keeps the password in your Keychain. It never sends, deletes or marks mail as read. If macOS asks to allow Keychain or Mail access, that is your Mac protecting your data; choosing Always Allow stops it from asking again."
-msgstr "Optional and read-only. Use the Mail app on this Mac, or connect an inbox directly: Notiz then talks straight to your mail provider from this device and keeps the password in your Keychain. It never sends, deletes or marks mail as read. If macOS asks to allow Keychain or Mail access, that is your Mac protecting your data; choosing Always Allow stops it from asking again."
+#~ msgid "Optional and read-only. Use the Mail app on this Mac, or connect an inbox directly: Notiz then talks straight to your mail provider from this device and keeps the password in your Keychain. It never sends, deletes or marks mail as read. If macOS asks to allow Keychain or Mail access, that is your Mac protecting your data; choosing Always Allow stops it from asking again."
+#~ msgstr "Optional and read-only. Use the Mail app on this Mac, or connect an inbox directly: Notiz then talks straight to your mail provider from this device and keeps the password in your Keychain. It never sends, deletes or marks mail as read. If macOS asks to allow Keychain or Mail access, that is your Mac protecting your data; choosing Always Allow stops it from asking again."
+
+#: src/settings/email/index.tsx:43
+msgid "Optional. Connect an inbox directly and Notiz talks straight to your mail provider from this device, keeping the password in your Keychain, without opening any other app. Using the Mail app on this Mac also works, but it has to open Mail in the background. If macOS asks to allow Keychain access, choosing Always Allow stops it from asking again."
+msgstr "Optional. Connect an inbox directly and Notiz talks straight to your mail provider from this device, keeping the password in your Keychain, without opening any other app. Using the Mail app on this Mac also works, but it has to open Mail in the background. If macOS asks to allow Keychain access, choosing Always Allow stops it from asking again."
 
 #: src/calendar/components/apple/permission.tsx:154
 #: src/settings/general/permissions.tsx:98
@@ -1553,8 +1557,12 @@ msgid "Read-only mail from your own account. Nothing leaves this device."
 msgstr "Read-only mail from your own account. Nothing leaves this device."
 
 #: src/settings/email/apple-mail.tsx:60
-msgid "Reads your Mail app inbox, every account you have added there. macOS will ask once to let Notiz control Mail. Read-only; no password is stored."
-msgstr "Reads your Mail app inbox, every account you have added there. macOS will ask once to let Notiz control Mail. Read-only; no password is stored."
+msgid "Reads your Mail app inbox, every account you have added there. macOS will ask once to let Notiz control Mail. Mail opens in the background while Notiz reads it; to avoid that, add the account directly below instead."
+msgstr "Reads your Mail app inbox, every account you have added there. macOS will ask once to let Notiz control Mail. Mail opens in the background while Notiz reads it; to avoid that, add the account directly below instead."
+
+#: src/settings/email/apple-mail.tsx:60
+#~ msgid "Reads your Mail app inbox, every account you have added there. macOS will ask once to let Notiz control Mail. Read-only; no password is stored."
+#~ msgstr "Reads your Mail app inbox, every account you have added there. macOS will ask once to let Notiz control Mail. Read-only; no password is stored."
 
 #: src/onboarding/index.tsx:298
 msgid "Ready to go"
