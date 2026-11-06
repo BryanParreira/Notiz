@@ -199,3 +199,8 @@ pub async fn trash(account_id: &str, uid: u32) -> Result<(), Error> {
 async fn find(account_id: &str) -> Result<store::StoredAccount, Error> {
     store::get(account_id)
 }
+
+/// Quits Mail.app if Notiz launched it, so it does not keep using memory.
+pub fn quit_apple_mail_on_exit() {
+    apple::quit_on_exit();
+}

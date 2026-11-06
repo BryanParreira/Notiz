@@ -5,6 +5,7 @@
 //! address filtering happens in Rust after the fetch.
 
 use std::process::Stdio;
+use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
 use std::time::Duration;
 
 use tokio::io::AsyncWriteExt;
@@ -27,7 +28,90 @@ pub(crate) fn is_apple(host: &str) -> bool {
     host == HOST
 }
 
+static LAUNCHED_BY_US: AtomicBool = AtomicBool::new(false);
+static LAST_USE: AtomicU64 = AtomicU64::new(0);
+// Mail.app is only needed while a script runs; leaving it open costs RAM.
+const IDLE_QUIT_AFTER: Duration = Duration::from_secs(25);
+
+fn now_ms() -> u64 {
+    std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .map(|d| d.as_millis() as u64)
+        .unwrap_or(0)
+}
+
+async fn mail_running() -> bool {
+    Command::new("/usr/bin/pgrep")
+        .args(["-x", "Mail"])
+        .stdout(Stdio::null())
+        .stderr(Stdio::null())
+        .status()
+        .await
+        .map(|s| s.success())
+        .unwrap_or(false)
+}
+
+// Starts Mail hidden and without stealing focus, remembering whether we did so
+// we never quit a Mail the user opened themselves.
+async fn ensure_mail_hidden() {
+    if mail_running().await {
+        return;
+    }
+    let started = Command::new("/usr/bin/open")
+        .args(["-g", "-j", "-a", "Mail"])
+        .stdout(Stdio::null())
+        .stderr(Stdio::null())
+        .status()
+        .await
+        .map(|s| s.success())
+        .unwrap_or(false);
+    if started {
+        LAUNCHED_BY_US.store(true, Ordering::SeqCst);
+    }
+}
+
+async fn quit_mail_if_ours() {
+    if !LAUNCHED_BY_US.swap(false, Ordering::SeqCst) || !mail_running().await {
+        return;
+    }
+    let _ = Command::new("/usr/bin/osascript")
+        .args(["-e", r#"tell application "Mail" to quit"#])
+        .stdout(Stdio::null())
+        .stderr(Stdio::null())
+        .status()
+        .await;
+}
+
+fn schedule_idle_quit() {
+    let stamp = now_ms();
+    LAST_USE.store(stamp, Ordering::SeqCst);
+    tokio::spawn(async move {
+        tokio::time::sleep(IDLE_QUIT_AFTER).await;
+        if LAST_USE.load(Ordering::SeqCst) == stamp {
+            quit_mail_if_ours().await;
+        }
+    });
+}
+
+/// Closes Mail on app exit when Notiz started it.
+pub(crate) fn quit_on_exit() {
+    if !LAUNCHED_BY_US.swap(false, Ordering::SeqCst) {
+        return;
+    }
+    let _ = std::process::Command::new("/usr/bin/osascript")
+        .args(["-e", r#"tell application "Mail" to quit"#])
+        .output();
+}
+
 async fn run(script: String) -> Result<String, Error> {
+    ensure_mail_hidden().await;
+    LAST_USE.store(now_ms(), Ordering::SeqCst);
+    let result = run_script(script).await;
+    schedule_idle_quit();
+    result
+}
+
+async fn run_script(script: String) -> Result<String, Error> {
     let mut child = Command::new("/usr/bin/osascript")
         .arg("-")
         .stdin(Stdio::piped())

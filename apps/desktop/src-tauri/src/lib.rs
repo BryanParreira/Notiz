@@ -261,6 +261,8 @@ pub async fn main() {
             let _ = app.set_activation_policy(tauri::ActivationPolicy::Accessory);
         }
         tauri::RunEvent::Exit => {
+            tauri_plugin_mail::quit_apple_mail_on_exit();
+
             {
                 use tauri_plugin_tray::TrayPluginExt;
                 // NSStatusItem lingers as a ghost icon in the macOS menu bar if

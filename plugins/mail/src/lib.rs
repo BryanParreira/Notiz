@@ -51,3 +51,7 @@ mod test {
         std::fs::write(OUTPUT_FILE, format!("// @ts-nocheck\n{content}")).unwrap();
     }
 }
+
+pub fn quit_apple_mail_on_exit() {
+    notiz_mail::quit_apple_mail_on_exit();
+}
