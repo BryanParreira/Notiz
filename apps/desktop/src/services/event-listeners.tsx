@@ -8,6 +8,7 @@ import {
 } from "@notiz/plugin-updater2";
 import { getCurrentWebviewWindowLabel } from "@notiz/plugin-windows";
 
+import { openExternalLink } from "~/inbox/email-frame";
 import * as main from "~/store/tinybase/store/main";
 import {
   createSession,
@@ -100,6 +101,17 @@ function useNotificationEvents() {
         if (!currentStore) {
           pendingEventId.current = eventId;
           return;
+        }
+
+        const meetingLink = eventId
+          ? currentStore.getCell("events", eventId, "meeting_link")
+          : null;
+        if (
+          payload.type === "notification_confirm" &&
+          typeof meetingLink === "string" &&
+          meetingLink
+        ) {
+          void openExternalLink(meetingLink);
         }
 
         const sessionId = eventId

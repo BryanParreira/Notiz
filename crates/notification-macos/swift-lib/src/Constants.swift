@@ -1,8 +1,8 @@
 import Cocoa
 
 enum Layout {
-  static let notificationWidth: CGFloat = 344
-  static let notificationHeight: CGFloat = 64
+  static let notificationWidth: CGFloat = 372
+  static let notificationHeight: CGFloat = 72
   static let compactFooterHeight: CGFloat = 28
   static let compactIconContainerSize: CGFloat = 36
   static let compactIconSize: CGFloat = 28
@@ -33,9 +33,9 @@ enum Timing {
 }
 
 enum Fonts {
-  static let titleSize: CGFloat = 14
+  static let titleSize: CGFloat = 15
   static let titleWeight: NSFont.Weight = .semibold
-  static let bodySize: CGFloat = 11
+  static let bodySize: CGFloat = 12.5
   static let bodyWeight: NSFont.Weight = .regular
   static let buttonSize: CGFloat = 12
   static let buttonWeight: NSFont.Weight = .medium

@@ -125,9 +125,18 @@ class NotificationInstance {
     }
   }
 
+  private static let timeFormatter: DateFormatter = {
+    let formatter = DateFormatter()
+    formatter.timeStyle = .short
+    formatter.dateStyle = .none
+    return formatter
+  }()
+
   private func compactScheduleText(_ remaining: TimeInterval) -> String {
     let minutes = max(1, Int(ceil(remaining / 60)))
-    return "Starting in \(minutes) minute\(minutes == 1 ? "" : "s")"
+    let when = meetingStartTime.map { Self.timeFormatter.string(from: $0) }
+    let lead = minutes == 1 ? "Starts in 1 min" : "Starts in \(minutes) min"
+    return when.map { "\(lead) · \($0)" } ?? lead
   }
 
   private func expandedScheduleText(_ remaining: TimeInterval) -> String {

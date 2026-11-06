@@ -125,7 +125,7 @@ export function checkEventNotifications(
         start_time: Math.floor(startTime.getTime() / 1000),
         participants: null,
         event_details: null,
-        action_label: "Open Notiz",
+        action_label: event.meeting_link ? "Join" : "Open Notiz",
         action_variant: null,
         options: null,
         footer: null,
