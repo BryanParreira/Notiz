@@ -4,6 +4,7 @@ import { useEffect } from "react";
 
 import { events as windowsEvents } from "@notiz/plugin-windows";
 
+import { TemplatePickerDialog } from "./template-picker";
 import { useNewNote } from "./useNewNote";
 
 import { DevtoolsFloatingPanelHost } from "~/devtools-panel/host";
@@ -21,6 +22,7 @@ function MainAppContent() {
     <>
       <Outlet />
       <UndoDeleteToast />
+      <TemplatePickerDialog />
       <DevtoolsFloatingPanelHost />
     </>
   );

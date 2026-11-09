@@ -1,6 +1,12 @@
 import { Trans } from "@lingui/react/macro";
-import { FileTextIcon, FolderIcon, PlusIcon } from "lucide-react";
-import { type KeyboardEvent, useState } from "react";
+import {
+  ChevronRightIcon,
+  FileTextIcon,
+  FolderIcon,
+  PlusIcon,
+  StarIcon,
+} from "lucide-react";
+import { Fragment, type KeyboardEvent, useState } from "react";
 
 import { cn } from "@notiz/utils";
 
@@ -10,6 +16,8 @@ import {
   type MenuItemDef,
   useNativeContextMenu,
 } from "~/shared/hooks/useNativeContextMenu";
+import { useStarredIds } from "~/shared/starred";
+import * as main from "~/store/tinybase/store/main";
 import { useTabs } from "~/store/zustand/tabs";
 
 export function SidebarFolders() {
@@ -18,16 +26,30 @@ export function SidebarFolders() {
   const openNew = useTabs((state) => state.openNew);
   const [creating, setCreating] = useState(false);
   const [renamingId, setRenamingId] = useState<string | null>(null);
+  const [creatingIn, setCreatingIn] = useState<string | null>(null);
+  const [collapsed, setCollapsed] = useState<Set<string>>(new Set());
+
+  const toggleCollapsed = (id: string) =>
+    setCollapsed((current) => {
+      const next = new Set(current);
+      if (!next.delete(id)) next.add(id);
+      return next;
+    });
+  const hidden = (id: string) =>
+    [...collapsed].some((parent) => id.startsWith(`${parent}/`));
+  const hasChildren = (id: string) =>
+    folders.some((folder) => folder.id.startsWith(`${id}/`));
 
   const activeFolderId =
     currentTab?.type === "folders" ? (currentTab.id ?? "") : undefined;
 
   const openFolder = (id: string | null) => openNew({ type: "folders", id });
 
-  const commitCreate = async (name: string) => {
+  const commitCreate = async (name: string, parentId: string | null = null) => {
     setCreating(false);
+    setCreatingIn(null);
     if (!name.trim()) return;
-    const path = await createFolder(name);
+    const path = await createFolder(name, parentId);
     if (path) openFolder(path);
   };
 
@@ -55,6 +77,8 @@ export function SidebarFolders() {
           onClick={() => openFolder(null)}
         />
 
+        <StarredNotes />
+
         {creating && (
           <NameInput
             placeholder="Folder name"
@@ -64,33 +88,54 @@ export function SidebarFolders() {
         )}
 
         {folders.map((folder) =>
-          renamingId === folder.id ? (
-            <NameInput
-              key={folder.id}
-              depth={folder.depth}
-              initial={folder.name}
-              placeholder="Folder name"
-              onSubmit={(name) => {
-                setRenamingId(null);
-                void renameFolder(folder.id, name).then((renamed) => {
-                  if (renamed && activeFolderId === folder.id) {
-                    openFolder(renamed);
-                  }
-                });
-              }}
-              onCancel={() => setRenamingId(null)}
-            />
-          ) : (
-            <FolderItem
-              key={folder.id}
-              folder={folder}
-              active={activeFolderId === folder.id}
-              onOpen={() => openFolder(folder.id)}
-              onRename={() => setRenamingId(folder.id)}
-              onDeleted={() => {
-                if (activeFolderId === folder.id) openFolder(null);
-              }}
-            />
+          hidden(folder.id) ? null : (
+            <Fragment key={folder.id}>
+              {renamingId === folder.id ? (
+                <NameInput
+                  depth={folder.depth}
+                  initial={folder.name}
+                  placeholder="Folder name"
+                  onSubmit={(name) => {
+                    setRenamingId(null);
+                    void renameFolder(folder.id, name).then((renamed) => {
+                      if (renamed && activeFolderId === folder.id) {
+                        openFolder(renamed);
+                      }
+                    });
+                  }}
+                  onCancel={() => setRenamingId(null)}
+                />
+              ) : (
+                <FolderItem
+                  folder={folder}
+                  active={activeFolderId === folder.id}
+                  collapsible={hasChildren(folder.id)}
+                  collapsed={collapsed.has(folder.id)}
+                  onToggle={() => toggleCollapsed(folder.id)}
+                  onOpen={() => openFolder(folder.id)}
+                  onRename={() => setRenamingId(folder.id)}
+                  onNewSubfolder={() => {
+                    setCollapsed((current) => {
+                      const next = new Set(current);
+                      next.delete(folder.id);
+                      return next;
+                    });
+                    setCreatingIn(folder.id);
+                  }}
+                  onDeleted={() => {
+                    if (activeFolderId === folder.id) openFolder(null);
+                  }}
+                />
+              )}
+              {creatingIn === folder.id && (
+                <NameInput
+                  depth={folder.depth + 1}
+                  placeholder="Subfolder name"
+                  onSubmit={(name) => void commitCreate(name, folder.id)}
+                  onCancel={() => setCreatingIn(null)}
+                />
+              )}
+            </Fragment>
           ),
         )}
       </div>
@@ -101,18 +146,27 @@ export function SidebarFolders() {
 function FolderItem({
   folder,
   active,
+  collapsible,
+  collapsed,
+  onToggle,
   onOpen,
   onRename,
+  onNewSubfolder,
   onDeleted,
 }: {
   folder: FolderNode;
   active: boolean;
+  collapsible: boolean;
+  collapsed: boolean;
+  onToggle: () => void;
   onOpen: () => void;
   onRename: () => void;
+  onNewSubfolder: () => void;
   onDeleted: () => void;
 }) {
   const items: MenuItemDef[] = [
     { id: `open-${folder.id}`, text: "Open", action: onOpen },
+    { id: `sub-${folder.id}`, text: "New subfolder", action: onNewSubfolder },
     { id: `rename-${folder.id}`, text: "Rename", action: onRename },
     { separator: true },
     {
@@ -125,7 +179,21 @@ function FolderItem({
   const showMenu = useNativeContextMenu(items);
 
   return (
-    <div onContextMenu={showMenu}>
+    <div onContextMenu={showMenu} className="group relative">
+      {collapsible && (
+        <button
+          type="button"
+          aria-label={collapsed ? "Expand folder" : "Collapse folder"}
+          onClick={onToggle}
+          style={{ left: 2 + folder.depth * 14 }}
+          className="text-muted-foreground hover:text-foreground absolute top-1/2 z-10 -translate-y-1/2 rounded p-0.5"
+        >
+          <ChevronRightIcon
+            size={12}
+            className={cn(["transition-transform", !collapsed && "rotate-90"])}
+          />
+        </button>
+      )}
       <FolderRow
         depth={folder.depth}
         icon={<FolderIcon size={14} />}
@@ -218,5 +286,42 @@ function NameInput({
         className="border-border bg-background focus:border-primary min-w-0 flex-1 rounded-md border px-2 py-1 text-sm outline-none"
       />
     </div>
+  );
+}
+
+function StarredNotes() {
+  const starred = useStarredIds();
+  if (starred.length === 0) return null;
+
+  return (
+    <div className="mb-1 flex flex-col gap-0.5">
+      <span className="text-muted-foreground px-3 pt-1 pb-0.5 text-xs">
+        <Trans>Starred</Trans>
+      </span>
+      {starred.map((id) => (
+        <StarredNote key={id} id={id} />
+      ))}
+    </div>
+  );
+}
+
+// Reads only this note's title so typing elsewhere never re-renders the sidebar.
+function StarredNote({ id }: { id: string }) {
+  const title = main.UI.useCell("sessions", id, "title", main.STORE_ID);
+  const active = useTabs(
+    (state) =>
+      state.currentTab?.type === "sessions" && state.currentTab.id === id,
+  );
+  const openNew = useTabs((state) => state.openNew);
+
+  if (title === undefined) return null;
+
+  return (
+    <FolderRow
+      icon={<StarIcon size={14} className="fill-current" />}
+      label={String(title) || "Untitled"}
+      active={active}
+      onClick={() => openNew({ type: "sessions", id })}
+    />
   );
 }

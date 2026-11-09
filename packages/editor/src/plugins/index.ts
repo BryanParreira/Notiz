@@ -1,5 +1,6 @@
 export { appLinkPastePlugin } from "./app-link-paste";
 export { autolinkPlugin } from "./autolink";
+export { codeHighlightPlugin } from "./code-highlight";
 export { clipboardPlugin, serializeClipboardText } from "./clipboard";
 export { clearMarksOnEnterPlugin } from "./clear-marks-on-enter";
 export {

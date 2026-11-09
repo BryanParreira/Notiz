@@ -34,7 +34,7 @@ function safeParse(value: unknown): Date | null {
   return Number.isNaN(date.getTime()) ? null : date;
 }
 
-function useNotesByDay(folderId: string | null) {
+function useNotesByDay(folderId: string | null, limit: number) {
   const sessions = main.UI.useTable("sessions", main.STORE_ID);
 
   return useMemo(() => {
@@ -62,7 +62,7 @@ function useNotesByDay(folderId: string | null) {
     notes.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
 
     const groups: { label: string; notes: NoteRow[] }[] = [];
-    for (const note of notes.slice(0, MAX_NOTES)) {
+    for (const note of notes.slice(0, limit)) {
       const label = isToday(note.createdAt)
         ? "Today"
         : format(note.createdAt, "EEE, MMM d");
@@ -74,17 +74,19 @@ function useNotesByDay(folderId: string | null) {
       }
     }
     return groups;
-  }, [sessions, folderId]);
+  }, [sessions, folderId, limit]);
 }
 
 export function NotesList({
   folderId = null,
+  limit = MAX_NOTES,
   empty,
 }: {
   folderId?: string | null;
+  limit?: number;
   empty: React.ReactNode;
 }) {
-  const groups = useNotesByDay(folderId);
+  const groups = useNotesByDay(folderId, limit);
   const folders = useFolders();
 
   if (groups.length === 0) {

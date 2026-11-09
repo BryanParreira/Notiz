@@ -288,7 +288,13 @@ function orderedListRule(nodeType: NodeType) {
 }
 
 function codeBlockRule(nodeType: NodeType) {
-  return textblockTypeInputRule(/^```$/, nodeType);
+  return textblockTypeInputRule(
+    /^```([a-zA-Z0-9+#-]*)$/,
+    nodeType,
+    (match) => ({
+      language: match[1] ?? "",
+    }),
+  );
 }
 
 function horizontalRuleRule() {

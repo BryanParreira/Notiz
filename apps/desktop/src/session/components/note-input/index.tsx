@@ -9,15 +9,19 @@ import {
   useState,
 } from "react";
 
-import type { NoteEditorRef } from "@notiz/editor/note";
+import { md2json } from "@notiz/editor/markdown";
+import type { JSONContent, NoteEditorRef } from "@notiz/editor/note";
 
+import { Backlinks } from "./backlinks";
 import { NoteMetaRow } from "./meta-row";
 import { RawEditor } from "./raw";
 import { SearchBar } from "./search/bar";
 import { useSearch } from "./search/context";
+import { TemplateStrip } from "./template-strip";
 
 import { useCaretNearBottom } from "~/session/components/caret-position-context";
 import { useScrollPreservation } from "~/shared/hooks/useScrollPreservation";
+import { onTemplateInsert } from "~/shared/note-templates";
 import type { Tab } from "~/store/zustand/tabs";
 
 export interface NoteInputHandle {
@@ -67,6 +71,42 @@ export const NoteInput = forwardRef<
 
   useCaretNearBottom({ view, container, enabled: true });
 
+  useEffect(
+    () =>
+      onTemplateInsert(({ sessionId: target, template }) => {
+        if (target !== sessionId) return;
+        const editor = editorRef.current;
+        const current = editor?.view?.state.doc.toJSON() as
+          | JSONContent
+          | undefined;
+        if (!editor || !current) return;
+
+        const blocks = [...(current.content ?? [])];
+        while (blocks.length > 1 && isEmptyBlock(blocks[blocks.length - 1])) {
+          blocks.pop();
+        }
+        const [first] = blocks;
+        const titled =
+          first?.type === "heading" && !blockText(first).trim()
+            ? [
+                {
+                  type: "heading",
+                  attrs: { level: 1 },
+                  content: [{ type: "text", text: template.title }],
+                },
+                ...blocks.slice(1),
+              ]
+            : blocks;
+
+        editor.commands.replaceContent({
+          type: "doc",
+          content: [...titled, ...(md2json(template.body).content ?? [])],
+        });
+        editor.commands.focus();
+      }),
+    [sessionId],
+  );
+
   const search = useSearch();
   const showSearchBar = search?.isVisible ?? false;
 
@@ -104,9 +144,21 @@ export const NoteInput = forwardRef<
               onViewReady={handleViewReady}
               onViewDisposed={handleViewDisposed}
             />
+            <TemplateStrip sessionId={sessionId} />
+            <Backlinks sessionId={sessionId} />
           </div>
         </div>
       </div>
     </div>
   );
 });
+
+export function blockText(node: JSONContent | undefined): string {
+  if (!node) return "";
+  if (node.text) return node.text;
+  return (node.content ?? []).map(blockText).join("");
+}
+
+function isEmptyBlock(node: JSONContent): boolean {
+  return node.type === "paragraph" && !blockText(node).trim();
+}

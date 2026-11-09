@@ -167,8 +167,9 @@ msgstr "AI-generated summary of all interactions and notes with this contact wil
 msgid "All"
 msgstr "All"
 
+#: src/daily/day-hub.tsx:201
 #: src/folders/index.tsx:30
-#: src/sidebar/folders.tsx:53
+#: src/sidebar/folders.tsx:75
 msgid "All notes"
 msgstr "All notes"
 
@@ -200,6 +201,10 @@ msgstr "Allow system audio access"
 #: src/session/components/outer-header/overflow/follow-up-modal.tsx:81
 #~ msgid "An AI-drafted follow-up based on this note."
 #~ msgstr "An AI-drafted follow-up based on this note."
+
+#: src/shared/template-picker.tsx:441
+msgid "An empty page, ready for anything."
+msgstr "An empty page, ready for anything."
 
 #: src/settings/profile/profile-form.tsx:65
 msgid "Anything I should know about you? (optional)"
@@ -279,11 +284,15 @@ msgstr "Back"
 #~ msgid "Base URL"
 #~ msgstr "Base URL"
 
+#: src/shared/template-picker.tsx:402
+msgid "Blank note"
+msgstr "Blank note"
+
 #: src/session/components/note-input/header.tsx:721
 #~ msgid "Brief"
 #~ msgstr "Brief"
 
-#: src/main/home.tsx:260
+#: src/daily/day-hub.tsx:123
 msgid "Bring your mail in"
 msgstr "Bring your mail in"
 
@@ -291,13 +300,17 @@ msgstr "Bring your mail in"
 msgid "Browse"
 msgstr "Browse"
 
+#: src/session/components/note-input/template-strip.tsx:65
+msgid "Browse all"
+msgstr "Browse all"
+
 #: src/instruction/index.tsx:277
 msgid "Browser handoff not working? Paste the callback link instead"
 msgstr "Browser handoff not working? Paste the callback link instead"
 
 #: src/settings/general/permissions.tsx:191
 #: src/sidebar/calendar.tsx:10
-#: src/sidebar/nav.tsx:79
+#: src/sidebar/nav.tsx:66
 msgid "Calendar"
 msgstr "Calendar"
 
@@ -327,6 +340,7 @@ msgstr "Calendars"
 #~ msgstr "Can transcribe while the meeting is happening."
 
 #: src/settings/todo/github.tsx:217
+#: src/shared/template-picker.tsx:465
 msgid "Cancel"
 msgstr "Cancel"
 
@@ -420,8 +434,8 @@ msgid "Closed"
 msgstr "Closed"
 
 #: src/main/home.tsx:121
-msgid "Coming up"
-msgstr "Coming up"
+#~ msgid "Coming up"
+#~ msgstr "Coming up"
 
 #: src/task/resource-view.tsx:125
 #: src/task/resource-view.tsx:196
@@ -595,6 +609,7 @@ msgid "Date and time are required"
 msgstr "Date and time are required"
 
 #: src/session/components/outer-header/overflow/delete.tsx:52
+#: src/shared/template-picker.tsx:454
 #: src/templates/sections-editor.tsx:280
 #: src/templates/template-form.tsx:285
 msgid "Delete"
@@ -779,7 +794,7 @@ msgstr "Expire recordings after three days"
 
 #: src/session/components/outer-header/overflow/export-modal.tsx:308
 #: src/session/components/outer-header/overflow/export-modal.tsx:357
-#: src/session/components/outer-header/overflow/index.tsx:64
+#: src/session/components/outer-header/overflow/index.tsx:70
 msgid "Export"
 msgstr "Export"
 
@@ -857,7 +872,7 @@ msgstr "First day of the week in the calendar view"
 msgid "Folder is not empty. Uncheck Move to use it as-is, or pick a dedicated empty folder (for example \"meetings\") for a full migration."
 msgstr "Folder is not empty. Uncheck Move to use it as-is, or pick a dedicated empty folder (for example \"meetings\") for a full migration."
 
-#: src/sidebar/folders.tsx:38
+#: src/sidebar/folders.tsx:60
 msgid "Folders"
 msgstr "Folders"
 
@@ -946,7 +961,7 @@ msgstr "Hide Deleted Events"
 #~ msgid "Hold to record. Release to paste."
 #~ msgstr "Hold to record. Release to paste."
 
-#: src/sidebar/nav.tsx:61
+#: src/sidebar/nav.tsx:54
 msgid "Home"
 msgstr "Home"
 
@@ -994,9 +1009,9 @@ msgstr "In {totalSeconds} second"
 msgid "In {totalSeconds} seconds"
 msgstr "In {totalSeconds} seconds"
 
+#: src/daily/day-hub.tsx:145
 #: src/inbox/index.tsx:439
-#: src/main/home.tsx:282
-#: src/sidebar/nav.tsx:73
+#: src/sidebar/nav.tsx:60
 msgid "Inbox"
 msgstr "Inbox"
 
@@ -1008,6 +1023,10 @@ msgstr "Inbox"
 #~ msgid "Input Monitoring"
 #~ msgstr "Input Monitoring"
 
+#: src/shared/template-picker.tsx:474
+msgid "Insert"
+msgstr "Insert"
+
 #: src/templates/sections-editor.tsx:254
 msgid "Insert above"
 msgstr "Insert above"
@@ -1015,6 +1034,10 @@ msgstr "Insert above"
 #: src/templates/sections-editor.tsx:260
 msgid "Insert below"
 msgstr "Insert below"
+
+#: src/shared/template-picker.tsx:320
+msgid "Insert template"
+msgstr "Insert template"
 
 #: src/session/components/note-input/header.tsx:702
 #~ msgid "Insights"
@@ -1068,6 +1091,10 @@ msgstr "Let's get to know each other"
 #: src/settings/general/theme.tsx:34
 msgid "Light"
 msgstr "Light"
+
+#: src/session/components/note-input/backlinks.tsx:61
+msgid "Linked from"
+msgstr "Linked from"
 
 #: src/contacts/details.tsx:518
 msgid "LinkedIn"
@@ -1216,8 +1243,9 @@ msgstr "Name"
 #~ msgid "New chat"
 #~ msgstr "New chat"
 
-#: src/main/home.tsx:91
-#: src/main/home.tsx:341
+#: src/daily/day-hub.tsx:219
+#: src/daily/day-hub.tsx:438
+#: src/shared/template-picker.tsx:322
 msgid "New note"
 msgstr "New note"
 
@@ -1270,12 +1298,12 @@ msgstr "No description provided."
 #~ msgstr "No draft yet."
 
 #: src/main/home.tsx:151
-msgid "No events today"
-msgstr "No events today"
+#~ msgid "No events today"
+#~ msgstr "No events today"
 
 #: src/main/home.tsx:153
-msgid "No events tomorrow"
-msgstr "No events tomorrow"
+#~ msgid "No events tomorrow"
+#~ msgstr "No events tomorrow"
 
 #: src/sidebar/timeline/index.tsx:947
 msgid "No items today"
@@ -1330,6 +1358,10 @@ msgstr "No related notes found"
 msgid "No results found."
 msgstr "No results found."
 
+#: src/shared/template-picker.tsx:371
+msgid "No templates match."
+msgstr "No templates match."
+
 #: src/templates/details.tsx:82
 msgid "No templates yet"
 msgstr "No templates yet"
@@ -1342,9 +1374,17 @@ msgstr "Note breadcrumb"
 msgid "Notes"
 msgstr "Notes"
 
+#: src/daily/day-hub.tsx:319
+msgid "Notes from this day"
+msgstr "Notes from this day"
+
 #: src/inbox/index.tsx:619
 msgid "Nothing in your inbox."
 msgstr "Nothing in your inbox."
+
+#: src/daily/day-hub.tsx:273
+msgid "Nothing on the calendar."
+msgstr "Nothing on the calendar."
 
 #: src/settings/general/index.tsx:385
 #: src/sidebar/settings.tsx:60
@@ -1431,7 +1471,7 @@ msgstr "Open calendar account actions"
 msgid "Open in New Tab"
 msgstr "Open in New Tab"
 
-#: src/session/components/outer-header/overflow/index.tsx:75
+#: src/session/components/outer-header/overflow/index.tsx:99
 #: src/sidebar/timeline/item.tsx:617
 msgid "Open in New Window"
 msgstr "Open in New Window"
@@ -1575,6 +1615,10 @@ msgstr "Recent"
 #: src/session/components/note-input/brief-emails.tsx:47
 #~ msgid "Recent emails"
 #~ msgstr "Recent emails"
+
+#: src/daily/day-hub.tsx:194
+msgid "Recent notes"
+msgstr "Recent notes"
 
 #: src/chat/page.tsx:197
 #~ msgid "Recents"
@@ -1752,6 +1796,10 @@ msgstr "Save audio after meeting"
 msgid "Save date"
 msgstr "Save date"
 
+#: src/daily/day-hub.tsx:269
+msgid "Schedule"
+msgstr "Schedule"
+
 #: src/contacts/shared.tsx:166
 msgid "Search contacts..."
 msgstr "Search contacts..."
@@ -1876,7 +1924,7 @@ msgstr "Set as default"
 #~ msgid "Set up a language model in Settings to start chatting. It runs on this device."
 #~ msgstr "Set up a language model in Settings to start chatting. It runs on this device."
 
-#: src/sidebar/nav.tsx:95
+#: src/sidebar/nav.tsx:82
 #: src/sidebar/settings.tsx:82
 msgid "Settings"
 msgstr "Settings"
@@ -1946,6 +1994,10 @@ msgstr "Sort options"
 msgid "Star us on GitHub:"
 msgstr "Star us on GitHub:"
 
+#: src/sidebar/folders.tsx:299
+msgid "Starred"
+msgstr "Starred"
+
 #: src/session/components/outer-header/index.tsx:145
 #~ msgid "Start recording"
 #~ msgstr "Start recording"
@@ -1954,9 +2006,21 @@ msgstr "Star us on GitHub:"
 #~ msgid "Start Recording"
 #~ msgstr "Start Recording"
 
+#: src/session/components/note-input/template-strip.tsx:37
+msgid "Start with"
+msgstr "Start with"
+
+#: src/shared/template-picker.tsx:409
+msgid "Start with an empty page"
+msgstr "Start with an empty page"
+
 #: src/onboarding/index.tsx:235
 msgid "Start with permissions"
 msgstr "Start with permissions"
+
+#: src/shared/template-picker.tsx:476
+msgid "Start writing"
+msgstr "Start writing"
 
 #: src/settings/profile/profile-form.tsx:75
 msgid "Stays on this device. Your assistant uses it to feel like yours."
@@ -1987,7 +2051,7 @@ msgstr "Storage configured"
 msgid "Storage Updated"
 msgstr "Storage Updated"
 
-#: src/sidebar/nav.tsx:108
+#: src/sidebar/nav.tsx:95
 msgid "Stored on this device"
 msgstr "Stored on this device"
 
@@ -2023,6 +2087,10 @@ msgstr "System audio"
 #: src/onboarding/permissions.tsx:155
 msgid "System audio enabled"
 msgstr "System audio enabled"
+
+#: src/daily/day-hub.tsx:358
+msgid "Tasks due"
+msgstr "Tasks due"
 
 #: src/templates/details.tsx:167
 #: src/templates/template-form.tsx:268
@@ -2078,8 +2146,8 @@ msgid "Timezone"
 msgstr "Timezone"
 
 #: src/sidebar/nav.tsx:67
-msgid "Today"
-msgstr "Today"
+#~ msgid "Today"
+#~ msgstr "Today"
 
 #: src/session/components/note-input/header.tsx:583
 #: src/session/components/outer-header/overflow/export-modal.tsx:245
@@ -2119,7 +2187,7 @@ msgstr "unread"
 msgid "Unread"
 msgstr "Unread"
 
-#: src/folders/notes-list.tsx:162
+#: src/folders/notes-list.tsx:164
 #: src/session/components/outer-header/overflow/export-modal.tsx:128
 #: src/session/components/outer-header/overflow/export-modal.tsx:153
 #: src/session/components/outer-header/overflow/export-modal.tsx:180
@@ -2146,6 +2214,10 @@ msgstr "Untitled"
 #: src/contacts/details.tsx:348
 msgid "Untitled Note"
 msgstr "Untitled Note"
+
+#: src/shared/template-picker.tsx:358
+msgid "Up and down to browse, Enter to choose. Save any note as a template from its menu."
+msgstr "Up and down to browse, Enter to choose. Save any note as a template from its menu."
 
 #: src/settings/general/index.tsx:303
 msgid "Update automatically"
@@ -2184,6 +2256,10 @@ msgstr "Upgrade to connect"
 #: src/settings/email/apple-mail.tsx:56
 msgid "Use Mail on this Mac"
 msgstr "Use Mail on this Mac"
+
+#: src/shared/template-picker.tsx:478
+msgid "Use template"
+msgstr "Use template"
 
 #. placeholder {0}: update.version
 #: src/settings/general/index.tsx:317
@@ -2277,7 +2353,7 @@ msgstr "Your assistant will use your name and what you share here to feel like y
 msgid "Your first name"
 msgstr "Your first name"
 
-#: src/main/home.tsx:332
+#: src/daily/day-hub.tsx:210
 msgid "Your notes live only on this device. Start your first one."
 msgstr "Your notes live only on this device. Start your first one."
 

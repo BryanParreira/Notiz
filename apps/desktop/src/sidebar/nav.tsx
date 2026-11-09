@@ -1,6 +1,5 @@
 import { Trans } from "@lingui/react/macro";
 import {
-  CalendarCheckIcon,
   CalendarDaysIcon,
   HomeIcon,
   LockIcon,
@@ -11,7 +10,6 @@ import type { ReactNode } from "react";
 
 import { cn } from "@notiz/utils";
 
-import { openDailyTab, todayKey } from "~/daily/open-daily-tab";
 import { useTabs } from "~/store/zustand/tabs";
 
 function NavButton({
@@ -48,25 +46,14 @@ export function SidebarNav() {
   const currentType = useTabs((state) => state.currentTab?.type);
   const openCurrent = useTabs((state) => state.openCurrent);
   const openNew = useTabs((state) => state.openNew);
-  const isTodayTab = useTabs(
-    (state) =>
-      state.currentTab?.type === "daily_summary" &&
-      state.currentTab.id === todayKey(),
-  );
 
   return (
     <nav className="flex flex-col gap-0.5 px-2">
       <NavButton
         icon={HomeIcon}
         label={<Trans>Home</Trans>}
-        active={currentType === "empty"}
+        active={currentType === "empty" || currentType === "daily_summary"}
         onClick={() => openCurrent({ type: "empty" })}
-      />
-      <NavButton
-        icon={CalendarCheckIcon}
-        label={<Trans>Today</Trans>}
-        active={isTodayTab}
-        onClick={() => openDailyTab()}
       />
       <NavButton
         icon={MailIcon}

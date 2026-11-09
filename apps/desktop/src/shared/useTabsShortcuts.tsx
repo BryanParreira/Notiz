@@ -3,7 +3,7 @@ import { useHotkeys } from "react-hotkeys-hook";
 import { useShallow } from "zustand/shallow";
 
 import { useMountEffect } from "~/shared/hooks/useMountEffect";
-import { useNewNote } from "~/shared/useNewNote";
+import { openTemplatePicker } from "~/shared/template-picker";
 import { uniqueIdfromTab, useTabs } from "~/store/zustand/tabs";
 
 export function useMainTabsShortcuts({ onModT }: { onModT: () => void }) {
@@ -31,9 +31,6 @@ export function useMainTabsShortcuts({ onModT }: { onModT: () => void }) {
       unpin: state.unpin,
     })),
   );
-
-  const newNote = useNewNote();
-  const newNoteCurrent = useNewNote({ behavior: "current" });
 
   const escapeShortcutRef = useRef(runEscapeShortcut);
   escapeShortcutRef.current = runEscapeShortcut;
@@ -77,19 +74,13 @@ export function useMainTabsShortcuts({ onModT }: { onModT: () => void }) {
 
   useHotkeys(
     "mod+n",
-    () => {
-      if (currentTab?.type === "empty") {
-        newNoteCurrent();
-      } else {
-        newNote();
-      }
-    },
+    () => openTemplatePicker(),
     {
       preventDefault: true,
       enableOnFormTags: true,
       enableOnContentEditable: true,
     },
-    [currentTab, newNote, newNoteCurrent],
+    [],
   );
 
   useHotkeys(

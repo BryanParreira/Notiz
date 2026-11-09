@@ -66,6 +66,7 @@ import {
   searchReplaceCurrent,
   setSearchState,
   taskIdentityPlugin,
+  codeHighlightPlugin,
 } from "../plugins";
 import { TaskSourceProvider } from "../task-source";
 import { useTaskStorageOptional } from "../task-storage";
@@ -635,6 +636,7 @@ export const NoteEditor = forwardRef<NoteEditorRef, NoteEditorProps>(
         gapCursor(),
         clipboardPlugin(),
         hashtagPlugin(),
+        codeHighlightPlugin(),
         imageTrailingParagraphPlugin(),
         searchPlugin(),
         placeholderPlugin(placeholderComponent),

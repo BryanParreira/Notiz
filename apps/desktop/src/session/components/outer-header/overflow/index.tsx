@@ -2,7 +2,9 @@ import { Trans } from "@lingui/react/macro";
 import {
   FileDownIcon,
   MoreHorizontalIcon,
+  LayoutTemplateIcon,
   SquareArrowOutUpRightIcon,
+  StarIcon,
 } from "lucide-react";
 import { useState } from "react";
 
@@ -19,8 +21,11 @@ import {
 import { DeleteNote } from "./delete";
 import { ExportModal } from "./export-modal";
 import { ShowInFinder } from "./misc";
+import { SaveAsTemplate } from "./save-as-template";
 
 import { openStandaloneNoteWindow } from "~/session/window";
+import { toggleStarred, useStarredIds } from "~/shared/starred";
+import { openTemplatePickerForNote } from "~/shared/template-picker";
 
 export function OverflowButton({
   standaloneWindow = false,
@@ -30,6 +35,7 @@ export function OverflowButton({
   sessionId: string;
 }) {
   const [open, setOpen] = useState(false);
+  const starred = useStarredIds().includes(sessionId);
   const [isExportModalOpen, setIsExportModalOpen] = useState(false);
   const openExportModal = () => {
     setOpen(false);
@@ -64,6 +70,24 @@ export function OverflowButton({
                 <Trans>Export</Trans>
               </span>
             </DropdownMenuItem>
+            <DropdownMenuItem
+              onClick={() => toggleStarred(sessionId)}
+              className="cursor-pointer"
+            >
+              <StarIcon className={starred ? "fill-current" : undefined} />
+              <span>{starred ? "Unstar" : "Star"}</span>
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              onClick={() => {
+                setOpen(false);
+                openTemplatePickerForNote(sessionId);
+              }}
+              className="cursor-pointer"
+            >
+              <LayoutTemplateIcon />
+              <span>Insert template…</span>
+            </DropdownMenuItem>
+            <SaveAsTemplate sessionId={sessionId} />
             <DropdownMenuSeparator />
             {!standaloneWindow && (
               <DropdownMenuItem
