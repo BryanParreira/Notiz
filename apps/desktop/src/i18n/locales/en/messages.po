@@ -167,7 +167,7 @@ msgstr "AI-generated summary of all interactions and notes with this contact wil
 msgid "All"
 msgstr "All"
 
-#: src/daily/day-hub.tsx:201
+#: src/daily/day-hub.tsx:259
 #: src/folders/index.tsx:30
 #: src/sidebar/folders.tsx:75
 msgid "All notes"
@@ -292,7 +292,7 @@ msgstr "Blank note"
 #~ msgid "Brief"
 #~ msgstr "Brief"
 
-#: src/daily/day-hub.tsx:123
+#: src/daily/day-hub.tsx:138
 msgid "Bring your mail in"
 msgstr "Bring your mail in"
 
@@ -1009,7 +1009,7 @@ msgstr "In {totalSeconds} second"
 msgid "In {totalSeconds} seconds"
 msgstr "In {totalSeconds} seconds"
 
-#: src/daily/day-hub.tsx:145
+#: src/daily/day-hub.tsx:160
 #: src/inbox/index.tsx:439
 #: src/sidebar/nav.tsx:60
 msgid "Inbox"
@@ -1052,6 +1052,7 @@ msgstr "Insert template"
 msgid "Job Title"
 msgstr "Job Title"
 
+#: src/daily/day-hub.tsx:480
 #: src/session/components/outer-header/index.tsx:130
 msgid "Join"
 msgstr "Join"
@@ -1243,8 +1244,8 @@ msgstr "Name"
 #~ msgid "New chat"
 #~ msgstr "New chat"
 
-#: src/daily/day-hub.tsx:219
-#: src/daily/day-hub.tsx:438
+#: src/daily/day-hub.tsx:273
+#: src/daily/day-hub.tsx:726
 #: src/shared/template-picker.tsx:322
 msgid "New note"
 msgstr "New note"
@@ -1334,7 +1335,7 @@ msgstr "No matching languages found"
 msgid "No notes found."
 msgstr "No notes found."
 
-#: src/daily/day-hub.tsx:212
+#: src/daily/day-hub.tsx:266
 msgid "No notes from today or yesterday."
 msgstr "No notes from today or yesterday."
 
@@ -1378,7 +1379,7 @@ msgstr "Note breadcrumb"
 msgid "Notes"
 msgstr "Notes"
 
-#: src/daily/day-hub.tsx:319
+#: src/daily/day-hub.tsx:607
 msgid "Notes from this day"
 msgstr "Notes from this day"
 
@@ -1386,7 +1387,7 @@ msgstr "Notes from this day"
 msgid "Nothing in your inbox."
 msgstr "Nothing in your inbox."
 
-#: src/daily/day-hub.tsx:273
+#: src/daily/day-hub.tsx:517
 msgid "Nothing on the calendar."
 msgstr "Nothing on the calendar."
 
@@ -1483,6 +1484,10 @@ msgstr "Open in New Window"
 #: src/chat/components/toolbar-controls.tsx:97
 #~ msgid "Open in right panel"
 #~ msgstr "Open in right panel"
+
+#: src/daily/day-hub.tsx:488
+msgid "Open note"
+msgstr "Open note"
 
 #: src/onboarding/final.tsx:54
 msgid "Open Notiz"
@@ -1620,7 +1625,7 @@ msgstr "Recent"
 #~ msgid "Recent emails"
 #~ msgstr "Recent emails"
 
-#: src/daily/day-hub.tsx:194
+#: src/daily/day-hub.tsx:252
 msgid "Recent notes"
 msgstr "Recent notes"
 
@@ -1800,7 +1805,7 @@ msgstr "Save audio after meeting"
 msgid "Save date"
 msgstr "Save date"
 
-#: src/daily/day-hub.tsx:269
+#: src/daily/day-hub.tsx:513
 msgid "Schedule"
 msgstr "Schedule"
 
@@ -2092,7 +2097,7 @@ msgstr "System audio"
 msgid "System audio enabled"
 msgstr "System audio enabled"
 
-#: src/daily/day-hub.tsx:358
+#: src/daily/day-hub.tsx:646
 msgid "Tasks due"
 msgstr "Tasks due"
 
@@ -2191,6 +2196,7 @@ msgstr "unread"
 msgid "Unread"
 msgstr "Unread"
 
+#: src/daily/day-hub.tsx:299
 #: src/folders/notes-list.tsx:200
 #: src/session/components/outer-header/overflow/export-modal.tsx:128
 #: src/session/components/outer-header/overflow/export-modal.tsx:153

@@ -167,7 +167,7 @@ msgstr ""
 msgid "All"
 msgstr ""
 
-#: src/daily/day-hub.tsx:201
+#: src/daily/day-hub.tsx:259
 #: src/folders/index.tsx:30
 #: src/sidebar/folders.tsx:75
 msgid "All notes"
@@ -292,7 +292,7 @@ msgstr ""
 #~ msgid "Brief"
 #~ msgstr ""
 
-#: src/daily/day-hub.tsx:123
+#: src/daily/day-hub.tsx:138
 msgid "Bring your mail in"
 msgstr ""
 
@@ -1009,7 +1009,7 @@ msgstr ""
 msgid "In {totalSeconds} seconds"
 msgstr ""
 
-#: src/daily/day-hub.tsx:145
+#: src/daily/day-hub.tsx:160
 #: src/inbox/index.tsx:439
 #: src/sidebar/nav.tsx:60
 msgid "Inbox"
@@ -1052,6 +1052,7 @@ msgstr ""
 msgid "Job Title"
 msgstr ""
 
+#: src/daily/day-hub.tsx:480
 #: src/session/components/outer-header/index.tsx:130
 msgid "Join"
 msgstr ""
@@ -1243,8 +1244,8 @@ msgstr ""
 #~ msgid "New chat"
 #~ msgstr ""
 
-#: src/daily/day-hub.tsx:219
-#: src/daily/day-hub.tsx:438
+#: src/daily/day-hub.tsx:273
+#: src/daily/day-hub.tsx:726
 #: src/shared/template-picker.tsx:322
 msgid "New note"
 msgstr ""
@@ -1334,7 +1335,7 @@ msgstr "Keine passenden Sprachen gefunden"
 msgid "No notes found."
 msgstr ""
 
-#: src/daily/day-hub.tsx:212
+#: src/daily/day-hub.tsx:266
 msgid "No notes from today or yesterday."
 msgstr ""
 
@@ -1378,7 +1379,7 @@ msgstr ""
 msgid "Notes"
 msgstr ""
 
-#: src/daily/day-hub.tsx:319
+#: src/daily/day-hub.tsx:607
 msgid "Notes from this day"
 msgstr ""
 
@@ -1386,7 +1387,7 @@ msgstr ""
 msgid "Nothing in your inbox."
 msgstr ""
 
-#: src/daily/day-hub.tsx:273
+#: src/daily/day-hub.tsx:517
 msgid "Nothing on the calendar."
 msgstr ""
 
@@ -1483,6 +1484,10 @@ msgstr ""
 #: src/chat/components/toolbar-controls.tsx:97
 #~ msgid "Open in right panel"
 #~ msgstr ""
+
+#: src/daily/day-hub.tsx:488
+msgid "Open note"
+msgstr ""
 
 #: src/onboarding/final.tsx:54
 msgid "Open Notiz"
@@ -1620,7 +1625,7 @@ msgstr ""
 #~ msgid "Recent emails"
 #~ msgstr ""
 
-#: src/daily/day-hub.tsx:194
+#: src/daily/day-hub.tsx:252
 msgid "Recent notes"
 msgstr ""
 
@@ -1800,7 +1805,7 @@ msgstr ""
 msgid "Save date"
 msgstr ""
 
-#: src/daily/day-hub.tsx:269
+#: src/daily/day-hub.tsx:513
 msgid "Schedule"
 msgstr ""
 
@@ -2092,7 +2097,7 @@ msgstr ""
 msgid "System audio enabled"
 msgstr ""
 
-#: src/daily/day-hub.tsx:358
+#: src/daily/day-hub.tsx:646
 msgid "Tasks due"
 msgstr ""
 
@@ -2191,6 +2196,7 @@ msgstr ""
 msgid "Unread"
 msgstr ""
 
+#: src/daily/day-hub.tsx:299
 #: src/folders/notes-list.tsx:200
 #: src/session/components/outer-header/overflow/export-modal.tsx:128
 #: src/session/components/outer-header/overflow/export-modal.tsx:153
