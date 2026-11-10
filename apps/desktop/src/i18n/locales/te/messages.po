@@ -1334,6 +1334,10 @@ msgstr "సరిపోయే భాషలు ఏవీ కనుగొనబడ
 msgid "No notes found."
 msgstr ""
 
+#: src/daily/day-hub.tsx:212
+msgid "No notes from today or yesterday."
+msgstr ""
+
 #: src/folders/index.tsx:51
 msgid "No notes yet."
 msgstr ""
@@ -2187,7 +2191,7 @@ msgstr ""
 msgid "Unread"
 msgstr ""
 
-#: src/folders/notes-list.tsx:164
+#: src/folders/notes-list.tsx:200
 #: src/session/components/outer-header/overflow/export-modal.tsx:128
 #: src/session/components/outer-header/overflow/export-modal.tsx:153
 #: src/session/components/outer-header/overflow/export-modal.tsx:180
@@ -2354,8 +2358,8 @@ msgid "Your first name"
 msgstr ""
 
 #: src/daily/day-hub.tsx:210
-msgid "Your notes live only on this device. Start your first one."
-msgstr ""
+#~ msgid "Your notes live only on this device. Start your first one."
+#~ msgstr ""
 
 #: src/session/components/note-input/enhanced/config-error.tsx:57
 #~ msgid "Your Notiz plan has expired. Configure another language model or renew your plan"
