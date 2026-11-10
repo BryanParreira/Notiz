@@ -12,6 +12,7 @@ import { cn } from "@notiz/utils";
 
 import { EditEventForm, EventActions } from "./event-actions";
 
+import { resolveCalendarColor } from "~/calendar/calendar-color";
 import { toTz, useCalendar, useTimezone } from "~/calendar/hooks";
 import { EventDisplay } from "~/session/components/outer-header/metadata";
 import { findSessionByEventId } from "~/session/utils";
@@ -46,7 +47,10 @@ export function EventChip({ eventId }: { eventId: string }) {
   const trackingId = event?.tracking_id_event as string | undefined;
   const recurrenceSeriesId = event?.recurrence_series_id as string | undefined;
   const isAllDay = !!event?.is_all_day;
-  const color = calendarColor ?? "#888";
+  const color = resolveCalendarColor(
+    calendarColor,
+    (event?.calendar_id as string) ?? null,
+  );
 
   const startedAt = event?.started_at
     ? format(toTz(event.started_at as string, tz), "h:mm a")

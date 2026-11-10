@@ -15,6 +15,7 @@ import { cn, safeParseDate } from "@notiz/utils";
 import { useSync } from "./context";
 import { EventPopoverContent } from "./event-chip";
 
+import { resolveCalendarColor } from "~/calendar/calendar-color";
 import {
   type CalendarData,
   toTz,
@@ -88,7 +89,7 @@ function layoutDay(
 function EventBlock({ event }: { event: GridEvent }) {
   const calendar = useCalendar(event.calendarId);
   const now = useNow();
-  const color = calendar?.color || "var(--color-primary, #6b7a2f)";
+  const color = resolveCalendarColor(calendar?.color, event.calendarId);
   const past = event.end < now;
 
   const startMinutes = minutesOfDay(event.start);
