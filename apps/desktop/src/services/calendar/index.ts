@@ -20,6 +20,7 @@ import {
   syncSessionEmbeddedEvents,
   syncSessionParticipants,
 } from "./process";
+import { pruneStaleCalendarEvents } from "./prune";
 
 import type { Schemas, Store } from "~/store/tinybase/store/main";
 
@@ -61,6 +62,8 @@ async function run(
 
   await syncCalendars(store, providerConnections);
   if (isAborted(options.signal)) return;
+
+  pruneStaleCalendarEvents(store);
 
   for (const { provider, connection_ids } of providerConnections) {
     for (const connectionId of connection_ids) {
