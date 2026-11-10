@@ -203,8 +203,8 @@ class NotificationButton: NSButton {
 
   override var intrinsicContentSize: NSSize {
     var s = super.intrinsicContentSize
-    s.width += 18
-    s.height = max(28, s.height + 4)
+    s.width += 14
+    s.height = max(26, s.height + 2)
     return s
   }
 
@@ -301,7 +301,16 @@ class CompactActionButton: ActionButton {
 
   private func setupCountdownStyle() {
     layer?.masksToBounds = true
-    layer?.backgroundColor = Colors.buttonNormalBg
+    // Plain action buttons: a slim accent pill instead of a heavy grey slab.
+    let accent = NSColor.controlAccentColor
+    setBackgroundColors(
+      normal: accent.cgColor,
+      pressed: (accent.blended(withFraction: 0.25, of: .black) ?? accent).cgColor
+    )
+    contentTintColor = .white
+    font = NSFont.systemFont(ofSize: Fonts.buttonSize, weight: .semibold)
+    layer?.borderWidth = 0
+    layer?.shadowOpacity = 0
     if #available(macOS 11.0, *) {
       layer?.cornerCurve = .continuous
     }

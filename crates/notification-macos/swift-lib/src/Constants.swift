@@ -1,19 +1,19 @@
 import Cocoa
 
 enum Layout {
-  static let notificationWidth: CGFloat = 372
-  static let notificationHeight: CGFloat = 72
+  static let notificationWidth: CGFloat = 348
+  static let notificationHeight: CGFloat = 60
   static let compactFooterHeight: CGFloat = 28
-  static let compactIconContainerSize: CGFloat = 36
-  static let compactIconSize: CGFloat = 28
+  static let compactIconContainerSize: CGFloat = 32
+  static let compactIconSize: CGFloat = 30
   static let expandedNotificationHeight: CGFloat = 380
   static let rightMargin: CGFloat = 15
   static let topMargin: CGFloat = 15
   static let slideInOffset: CGFloat = 10
   static let buttonOverhang: CGFloat = 8
   static let cornerRadius: CGFloat = 14
-  static let liquidGlassCornerRadius: CGFloat = 22
-  static let contentPaddingHorizontal: CGFloat = 12
+  static let liquidGlassCornerRadius: CGFloat = 18
+  static let contentPaddingHorizontal: CGFloat = 14
   static let contentPaddingVertical: CGFloat = 9
   static let expandedPaddingHorizontal: CGFloat = 16
   static let expandedPaddingVertical: CGFloat = 14
@@ -33,9 +33,9 @@ enum Timing {
 }
 
 enum Fonts {
-  static let titleSize: CGFloat = 15
+  static let titleSize: CGFloat = 13.5
   static let titleWeight: NSFont.Weight = .semibold
-  static let bodySize: CGFloat = 12.5
+  static let bodySize: CGFloat = 12
   static let bodyWeight: NSFont.Weight = .regular
   static let buttonSize: CGFloat = 12
   static let buttonWeight: NSFont.Weight = .medium

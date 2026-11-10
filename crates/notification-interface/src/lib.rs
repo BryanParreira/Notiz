@@ -190,10 +190,7 @@ impl Notification {
 impl NotificationSource {
     pub fn default_icon(&self) -> Option<NotificationIcon> {
         match self {
-            Self::CalendarEvent { .. } => Some(NotificationIcon::Overlay {
-                base: NotificationIconAsset::AppIcon,
-                badge: NotificationIconAsset::Calendar,
-            }),
+            Self::CalendarEvent { .. } => None,
             Self::Session { .. } => None,
             Self::MicDetected { app_ids, .. } => app_ids
                 .iter()
