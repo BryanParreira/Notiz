@@ -27,7 +27,6 @@ import { useMemo, useState } from "react";
 import { Kbd } from "@notiz/ui/components/ui/kbd";
 import { cn } from "@notiz/utils";
 
-import { appendToDailyNote } from "./append";
 import { DAILY_DATE_FORMAT, todayKey } from "./open-daily-tab";
 
 import { fetchInboxMessages } from "~/inbox/data";
@@ -39,7 +38,6 @@ import { AppleMailConnect } from "~/settings/email/apple-mail";
 import { useConfigValue } from "~/shared/config";
 import { StandardTabWrapper } from "~/shared/main";
 import { useNewNote } from "~/shared/useNewNote";
-import { showTransientToast } from "~/sidebar/toast/transient";
 import * as main from "~/store/tinybase/store/main";
 import { getOrCreateSessionForEventId } from "~/store/tinybase/store/sessions";
 import { useTabs } from "~/store/zustand/tabs";
@@ -431,46 +429,6 @@ function WeekStrip({
   );
 }
 
-function QuickCapture({ date }: { date: string }) {
-  const store = main.UI.useStore(main.STORE_ID);
-  const [text, setText] = useState("");
-
-  const submit = () => {
-    const value = text.trim();
-    if (!value || !store) return;
-    appendToDailyNote(store as main.Store, date, value);
-    setText("");
-    showTransientToast({ description: "Added to the day's page" });
-  };
-
-  return (
-    <form
-      onSubmit={(e) => {
-        e.preventDefault();
-        submit();
-      }}
-      className="border-border bg-card focus-within:border-foreground/30 flex items-center gap-3 rounded-2xl border px-4 py-2.5 transition-colors"
-      data-tauri-drag-region="false"
-    >
-      <PlusIcon className="text-muted-foreground size-4 shrink-0" />
-      <input
-        value={text}
-        onChange={(e) => setText(e.target.value)}
-        placeholder="Jot something down for this day…"
-        className="text-foreground placeholder:text-muted-foreground min-w-0 flex-1 bg-transparent text-sm outline-none"
-      />
-      {text.trim() && (
-        <button
-          type="submit"
-          className="text-muted-foreground hover:text-foreground text-xs"
-        >
-          <Kbd>↵</Kbd>
-        </button>
-      )}
-    </form>
-  );
-}
-
 function UpNext({
   events,
   now,
@@ -786,8 +744,6 @@ export function DayHub({
               <WeekStrip day={day} onSelect={go} />
             </div>
           </header>
-
-          <QuickCapture date={date} />
 
           {today && (
             <UpNext
