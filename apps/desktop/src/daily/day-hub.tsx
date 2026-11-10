@@ -1,6 +1,15 @@
 import { Trans } from "@lingui/react/macro";
 import { useQuery } from "@tanstack/react-query";
-import { addDays, format, isSameDay, isToday, parse, parseISO } from "date-fns";
+import {
+  addDays,
+  differenceInMinutes,
+  format,
+  isSameDay,
+  isToday,
+  isYesterday,
+  parse,
+  parseISO,
+} from "date-fns";
 import {
   ChevronLeftIcon,
   ChevronRightIcon,
@@ -8,6 +17,7 @@ import {
   FileTextIcon,
   MailIcon,
   PlusIcon,
+  VideoIcon,
 } from "lucide-react";
 import { useMemo, useState } from "react";
 
@@ -17,10 +27,11 @@ import { cn } from "@notiz/utils";
 
 import { DAILY_DATE_FORMAT, todayKey } from "./open-daily-tab";
 
-import { NotesList } from "~/folders/notes-list";
 import { fetchInboxMessages } from "~/inbox/data";
+import { openExternalLink } from "~/inbox/email-frame";
 import { selectInboxMessageOnOpen } from "~/inbox/pending-selection";
 import { RemindersSection } from "~/reminders";
+import { extractPlainText } from "~/search/contexts/engine/utils";
 import { AppleMailConnect } from "~/settings/email/apple-mail";
 import { useConfigValue } from "~/shared/config";
 import { StandardTabWrapper } from "~/shared/main";
@@ -42,6 +53,8 @@ function useDayEvents(day: Date) {
           typeof row.started_at === "string" ? parseISO(row.started_at) : null,
         end: typeof row.ended_at === "string" ? parseISO(row.ended_at) : null,
         allDay: Boolean(row.is_all_day),
+        meetingLink:
+          typeof row.meeting_link === "string" ? row.meeting_link : "",
       }))
       .filter(
         (e) =>
@@ -183,9 +196,52 @@ function InboxGlance() {
   );
 }
 
+function useRecentNotes() {
+  const sessions = main.UI.useTable("sessions", main.STORE_ID);
+
+  return useMemo(() => {
+    const result: {
+      id: string;
+      title: string;
+      preview: string;
+      folder: string;
+      createdAt: Date;
+    }[] = [];
+    for (const [id, row] of Object.entries(sessions)) {
+      if (typeof row.created_at !== "string") continue;
+      const createdAt = parseISO(row.created_at);
+      if (
+        Number.isNaN(createdAt.getTime()) ||
+        (!isToday(createdAt) && !isYesterday(createdAt))
+      ) {
+        continue;
+      }
+      const title = String(row.title || "");
+      let preview = extractPlainText(row.raw_md).trim();
+      if (title && preview.startsWith(title)) {
+        preview = preview.slice(title.length).trim();
+      }
+      if (!title && !preview) continue;
+      result.push({
+        id,
+        title,
+        preview: preview.slice(0, 160),
+        folder: String(row.folder_id ?? ""),
+        createdAt,
+      });
+    }
+    return result.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+  }, [sessions]);
+}
+
+const NOTE_CARDS = 3;
+
 function Notes() {
   const newNote = useNewNote({ behavior: "current" });
   const openNew = useTabs((state) => state.openNew);
+  const openCurrent = useTabs((state) => state.openCurrent);
+  const notes = useRecentNotes();
+  const shown = notes.slice(0, NOTE_CARDS);
 
   return (
     <section className="flex flex-col gap-3">
@@ -201,27 +257,55 @@ function Notes() {
           <Trans>All notes</Trans>
         </button>
       </div>
-      <NotesList
-        limit={6}
-        recentOnly
-        compact
-        empty={
-          <section className="border-border flex items-center justify-between gap-3 rounded-2xl border border-dashed px-4 py-3">
-            <span className="text-muted-foreground flex items-center gap-2 text-sm">
-              <FileTextIcon className="size-4" />
-              <Trans>No notes from today or yesterday.</Trans>
-            </span>
-            <button
-              type="button"
-              onClick={newNote}
-              className="bg-primary text-primary-foreground inline-flex items-center gap-2 rounded-full px-3 py-1.5 text-xs transition-opacity hover:opacity-90"
-            >
-              <Trans>New note</Trans>
-              <Kbd className="bg-transparent text-inherit">⌘ N</Kbd>
-            </button>
-          </section>
-        }
-      />
+      {shown.length === 0 ? (
+        <div className="border-border flex items-center justify-between gap-3 rounded-2xl border border-dashed px-4 py-3">
+          <span className="text-muted-foreground flex items-center gap-2 text-sm">
+            <FileTextIcon className="size-4" />
+            <Trans>No notes from today or yesterday.</Trans>
+          </span>
+          <button
+            type="button"
+            onClick={newNote}
+            className="bg-primary text-primary-foreground inline-flex items-center gap-2 rounded-full px-3 py-1.5 text-xs transition-opacity hover:opacity-90"
+          >
+            <Trans>New note</Trans>
+            <Kbd className="bg-transparent text-inherit">⌘ N</Kbd>
+          </button>
+        </div>
+      ) : (
+        <ul className="flex flex-col gap-2.5">
+          {shown.map((note) => (
+            <li key={note.id} className="min-w-0">
+              <button
+                type="button"
+                onClick={() => openCurrent({ type: "sessions", id: note.id })}
+                className="border-border bg-card hover:bg-accent flex h-full w-full flex-col gap-1.5 rounded-2xl border px-4 py-3 text-left transition-colors"
+              >
+                <span className="text-muted-foreground flex items-center gap-1.5 text-xs">
+                  <span>
+                    {isToday(note.createdAt)
+                      ? format(note.createdAt, "h:mm a")
+                      : `Yesterday, ${format(note.createdAt, "h:mm a")}`}
+                  </span>
+                  {note.folder && (
+                    <span className="text-foreground/70 truncate font-medium">
+                      · {note.folder}
+                    </span>
+                  )}
+                </span>
+                <span className="text-foreground truncate text-sm font-medium">
+                  {note.title || <Trans>Untitled</Trans>}
+                </span>
+                {note.preview && (
+                  <span className="text-muted-foreground line-clamp-2 text-xs leading-snug">
+                    {note.preview}
+                  </span>
+                )}
+              </button>
+            </li>
+          ))}
+        </ul>
+      )}
     </section>
   );
 }
@@ -250,13 +334,78 @@ function briefingText(events: DayEvent[], unread: number, now: Date) {
   return parts.join(" ");
 }
 
+function UpNext({
+  events,
+  now,
+  onOpen,
+}: {
+  events: DayEvent[];
+  now: Date;
+  onOpen: (event: DayEvent) => void;
+}) {
+  const timed = events.filter((e) => !e.allDay);
+  const current = timed.find(
+    (e) => e.start! <= now && (e.end ?? e.start!) > now,
+  );
+  const event = current ?? timed.find((e) => e.start! > now);
+  if (!event) return null;
+
+  const minutes = differenceInMinutes(event.start!, now);
+  const label = current
+    ? "Happening now"
+    : minutes < 1
+      ? "Starting now"
+      : minutes < 60
+        ? `In ${minutes} min`
+        : `At ${format(event.start!, "h:mm a")}`;
+
+  return (
+    <section className="border-border bg-card flex flex-wrap items-center gap-x-6 gap-y-3 rounded-2xl border px-5 py-4">
+      <div className="flex min-w-0 flex-1 flex-col gap-1">
+        <span className="text-primary flex items-center gap-2 text-xs font-medium tracking-wider uppercase">
+          <span className="bg-primary size-1.5 rounded-full" />
+          {label}
+        </span>
+        <span className="font-display text-foreground truncate text-2xl leading-tight">
+          {event.title}
+        </span>
+        <span className="text-muted-foreground text-sm tabular-nums">
+          {format(event.start!, "h:mm")} –{" "}
+          {format(event.end ?? event.start!, "h:mm a")}
+        </span>
+      </div>
+      <div className="flex items-center gap-2">
+        {event.meetingLink && (
+          <button
+            type="button"
+            onClick={() => void openExternalLink(event.meetingLink)}
+            className="bg-foreground text-background inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm transition-opacity hover:opacity-90"
+          >
+            <VideoIcon className="size-4" />
+            <Trans>Join</Trans>
+          </button>
+        )}
+        <button
+          type="button"
+          onClick={() => onOpen(event)}
+          className="border-border text-foreground hover:bg-accent rounded-full border px-4 py-2 text-sm transition-colors"
+        >
+          <Trans>Open note</Trans>
+        </button>
+      </div>
+    </section>
+  );
+}
+
 const SCHEDULE_PREVIEW = 5;
 
 function ScheduleSection({
   events,
+  now,
   onOpen,
 }: {
   events: DayEvent[];
+  now: Date;
   onOpen: (event: DayEvent) => void;
 }) {
   const [showAll, setShowAll] = useState(false);
@@ -286,7 +435,16 @@ function ScheduleSection({
                     ? "All day"
                     : `${format(event.start!, "h:mm")} – ${format(event.end ?? event.start!, "h:mm a")}`}
                 </span>
-                <span className="text-foreground min-w-0 flex-1 truncate text-sm">
+                <span
+                  className={cn([
+                    "min-w-0 flex-1 truncate text-sm",
+                    isToday(event.start!) &&
+                    !event.allDay &&
+                    (event.end ?? event.start!) < now
+                      ? "text-muted-foreground line-through decoration-1"
+                      : "text-foreground",
+                  ])}
+                >
                   {event.title}
                 </span>
               </button>
@@ -479,10 +637,27 @@ export function DayHub({
             </div>
           </header>
 
+          {today && (
+            <UpNext
+              events={events}
+              now={now}
+              onOpen={(event) => {
+                if (!store) return;
+                const sessionId = getOrCreateSessionForEventId(
+                  store,
+                  event.id,
+                  event.title,
+                );
+                openCurrent({ type: "sessions", id: sessionId });
+              }}
+            />
+          )}
+
           <div className="grid gap-x-10 gap-y-6 md:grid-cols-2">
             <div className="flex min-w-0 flex-col gap-6">
               <ScheduleSection
                 events={events}
+                now={now}
                 onOpen={(event) => {
                   if (!store) return;
                   const sessionId = getOrCreateSessionForEventId(
@@ -493,12 +668,12 @@ export function DayHub({
                   openCurrent({ type: "sessions", id: sessionId });
                 }}
               />
-              {today ? <Notes /> : <DayNotes notes={notes} />}
-            </div>
-            <div className="flex min-w-0 flex-col gap-6">
               <RemindersSection day={day} />
               <DueTasks day={day} />
+            </div>
+            <div className="flex min-w-0 flex-col gap-6">
               {today && <InboxGlance />}
+              {today ? <Notes /> : <DayNotes notes={notes} />}
             </div>
           </div>
         </div>
