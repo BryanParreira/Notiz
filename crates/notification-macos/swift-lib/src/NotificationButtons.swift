@@ -301,11 +301,10 @@ class CompactActionButton: ActionButton {
 
   private func setupCountdownStyle() {
     layer?.masksToBounds = true
-    // Plain action buttons: a slim accent pill instead of a heavy grey slab.
-    let accent = NSColor.controlAccentColor
+    // Plain action buttons: a slim neutral dark pill instead of a heavy grey slab.
     setBackgroundColors(
-      normal: accent.cgColor,
-      pressed: (accent.blended(withFraction: 0.25, of: .black) ?? accent).cgColor
+      normal: NSColor(calibratedWhite: 0.16, alpha: 0.95).cgColor,
+      pressed: NSColor(calibratedWhite: 0.05, alpha: 0.95).cgColor
     )
     contentTintColor = .white
     font = NSFont.systemFont(ofSize: Fonts.buttonSize, weight: .semibold)
