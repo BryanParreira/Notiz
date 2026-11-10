@@ -3,7 +3,10 @@ import { useQuery } from "@tanstack/react-query";
 import {
   addDays,
   differenceInMinutes,
+  eachDayOfInterval,
+  endOfWeek,
   format,
+  startOfWeek,
   isSameDay,
   isToday,
   isYesterday,
@@ -21,10 +24,10 @@ import {
 } from "lucide-react";
 import { useMemo, useState } from "react";
 
-import { Button } from "@notiz/ui/components/ui/button";
 import { Kbd } from "@notiz/ui/components/ui/kbd";
 import { cn } from "@notiz/utils";
 
+import { appendToDailyNote } from "./append";
 import { DAILY_DATE_FORMAT, todayKey } from "./open-daily-tab";
 
 import { fetchInboxMessages } from "~/inbox/data";
@@ -36,6 +39,7 @@ import { AppleMailConnect } from "~/settings/email/apple-mail";
 import { useConfigValue } from "~/shared/config";
 import { StandardTabWrapper } from "~/shared/main";
 import { useNewNote } from "~/shared/useNewNote";
+import { showTransientToast } from "~/sidebar/toast/transient";
 import * as main from "~/store/tinybase/store/main";
 import { getOrCreateSessionForEventId } from "~/store/tinybase/store/sessions";
 import { useTabs } from "~/store/zustand/tabs";
@@ -334,6 +338,139 @@ function briefingText(events: DayEvent[], unread: number, now: Date) {
   return parts.join(" ");
 }
 
+function useEventDays() {
+  const events = main.UI.useTable("events", main.STORE_ID);
+
+  return useMemo(() => {
+    const days = new Set<string>();
+    for (const row of Object.values(events)) {
+      if (typeof row.started_at !== "string") continue;
+      const start = parseISO(row.started_at);
+      if (!Number.isNaN(start.getTime())) {
+        days.add(format(start, DAILY_DATE_FORMAT));
+      }
+    }
+    return days;
+  }, [events]);
+}
+
+function WeekStrip({
+  day,
+  onSelect,
+}: {
+  day: Date;
+  onSelect: (date: Date) => void;
+}) {
+  const eventDays = useEventDays();
+  const days = eachDayOfInterval({
+    start: startOfWeek(day, { weekStartsOn: 1 }),
+    end: endOfWeek(day, { weekStartsOn: 1 }),
+  });
+
+  return (
+    <div
+      className="flex shrink-0 items-center gap-1"
+      data-tauri-drag-region="false"
+    >
+      <button
+        type="button"
+        aria-label="Previous week"
+        onClick={() => onSelect(addDays(day, -7))}
+        className="text-muted-foreground hover:text-foreground rounded-full p-1.5 transition-colors"
+      >
+        <ChevronLeftIcon className="size-4" />
+      </button>
+      {days.map((d) => {
+        const selected = isSameDay(d, day);
+        const hasEvents = eventDays.has(format(d, DAILY_DATE_FORMAT));
+        return (
+          <button
+            key={d.toISOString()}
+            type="button"
+            onClick={() => onSelect(d)}
+            className={cn([
+              "flex w-11 flex-col items-center gap-0.5 rounded-xl py-1.5 transition-colors",
+              selected
+                ? "bg-foreground text-background"
+                : "text-muted-foreground hover:bg-accent hover:text-foreground",
+            ])}
+          >
+            <span className="text-[10px] font-medium tracking-wider uppercase">
+              {format(d, "EEE")}
+            </span>
+            <span
+              className={cn([
+                "text-base leading-none tabular-nums",
+                isToday(d) && !selected && "text-primary font-semibold",
+              ])}
+            >
+              {format(d, "d")}
+            </span>
+            <span
+              className={cn([
+                "size-1 rounded-full",
+                hasEvents
+                  ? selected
+                    ? "bg-background/70"
+                    : "bg-primary/60"
+                  : "bg-transparent",
+              ])}
+            />
+          </button>
+        );
+      })}
+      <button
+        type="button"
+        aria-label="Next week"
+        onClick={() => onSelect(addDays(day, 7))}
+        className="text-muted-foreground hover:text-foreground rounded-full p-1.5 transition-colors"
+      >
+        <ChevronRightIcon className="size-4" />
+      </button>
+    </div>
+  );
+}
+
+function QuickCapture({ date }: { date: string }) {
+  const store = main.UI.useStore(main.STORE_ID);
+  const [text, setText] = useState("");
+
+  const submit = () => {
+    const value = text.trim();
+    if (!value || !store) return;
+    appendToDailyNote(store as main.Store, date, value);
+    setText("");
+    showTransientToast({ description: "Added to the day's page" });
+  };
+
+  return (
+    <form
+      onSubmit={(e) => {
+        e.preventDefault();
+        submit();
+      }}
+      className="border-border bg-card focus-within:border-foreground/30 flex items-center gap-3 rounded-2xl border px-4 py-2.5 transition-colors"
+      data-tauri-drag-region="false"
+    >
+      <PlusIcon className="text-muted-foreground size-4 shrink-0" />
+      <input
+        value={text}
+        onChange={(e) => setText(e.target.value)}
+        placeholder="Jot something down for this day…"
+        className="text-foreground placeholder:text-muted-foreground min-w-0 flex-1 bg-transparent text-sm outline-none"
+      />
+      {text.trim() && (
+        <button
+          type="submit"
+          className="text-muted-foreground hover:text-foreground text-xs"
+        >
+          <Kbd>↵</Kbd>
+        </button>
+      )}
+    </form>
+  );
+}
+
 function UpNext({
   events,
   now,
@@ -423,33 +560,68 @@ function ScheduleSection({
         </p>
       ) : (
         <ul className="border-border bg-card divide-border divide-y divide-dashed overflow-hidden rounded-2xl border">
-          {shown.map((event) => (
-            <li key={event.id}>
-              <button
-                type="button"
-                onClick={() => onOpen(event)}
-                className="hover:bg-accent flex w-full items-center gap-3 px-4 py-2.5 text-left transition-colors"
-              >
-                <span className="text-muted-foreground w-24 shrink-0 text-xs tabular-nums">
-                  {event.allDay
-                    ? "All day"
-                    : `${format(event.start!, "h:mm")} – ${format(event.end ?? event.start!, "h:mm a")}`}
-                </span>
-                <span
+          {shown.map((event) => {
+            const isNow =
+              !event.allDay &&
+              event.start! <= now &&
+              (event.end ?? event.start!) > now;
+            const past =
+              !event.allDay &&
+              isToday(event.start!) &&
+              (event.end ?? event.start!) <= now;
+            const mins =
+              event.end && !event.allDay
+                ? differenceInMinutes(event.end, event.start!)
+                : 0;
+            const duration =
+              mins >= 60
+                ? `${Math.floor(mins / 60)}h${mins % 60 ? ` ${mins % 60}m` : ""}`
+                : mins > 0
+                  ? `${mins}m`
+                  : "";
+            return (
+              <li key={event.id}>
+                <button
+                  type="button"
+                  onClick={() => onOpen(event)}
                   className={cn([
-                    "min-w-0 flex-1 truncate text-sm",
-                    isToday(event.start!) &&
-                    !event.allDay &&
-                    (event.end ?? event.start!) < now
-                      ? "text-muted-foreground line-through decoration-1"
-                      : "text-foreground",
+                    "hover:bg-accent flex w-full items-center gap-3 px-4 py-2.5 text-left transition-colors",
+                    isNow && "bg-primary/5",
                   ])}
                 >
-                  {event.title}
-                </span>
-              </button>
-            </li>
-          ))}
+                  <span className="text-muted-foreground w-24 shrink-0 text-xs tabular-nums">
+                    {event.allDay
+                      ? "All day"
+                      : `${format(event.start!, "h:mm")} – ${format(event.end ?? event.start!, "h:mm a")}`}
+                  </span>
+                  <span
+                    className={cn([
+                      "size-2 shrink-0 rounded-full",
+                      isNow
+                        ? "bg-primary ring-primary/20 ring-4"
+                        : past
+                          ? "bg-muted-foreground/30"
+                          : "border-muted-foreground/50 border",
+                    ])}
+                  />
+                  <span
+                    className={cn([
+                      "min-w-0 flex-1 truncate text-sm",
+                      past ? "text-muted-foreground" : "text-foreground",
+                      isNow && "font-medium",
+                    ])}
+                  >
+                    {event.title}
+                  </span>
+                  {duration && (
+                    <span className="text-muted-foreground shrink-0 text-xs tabular-nums">
+                      {duration}
+                    </span>
+                  )}
+                </button>
+              </li>
+            );
+          })}
           {hidden > 0 && (
             <li>
               <button
@@ -599,43 +771,23 @@ export function DayHub({
             </div>
             <div className="flex items-center justify-between gap-4">
               <p className="text-muted-foreground text-base">
-                {today ? briefingText(events, unread, now) : ""}
+                {today ? (
+                  briefingText(events, unread, now)
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => onNavigate(todayKey())}
+                    className="hover:text-foreground transition-colors"
+                  >
+                    ← Back to today
+                  </button>
+                )}
               </p>
-              <div
-                className="flex shrink-0 items-center gap-1"
-                data-tauri-drag-region="false"
-              >
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  aria-label="Previous day"
-                  onClick={() => go(addDays(day, -1))}
-                >
-                  <ChevronLeftIcon className="size-4" />
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className={cn([
-                    "rounded-full",
-                    today && "text-muted-foreground",
-                  ])}
-                  disabled={today}
-                  onClick={() => onNavigate(todayKey())}
-                >
-                  Today
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  aria-label="Next day"
-                  onClick={() => go(addDays(day, 1))}
-                >
-                  <ChevronRightIcon className="size-4" />
-                </Button>
-              </div>
+              <WeekStrip day={day} onSelect={go} />
             </div>
           </header>
+
+          <QuickCapture date={date} />
 
           {today && (
             <UpNext
