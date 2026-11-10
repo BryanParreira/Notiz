@@ -213,8 +213,37 @@ impl<'a, R: tauri::Runtime, M: tauri::Manager<R>> Updater2<'a, R, M> {
             let _ = store.save();
         }
 
+        self.backup_notes_before_install();
+
         update.install(&bytes)?;
         Ok(InstallResult::RelaunchCurrent)
+    }
+
+    // Notes live outside the app bundle and an update never touches them; this
+    // copy is a safety net in case something ever goes wrong.
+    fn backup_notes_before_install(&self) {
+        use tauri_plugin_settings::SettingsPluginExt;
+
+        let settings = self.manager.settings();
+        let (Ok(vault), Ok(global)) = (settings.vault_base(), settings.global_base()) else {
+            tracing::warn!("notes_backup_skipped: data folder unavailable");
+            return;
+        };
+        let current = self.manager.package_info().version.to_string();
+        let timestamp = std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .map(|d| d.as_secs())
+            .unwrap_or(0);
+
+        match crate::backup::backup_notes(
+            vault.as_std_path(),
+            global.as_std_path(),
+            &current,
+            timestamp,
+        ) {
+            Ok(path) => tracing::info!("notes_backup_created: {}", path.display()),
+            Err(e) => tracing::warn!("notes_backup_failed: {}", e),
+        }
     }
 
     pub async fn postinstall(&self, result: InstallResult) -> Result<(), crate::Error> {

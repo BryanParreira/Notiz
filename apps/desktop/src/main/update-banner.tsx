@@ -46,7 +46,9 @@ type UpdateCheckState = {
 } | null;
 
 const UPDATE_CHECK_QUERY_KEY = ["updater2", "check"] as const;
-const UPDATE_CHECK_INTERVAL_MS = 30 * 60 * 1000;
+const UPDATE_CHECK_INTERVAL_MS = 10 * 60 * 1000;
+// Short enough that coming back to the app re-checks for a new release.
+const UPDATE_CHECK_STALE_MS = 2 * 60 * 1000;
 
 export function useDesktopUpdateControl(): DesktopUpdateControl {
   const autoUpdate = useConfigValue("auto_update");
@@ -198,7 +200,8 @@ export function useDesktopUpdateControl(): DesktopUpdateControl {
     enabled: autoUpdate,
     refetchInterval: autoUpdate ? UPDATE_CHECK_INTERVAL_MS : false,
     retry: false,
-    staleTime: UPDATE_CHECK_INTERVAL_MS,
+    staleTime: UPDATE_CHECK_STALE_MS,
+    refetchOnWindowFocus: true,
   });
 
   const { mutate: downloadUpdate, isPending: downloadStarting } = useMutation({

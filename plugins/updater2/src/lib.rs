@@ -1,3 +1,4 @@
+mod backup;
 mod commands;
 mod error;
 mod events;
@@ -54,7 +55,7 @@ pub fn init<R: tauri::Runtime>() -> tauri::plugin::TauriPlugin<R> {
             tauri::async_runtime::spawn(async move {
                 loop {
                     check_and_download(&handle).await;
-                    tokio::time::sleep(std::time::Duration::from_secs(30 * 60)).await;
+                    tokio::time::sleep(std::time::Duration::from_secs(10 * 60)).await;
                 }
             });
 
