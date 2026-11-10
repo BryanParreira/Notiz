@@ -1,5 +1,5 @@
 import { Trans } from "@lingui/react/macro";
-import { format, isToday, parseISO } from "date-fns";
+import { format, isToday, isYesterday, parseISO } from "date-fns";
 import { FileTextIcon, MoreHorizontalIcon } from "lucide-react";
 import { type MouseEvent, useMemo } from "react";
 
@@ -34,7 +34,11 @@ function safeParse(value: unknown): Date | null {
   return Number.isNaN(date.getTime()) ? null : date;
 }
 
-function useNotesByDay(folderId: string | null, limit: number) {
+function useNotesByDay(
+  folderId: string | null,
+  limit: number,
+  recentOnly: boolean,
+) {
   const sessions = main.UI.useTable("sessions", main.STORE_ID);
 
   return useMemo(() => {
@@ -43,6 +47,8 @@ function useNotesByDay(folderId: string | null, limit: number) {
       const createdAt = safeParse(row.created_at);
       const noteFolder = String(row.folder_id ?? "");
       if (!createdAt || !isInFolder(noteFolder, folderId)) continue;
+      if (recentOnly && !isToday(createdAt) && !isYesterday(createdAt))
+        continue;
       const title = String(row.title || "");
       let preview = extractPlainText(row.raw_md).trim();
       if (title && preview.startsWith(title)) {
@@ -65,7 +71,9 @@ function useNotesByDay(folderId: string | null, limit: number) {
     for (const note of notes.slice(0, limit)) {
       const label = isToday(note.createdAt)
         ? "Today"
-        : format(note.createdAt, "EEE, MMM d");
+        : isYesterday(note.createdAt)
+          ? "Yesterday"
+          : format(note.createdAt, "EEE, MMM d");
       const last = groups[groups.length - 1];
       if (last && last.label === label) {
         last.notes.push(note);
@@ -74,19 +82,24 @@ function useNotesByDay(folderId: string | null, limit: number) {
       }
     }
     return groups;
-  }, [sessions, folderId, limit]);
+  }, [sessions, folderId, limit, recentOnly]);
 }
 
 export function NotesList({
   folderId = null,
   limit = MAX_NOTES,
+  recentOnly = false,
+  compact = false,
   empty,
 }: {
   folderId?: string | null;
   limit?: number;
+  // Only notes from today and yesterday, for a short glanceable list.
+  recentOnly?: boolean;
+  compact?: boolean;
   empty: React.ReactNode;
 }) {
-  const groups = useNotesByDay(folderId, limit);
+  const groups = useNotesByDay(folderId, limit, recentOnly);
   const folders = useFolders();
 
   if (groups.length === 0) {
@@ -94,14 +107,24 @@ export function NotesList({
   }
 
   return (
-    <section className="flex flex-col gap-6">
+    <section className={cn(["flex flex-col", compact ? "gap-3" : "gap-6"])}>
       {groups.map((group) => (
         <div key={group.label} className="flex flex-col gap-1">
-          <h2 className="text-muted-foreground px-3 pb-1 text-sm">
+          <h2
+            className={cn([
+              "text-muted-foreground px-3 text-sm",
+              compact ? "pb-0 text-xs" : "pb-1",
+            ])}
+          >
             {group.label}
           </h2>
           {group.notes.map((note) => (
-            <NoteListItem key={note.id} note={note} folders={folders} />
+            <NoteListItem
+              key={note.id}
+              note={note}
+              folders={folders}
+              compact={compact}
+            />
           ))}
         </div>
       ))}
@@ -112,9 +135,11 @@ export function NotesList({
 function NoteListItem({
   note,
   folders,
+  compact,
 }: {
   note: NoteRow;
   folders: FolderNode[];
+  compact: boolean;
 }) {
   const openCurrent = useTabs((state) => state.openCurrent);
 
@@ -147,7 +172,8 @@ function NoteListItem({
     <div
       onContextMenu={showMenu}
       className={cn([
-        "group hover:bg-accent flex items-center gap-4 rounded-xl px-3 py-2.5",
+        "group hover:bg-accent flex items-center gap-4 rounded-xl px-3",
+        compact ? "py-1.5" : "py-2.5",
         "transition-colors",
       ])}
     >
@@ -156,11 +182,21 @@ function NoteListItem({
         onClick={() => openCurrent({ type: "sessions", id: note.id })}
         className="flex min-w-0 flex-1 items-center gap-4 text-left"
       >
-        <span className="bg-secondary text-muted-foreground flex size-10 shrink-0 items-center justify-center rounded-lg">
+        <span
+          className={cn([
+            "bg-secondary text-muted-foreground flex shrink-0 items-center justify-center rounded-lg",
+            compact ? "size-8" : "size-10",
+          ])}
+        >
           <FileTextIcon className="size-4" />
         </span>
         <span className="flex min-w-0 flex-1 flex-col">
-          <span className="text-foreground truncate text-base">
+          <span
+            className={cn([
+              "text-foreground truncate",
+              compact ? "text-sm" : "text-base",
+            ])}
+          >
             {note.title || <Trans>Untitled</Trans>}
           </span>
           {(note.preview || note.folderId) && (

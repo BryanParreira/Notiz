@@ -202,19 +202,19 @@ function Notes() {
         </button>
       </div>
       <NotesList
-        limit={5}
+        limit={6}
+        recentOnly
+        compact
         empty={
-          <section className="border-border flex flex-col items-center gap-3 rounded-2xl border border-dashed px-6 py-12 text-center">
-            <FileTextIcon className="text-muted-foreground size-6" />
-            <p className="text-muted-foreground text-sm">
-              <Trans>
-                Your notes live only on this device. Start your first one.
-              </Trans>
-            </p>
+          <section className="border-border flex items-center justify-between gap-3 rounded-2xl border border-dashed px-4 py-3">
+            <span className="text-muted-foreground flex items-center gap-2 text-sm">
+              <FileTextIcon className="size-4" />
+              <Trans>No notes from today or yesterday.</Trans>
+            </span>
             <button
               type="button"
               onClick={newNote}
-              className="bg-primary text-primary-foreground inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm transition-opacity hover:opacity-90"
+              className="bg-primary text-primary-foreground inline-flex items-center gap-2 rounded-full px-3 py-1.5 text-xs transition-opacity hover:opacity-90"
             >
               <Trans>New note</Trans>
               <Kbd className="bg-transparent text-inherit">⌘ N</Kbd>
@@ -407,8 +407,8 @@ export function DayHub({
         data-tauri-drag-region
         className="scroll-fade-y flex h-full flex-col overflow-y-auto"
       >
-        <div className="mx-auto flex w-full max-w-5xl flex-col gap-8 px-8 pt-10 pb-24">
-          <header className="flex flex-col gap-4">
+        <div className="mx-auto flex w-full max-w-5xl flex-col gap-6 px-8 pt-8 pb-10">
+          <header className="flex flex-col gap-3">
             <div className="flex items-start justify-between gap-4">
               <div className="flex flex-col gap-1">
                 <span className="text-muted-foreground text-xs font-medium tracking-wider uppercase">
@@ -479,8 +479,8 @@ export function DayHub({
             </div>
           </header>
 
-          <div className="grid gap-x-10 gap-y-8 md:grid-cols-2">
-            <div className="flex min-w-0 flex-col gap-8">
+          <div className="grid gap-x-10 gap-y-6 md:grid-cols-2">
+            <div className="flex min-w-0 flex-col gap-6">
               <ScheduleSection
                 events={events}
                 onOpen={(event) => {
@@ -495,7 +495,7 @@ export function DayHub({
               />
               {today ? <Notes /> : <DayNotes notes={notes} />}
             </div>
-            <div className="flex min-w-0 flex-col gap-8">
+            <div className="flex min-w-0 flex-col gap-6">
               <RemindersSection day={day} />
               <DueTasks day={day} />
               {today && <InboxGlance />}
