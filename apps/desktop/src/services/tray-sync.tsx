@@ -65,7 +65,18 @@ export function TraySync() {
       timer = setTimeout(schedule, untilNextMinute + 250);
     };
     schedule();
-    return () => clearTimeout(timer);
+    // A hidden window can pause its timers; resync the moment it wakes.
+    const resync = () => {
+      clearTimeout(timer);
+      schedule();
+    };
+    window.addEventListener("focus", resync);
+    document.addEventListener("visibilitychange", resync);
+    return () => {
+      clearTimeout(timer);
+      window.removeEventListener("focus", resync);
+      document.removeEventListener("visibilitychange", resync);
+    };
   }, []);
 
   useEffect(() => {
@@ -90,7 +101,7 @@ export function TraySync() {
           !!e.start &&
           !!e.end &&
           !e.allDay &&
-          e.end >= now &&
+          e.end > now &&
           isSameDay(e.start, now),
       )
       .sort((a, b) => a.start.getTime() - b.start.getTime());

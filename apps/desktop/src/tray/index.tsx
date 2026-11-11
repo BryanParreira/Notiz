@@ -1,4 +1,4 @@
-import { format, isPast, parseISO } from "date-fns";
+import { format, parseISO } from "date-fns";
 import {
   CalendarDaysIcon,
   CheckIcon,
@@ -7,7 +7,7 @@ import {
   PlusIcon,
   VideoIcon,
 } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 import {
   commands as trayCommands,
@@ -50,8 +50,16 @@ function useTraySummary() {
 function useNow() {
   const [now, setNow] = useState(() => new Date());
   useEffect(() => {
-    const id = setInterval(() => setNow(new Date()), 15_000);
-    return () => clearInterval(id);
+    const tick = () => setNow(new Date());
+    const id = setInterval(tick, 10_000);
+    // A hidden panel's timers can be paused, so catch up the moment it is shown.
+    window.addEventListener("focus", tick);
+    document.addEventListener("visibilitychange", tick);
+    return () => {
+      clearInterval(id);
+      window.removeEventListener("focus", tick);
+      document.removeEventListener("visibilitychange", tick);
+    };
   }, []);
   return now;
 }
@@ -139,18 +147,12 @@ function NextCard({ item, now }: { item: TrayEventItem; now: Date }) {
   );
 }
 
-function AgendaRow({ item, now }: { item: TrayEventItem; now: Date }) {
-  const end = item.end ? parseISO(item.end) : null;
-  const done = end ? isPast(end) && end < now : false;
-
+function AgendaRow({ item }: { item: TrayEventItem }) {
   return (
     <button
       type="button"
       onClick={() => act("open_event", item.id)}
-      className={cn([
-        "hover:bg-accent flex w-full items-center gap-3 rounded-lg px-2 py-1.5 text-left transition-colors",
-        done && "opacity-50",
-      ])}
+      className="hover:bg-accent flex w-full items-center gap-3 rounded-lg px-2 py-1.5 text-left transition-colors"
     >
       <span className="text-muted-foreground w-14 shrink-0 text-xs tabular-nums">
         {item.start ? format(parseISO(item.start), "h:mm a") : ""}
@@ -253,7 +255,22 @@ export function TrayPanel() {
     };
   }, []);
 
-  const later = summary.agenda.filter((e) => e.id !== summary.next?.id);
+  // Filtered against the live clock, so a meeting that has ended disappears
+  // right away even if the next summary from the main window is late.
+  const upcoming = useMemo(() => {
+    const seen = new Set<string>();
+    const items = [
+      ...(summary.next ? [summary.next] : []),
+      ...summary.agenda,
+    ].filter((item) => {
+      if (seen.has(item.id)) return false;
+      seen.add(item.id);
+      return !item.end || parseISO(item.end) > now;
+    });
+    return items.sort((a, b) => (a.start ?? "").localeCompare(b.start ?? ""));
+  }, [summary, now]);
+  const next = upcoming[0] ?? null;
+  const later = upcoming.slice(1);
 
   return (
     <div className="bg-background border-border flex h-screen flex-col overflow-hidden rounded-2xl border select-none [&_button]:outline-none [&_button]:focus-visible:ring-0 [&_button]:focus-visible:outline-none">
@@ -270,8 +287,8 @@ export function TrayPanel() {
       </div>
 
       <div className="scrollbar-hide flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto px-3 pb-3">
-        {summary.next ? (
-          <NextCard item={summary.next} now={now} />
+        {next ? (
+          <NextCard item={next} now={now} />
         ) : (
           <div className="border-border text-muted-foreground flex flex-col items-center gap-2 rounded-2xl border border-dashed px-4 py-8 text-center text-sm">
             <CheckIcon className="size-5" />
@@ -285,7 +302,7 @@ export function TrayPanel() {
               Later today
             </div>
             {later.map((item) => (
-              <AgendaRow key={item.id} item={item} now={now} />
+              <AgendaRow key={item.id} item={item} />
             ))}
           </div>
         )}
