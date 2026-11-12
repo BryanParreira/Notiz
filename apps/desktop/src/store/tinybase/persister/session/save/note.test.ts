@@ -57,4 +57,50 @@ describe("buildNoteSaveOps", () => {
       },
     ]);
   });
+
+  test("never deletes memos when every note is saved at once", () => {
+    const store = createTestMainStore();
+    for (const id of ["a", "b"]) {
+      store.setRow("sessions", id, {
+        user_id: "user-1",
+        created_at: "2024-01-01T00:00:00Z",
+        title: id,
+        folder_id: "",
+        event_json: "",
+        raw_md: "",
+      });
+    }
+
+    const ops = buildNoteSaveOps(store, store.getTables(), "/data", undefined, {
+      deleteEmptyMemos: true,
+    });
+
+    expect(ops).toEqual([]);
+  });
+
+  test("does not delete the memo of a note that did not change", () => {
+    const store = createTestMainStore();
+    for (const id of ["opened", "untouched"]) {
+      store.setRow("sessions", id, {
+        user_id: "user-1",
+        created_at: "2024-01-01T00:00:00Z",
+        title: id,
+        folder_id: "",
+        event_json: "",
+        raw_md: "",
+      });
+    }
+
+    const ops = buildNoteSaveOps(
+      store,
+      store.getTables(),
+      "/data",
+      new Set(["opened"]),
+      { deleteEmptyMemos: true },
+    );
+
+    expect(ops).toEqual([
+      { type: "delete", paths: ["/data/sessions/opened/_memo.md"] },
+    ]);
+  });
 });

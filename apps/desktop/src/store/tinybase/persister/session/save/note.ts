@@ -101,7 +101,10 @@ function collectMemos(ctx: BuildContext): {
       ? tryParseAndConvertToMarkdown(session.raw_md)
       : null;
     if (!markdown) {
-      if (deleteEmptyMemos) {
+      // Notes load without their text and fill it in when opened, so an empty
+      // raw_md can just mean "not opened yet". Only remove a memo for a note
+      // the user actually changed, never during a save that covers every note.
+      if (deleteEmptyMemos && changedSessionIds?.has(session.id)) {
         deletePaths.push(memoPath);
       }
       continue;
