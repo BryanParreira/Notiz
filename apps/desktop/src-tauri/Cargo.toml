@@ -1,6 +1,6 @@
 [package]
 name = "desktop"
-version = "1.7.9"
+version = "1.7.10"
 authors = ["you"]
 edition = "2024"
 description = "Notiz Desktop App"
