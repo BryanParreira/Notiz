@@ -42,7 +42,7 @@ export const BUILT_IN_TEMPLATES: NoteTemplate[] = [
     description: "Agenda, discussion, decisions and who does what",
     accent: "#e8dcc4",
     category: "Meetings",
-    body: `**Date:** {{date}}\n**Attendees:** \n\n---\n\n## Agenda\n\n- \n\n## Discussion\n\n- \n\n## Decisions\n\n- \n\n## Action items\n\n- [ ] `,
+    body: `**Date:** {{date}}\n\n**Attendees:** \n\n---\n\n## Agenda\n\n- \n\n## Discussion\n\n- \n\n## Decisions\n\n- \n\n## Action items\n\n- [ ] `,
   },
   {
     id: "one-on-one",
@@ -50,7 +50,7 @@ export const BUILT_IN_TEMPLATES: NoteTemplate[] = [
     description: "Recurring check-in with one person",
     accent: "#d9e4d0",
     category: "Meetings",
-    body: `**With:** \n**Date:** {{date}}\n\n---\n\n## How are things going?\n\n- \n\n## Since last time\n\n- \n\n## To discuss\n\n- \n\n## Feedback\n\n- \n\n## Follow-ups\n\n- [ ] `,
+    body: `**With:** \n\n**Date:** {{date}}\n\n---\n\n## How are things going?\n\n- \n\n## Since last time\n\n- \n\n## To discuss\n\n- \n\n## Feedback\n\n- \n\n## Follow-ups\n\n- [ ] `,
   },
   {
     id: "standup",
@@ -66,7 +66,7 @@ export const BUILT_IN_TEMPLATES: NoteTemplate[] = [
     description: "Needs, answers given and next steps",
     accent: "#ead9c8",
     category: "Meetings",
-    body: `**Client:** \n**Date:** {{date}}\n\n---\n\n## Their goals\n\n- \n\n## What we discussed\n\n- \n\n## Questions to answer\n\n- [ ] \n\n## Next steps\n\n- [ ] `,
+    body: `**Client:** \n\n**Date:** {{date}}\n\n---\n\n## Their goals\n\n- \n\n## What we discussed\n\n- \n\n## Questions to answer\n\n- [ ] \n\n## Next steps\n\n- [ ] `,
   },
   {
     id: "interview",
@@ -74,7 +74,7 @@ export const BUILT_IN_TEMPLATES: NoteTemplate[] = [
     description: "Structured notes with a verdict",
     accent: "#d6dfe8",
     category: "Meetings",
-    body: `**Candidate:** \n**Role:** \n**Date:** {{date}}\n\n---\n\n## Background\n\n- \n\n## Strengths\n\n- \n\n## Concerns\n\n- \n\n## Questions they asked\n\n- \n\n> **Verdict** — hire, hold or pass, and why.`,
+    body: `**Candidate:** \n\n**Role:** \n\n**Date:** {{date}}\n\n---\n\n## Background\n\n- \n\n## Strengths\n\n- \n\n## Concerns\n\n- \n\n## Questions they asked\n\n- \n\n> **Verdict** — hire, hold or pass, and why.`,
   },
   {
     id: "project",
@@ -82,7 +82,7 @@ export const BUILT_IN_TEMPLATES: NoteTemplate[] = [
     description: "Goal, scope, milestones and open questions",
     accent: "#d4dff0",
     category: "Work",
-    body: `> **Goal** — one sentence on what done looks like.\n\n**Owner:** \n**Target date:** \n\n---\n\n## Scope\n\n- \n\n## Milestones\n\n- [ ] \n- [ ] \n- [ ] \n\n## Risks\n\n- \n\n## Open questions\n\n- `,
+    body: `> **Goal** — one sentence on what done looks like.\n\n**Owner:** \n\n**Target date:** \n\n---\n\n## Scope\n\n- \n\n## Milestones\n\n- [ ] \n- [ ] \n- [ ] \n\n## Risks\n\n- \n\n## Open questions\n\n- `,
   },
   {
     id: "spec",
@@ -186,7 +186,7 @@ export const BUILT_IN_TEMPLATES: NoteTemplate[] = [
     description: "Ingredients, steps and how it turned out",
     accent: "#f0dccc",
     category: "Personal",
-    body: `**Serves:** \n**Time:** \n\n---\n\n## Ingredients\n\n- \n\n## Steps\n\n1. \n\n## Notes\n\n- `,
+    body: `**Serves:** \n\n**Time:** \n\n---\n\n## Ingredients\n\n- \n\n## Steps\n\n1. \n\n## Notes\n\n- `,
   },
   {
     id: "book",
@@ -194,7 +194,7 @@ export const BUILT_IN_TEMPLATES: NoteTemplate[] = [
     description: "Key ideas, quotes and what to apply",
     accent: "#d8e0cc",
     category: "Learning",
-    body: `**Author:** \n**Started:** {{date}}\n\n---\n\n## Key ideas\n\n- \n\n## Quotes\n\n> \n\n## What I will apply\n\n- [ ] `,
+    body: `**Author:** \n\n**Started:** {{date}}\n\n---\n\n## Key ideas\n\n- \n\n## Quotes\n\n> \n\n## What I will apply\n\n- [ ] `,
   },
   {
     id: "lecture",
@@ -202,7 +202,7 @@ export const BUILT_IN_TEMPLATES: NoteTemplate[] = [
     description: "Topic, key points and questions to follow up",
     accent: "#d6e0e8",
     category: "Learning",
-    body: `**Course:** \n**Date:** {{date}}\n\n---\n\n## Topic\n\n\n\n## Key points\n\n- \n\n## Examples\n\n- \n\n## Questions\n\n- [ ] \n\n## Summary\n\n`,
+    body: `**Course:** \n\n**Date:** {{date}}\n\n---\n\n## Topic\n\n\n\n## Key points\n\n- \n\n## Examples\n\n- \n\n## Questions\n\n- [ ] \n\n## Summary\n\n`,
   },
 ];
 
@@ -305,6 +305,76 @@ export function resolveTemplateBody(template: NoteTemplate): string {
     .replace(/\{\{day\}\}/g, format(now, "EEEE, MMMM d"));
 }
 
+type DocNode = {
+  type?: string;
+  attrs?: Record<string, unknown>;
+  content?: DocNode[];
+  text?: string;
+  marks?: { type: string }[];
+};
+
+function nodeText(node: DocNode): string {
+  return node.text ?? (node.content ?? []).map(nodeText).join("");
+}
+
+const CHECKBOX_PREFIX = /^\[( |x|X)\]\s?/;
+
+// An empty "- [ ]" line is read as a bullet that contains the text "[ ]", not
+// as a checkbox. Turn those lists into real task lists.
+function toTaskList(list: DocNode): DocNode {
+  const items = list.content ?? [];
+  const allCheckboxes =
+    items.length > 0 &&
+    items.every((item) => CHECKBOX_PREFIX.test(nodeText(item)));
+  if (!allCheckboxes) return list;
+
+  return {
+    type: "taskList",
+    content: items.map((item) => {
+      const paragraph = item.content?.[0];
+      const first = paragraph?.content?.[0];
+      const match = first?.text ? CHECKBOX_PREFIX.exec(first.text) : null;
+      const rest = (first?.text ?? "").replace(CHECKBOX_PREFIX, "");
+      const inline = [
+        ...(rest ? [{ ...first, text: rest }] : []),
+        ...(paragraph?.content ?? []).slice(1),
+      ];
+      return {
+        type: "taskItem",
+        attrs: { checked: match?.[1]?.toLowerCase() === "x" },
+        content: [
+          { type: "paragraph", ...(inline.length ? { content: inline } : {}) },
+        ],
+      };
+    }),
+  };
+}
+
+function isEmptyParagraph(node: DocNode) {
+  return node.type === "paragraph" && !nodeText(node).trim();
+}
+
+/** Turns note markdown into editor content with real checkboxes and tidy spacing. */
+export function markdownToNoteContent(markdown: string): DocNode[] {
+  const blocks = (md2json(markdown).content ?? []) as DocNode[];
+  const result: DocNode[] = [];
+
+  for (const block of blocks) {
+    const next = block.type === "bulletList" ? toTaskList(block) : block;
+    const previous = result[result.length - 1];
+    if (previous && isEmptyParagraph(previous) && isEmptyParagraph(next)) {
+      continue;
+    }
+    result.push(next);
+  }
+  return result;
+}
+
+/** The editor blocks for a template, with today's date filled in. */
+export function templateContent(template: NoteTemplate): DocNode[] {
+  return markdownToNoteContent(resolveTemplateBody(template));
+}
+
 export function createNoteFromTemplate(
   store: main.Store,
   template: NoteTemplate,
@@ -314,7 +384,7 @@ export function createNoteFromTemplate(
     "sessions",
     sessionId,
     "raw_md",
-    JSON.stringify(md2json(resolveTemplateBody(template))),
+    JSON.stringify({ type: "doc", content: templateContent(template) }),
   );
   return sessionId;
 }

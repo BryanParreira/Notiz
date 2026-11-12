@@ -9,7 +9,6 @@ import {
   useState,
 } from "react";
 
-import { md2json } from "@notiz/editor/markdown";
 import type { JSONContent, NoteEditorRef } from "@notiz/editor/note";
 
 import { Backlinks } from "./backlinks";
@@ -21,7 +20,7 @@ import { TemplateStrip } from "./template-strip";
 
 import { useCaretNearBottom } from "~/session/components/caret-position-context";
 import { useScrollPreservation } from "~/shared/hooks/useScrollPreservation";
-import { onTemplateInsert } from "~/shared/note-templates";
+import { onTemplateInsert, templateContent } from "~/shared/note-templates";
 import type { Tab } from "~/store/zustand/tabs";
 
 export interface NoteInputHandle {
@@ -100,7 +99,7 @@ export const NoteInput = forwardRef<
 
         editor.commands.replaceContent({
           type: "doc",
-          content: [...titled, ...(md2json(template.body).content ?? [])],
+          content: [...titled, ...templateContent(template)],
         });
         editor.commands.focus();
       }),
