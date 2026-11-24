@@ -24,7 +24,6 @@ import {
 } from "lucide-react";
 import { useMemo, useState } from "react";
 
-import { Kbd } from "@notiz/ui/components/ui/kbd";
 import { cn } from "@notiz/utils";
 
 import { DAILY_DATE_FORMAT, todayKey } from "./open-daily-tab";
@@ -260,18 +259,19 @@ function Notes() {
         </button>
       </div>
       {shown.length === 0 ? (
-        <div className="border-border flex items-center justify-between gap-3 rounded-2xl border border-dashed px-4 py-3">
+        <div className="border-border flex flex-col items-start gap-3 rounded-2xl border border-dashed px-4 py-4">
           <span className="text-muted-foreground flex items-center gap-2 text-sm">
-            <FileTextIcon className="size-4" />
+            <FileTextIcon className="size-4 shrink-0" />
             <Trans>No notes from today or yesterday.</Trans>
           </span>
           <button
             type="button"
             onClick={newNote}
-            className="bg-primary text-primary-foreground inline-flex items-center gap-2 rounded-full px-3 py-1.5 text-xs transition-opacity hover:opacity-90"
+            className="bg-primary text-primary-foreground inline-flex shrink-0 items-center gap-2 rounded-full px-4 py-2 text-sm whitespace-nowrap transition-opacity hover:opacity-90"
           >
+            <PlusIcon className="size-4" />
             <Trans>New note</Trans>
-            <Kbd className="bg-transparent text-inherit">⌘ N</Kbd>
+            <span className="text-primary-foreground/60 text-xs">⌘N</span>
           </button>
         </div>
       ) : (
@@ -547,7 +547,7 @@ function ScheduleSection({
                     isNow && "bg-primary/5",
                   ])}
                 >
-                  <span className="text-muted-foreground w-24 shrink-0 text-xs tabular-nums">
+                  <span className="text-muted-foreground w-[7.5rem] shrink-0 text-xs whitespace-nowrap tabular-nums">
                     {event.allDay
                       ? "All day"
                       : `${format(event.start!, "h:mm")} – ${format(event.end ?? event.start!, "h:mm a")}`}
@@ -719,7 +719,7 @@ export function DayHub({
                   onClick={newNote}
                   className={cn([
                     "border-border bg-card text-foreground hover:bg-accent",
-                    "flex items-center gap-2 rounded-full border px-4 py-2 text-sm transition-colors",
+                    "flex shrink-0 items-center gap-2 rounded-full border px-4 py-2 text-sm whitespace-nowrap transition-colors",
                   ])}
                 >
                   <PlusIcon className="size-4" />

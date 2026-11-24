@@ -167,7 +167,7 @@ msgstr "AI-generated summary of all interactions and notes with this contact wil
 msgid "All"
 msgstr "All"
 
-#: src/daily/day-hub.tsx:259
+#: src/daily/day-hub.tsx:258
 #: src/folders/index.tsx:30
 #: src/sidebar/folders.tsx:75
 msgid "All notes"
@@ -292,7 +292,7 @@ msgstr "Blank note"
 #~ msgid "Brief"
 #~ msgstr "Brief"
 
-#: src/daily/day-hub.tsx:138
+#: src/daily/day-hub.tsx:137
 msgid "Bring your mail in"
 msgstr "Bring your mail in"
 
@@ -1009,7 +1009,7 @@ msgstr "In {totalSeconds} second"
 msgid "In {totalSeconds} seconds"
 msgstr "In {totalSeconds} seconds"
 
-#: src/daily/day-hub.tsx:160
+#: src/daily/day-hub.tsx:159
 #: src/inbox/index.tsx:439
 #: src/sidebar/nav.tsx:60
 msgid "Inbox"
@@ -1335,7 +1335,7 @@ msgstr "No matching languages found"
 msgid "No notes found."
 msgstr "No notes found."
 
-#: src/daily/day-hub.tsx:266
+#: src/daily/day-hub.tsx:265
 msgid "No notes from today or yesterday."
 msgstr "No notes from today or yesterday."
 
@@ -1625,7 +1625,7 @@ msgstr "Recent"
 #~ msgid "Recent emails"
 #~ msgstr "Recent emails"
 
-#: src/daily/day-hub.tsx:252
+#: src/daily/day-hub.tsx:251
 msgid "Recent notes"
 msgstr "Recent notes"
 
