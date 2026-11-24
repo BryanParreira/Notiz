@@ -102,11 +102,13 @@ async function runForConnection(
 
   let incoming;
   let incomingParticipants;
+  let failedCalendarTrackingIds: string[] = [];
 
   try {
     const result = await fetchIncomingEvents(ctx);
     incoming = result.events;
     incomingParticipants = result.participants;
+    failedCalendarTrackingIds = result.failedCalendarTrackingIds ?? [];
   } catch (error) {
     if (error instanceof CalendarFetchError) {
       console.error(
@@ -119,7 +121,16 @@ async function runForConnection(
 
   if (isAborted(options.signal)) return;
 
-  const existing = fetchExistingEvents(ctx);
+  // Events of a calendar that failed to load are not missing, just unread.
+  const unreadCalendarIds = new Set(
+    failedCalendarTrackingIds.flatMap((trackingId) => {
+      const calendarId = ctx.calendarTrackingIdToId.get(trackingId);
+      return calendarId ? [calendarId] : [];
+    }),
+  );
+  const existing = fetchExistingEvents(ctx).filter(
+    (event) => !event.calendar_id || !unreadCalendarIds.has(event.calendar_id),
+  );
   if (isAborted(options.signal)) return;
 
   const eventsOut = syncEvents(ctx, {

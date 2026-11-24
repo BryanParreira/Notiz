@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { useMemo } from "react";
+import { useMemo, useSyncExternalStore } from "react";
 
 import { commands as fsSyncCommands } from "@notiz/plugin-fs-sync";
 
@@ -38,10 +38,42 @@ export function isInFolder(
   return noteFolderId === folderId || noteFolderId.startsWith(`${folderId}/`);
 }
 
+// Only the folder column matters here. Subscribing to the whole sessions table
+// would rebuild the sidebar on every keystroke, since typing rewrites a note.
+function useNoteFolders(): string {
+  const store = main.UI.useStore(main.STORE_ID);
+
+  return useSyncExternalStore(
+    (listener) => {
+      if (!store) return () => {};
+      const id = store.addCellListener("sessions", null, "folder_id", () =>
+        listener(),
+      );
+      const rowsId = store.addRowIdsListener("sessions", () => listener());
+      return () => {
+        store.delListener(id);
+        store.delListener(rowsId);
+      };
+    },
+    () => {
+      if (!store) return "";
+      // A string snapshot compares by value, so unrelated edits cause no render.
+      return store
+        .getRowIds("sessions")
+        .map((rowId) =>
+          String(store.getCell("sessions", rowId, "folder_id") ?? ""),
+        )
+        .filter(Boolean)
+        .join("\n");
+    },
+    () => "",
+  );
+}
+
 // Folders are directories on disk. Empty ones only exist there, while the ones
 // holding notes are also known to the store, so show the union of both.
 export function useFolders(): FolderNode[] {
-  const sessions = main.UI.useTable("sessions", main.STORE_ID);
+  const noteFoldersKey = useNoteFolders();
 
   const { data: diskFolders } = useQuery({
     queryKey: FOLDERS_QUERY_KEY,
@@ -53,9 +85,7 @@ export function useFolders(): FolderNode[] {
   });
 
   return useMemo(() => {
-    const noteFolders = Object.values(sessions)
-      .map((row) => String(row.folder_id ?? ""))
-      .filter(Boolean);
+    const noteFolders = noteFoldersKey ? noteFoldersKey.split("\n") : [];
 
     const ids = new Set<string>();
     for (const folder of [...noteFolders, ...(diskFolders ?? [])]) {
@@ -68,5 +98,5 @@ export function useFolders(): FolderNode[] {
       depth: id.split("/").length - 1,
       count: noteFolders.filter((folder) => isInFolder(folder, id)).length,
     }));
-  }, [sessions, diskFolders]);
+  }, [noteFoldersKey, diskFolders]);
 }

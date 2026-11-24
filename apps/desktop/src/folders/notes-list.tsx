@@ -34,6 +34,24 @@ function safeParse(value: unknown): Date | null {
   return Number.isNaN(date.getTime()) ? null : date;
 }
 
+// Parsing every note's body for a preview is the costly part, so keep the last
+// result per note and reuse it until that note's text actually changes.
+const previewCache = new Map<string, { raw: string; preview: string }>();
+
+function previewFor(id: string, rawMd: unknown, title: string): string {
+  const raw = typeof rawMd === "string" ? rawMd : "";
+  let entry = previewCache.get(id);
+  if (!entry || entry.raw !== raw) {
+    entry = { raw, preview: extractPlainText(raw).trim() };
+    previewCache.set(id, entry);
+  }
+  let preview = entry.preview;
+  if (title && preview.startsWith(title)) {
+    preview = preview.slice(title.length).trim();
+  }
+  return preview;
+}
+
 function useNotesByDay(
   folderId: string | null,
   limit: number,
@@ -50,10 +68,7 @@ function useNotesByDay(
       if (recentOnly && !isToday(createdAt) && !isYesterday(createdAt))
         continue;
       const title = String(row.title || "");
-      let preview = extractPlainText(row.raw_md).trim();
-      if (title && preview.startsWith(title)) {
-        preview = preview.slice(title.length).trim();
-      }
+      const preview = previewFor(id, row.raw_md, title);
       if (!title && !preview) continue;
 
       notes.push({

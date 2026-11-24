@@ -93,7 +93,10 @@ impl AppWindow {
                 }
             };
 
+            // Windows are hidden rather than closed, and their timers drive the
+            // menu bar countdown and event alerts, so they must not be throttled.
             builder = builder
+                .background_throttling(tauri::utils::config::BackgroundThrottlingPolicy::Disabled)
                 .visible(false)
                 .decorations(true)
                 .hidden_title(true)

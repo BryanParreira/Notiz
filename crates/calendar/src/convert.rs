@@ -1,3 +1,4 @@
+use chrono::{NaiveDate, NaiveDateTime, TimeZone, Utc};
 use notiz_apple_calendar::types::{
     AppleCalendar, AppleEvent, EventStatus as AppleEventStatus, Participant, ParticipantRole,
     ParticipantStatus,
@@ -12,8 +13,9 @@ use notiz_google_calendar::{
     EventStatus as GoogleEventStatus,
 };
 use notiz_outlook_calendar::{
-    Attendee as OutlookAttendee, AttendeeType, Calendar as OutlookCalendar, Event as OutlookEvent,
-    EventShowAs, ResponseType as OutlookResponseType,
+    Attendee as OutlookAttendee, AttendeeType, Calendar as OutlookCalendar,
+    DateTimeTimeZone as OutlookDateTime, Event as OutlookEvent, EventShowAs,
+    ResponseType as OutlookResponseType,
 };
 
 pub fn convert_google_calendars(calendars: Vec<GoogleCalendar>) -> Vec<CalendarListItem> {
@@ -190,15 +192,16 @@ fn convert_google_event(event: GoogleEvent, calendar_id: &str) -> CalendarEvent 
 fn convert_outlook_event(event: OutlookEvent, calendar_id: &str) -> CalendarEvent {
     let raw = serde_json::to_string(&event).unwrap_or_default();
 
+    let all_day = event.is_all_day.unwrap_or(false);
     let started_at = event
         .start
         .as_ref()
-        .map(|start| start.date_time.clone())
+        .map(|start| outlook_datetime_to_iso(start, all_day))
         .unwrap_or_default();
     let ended_at = event
         .end
         .as_ref()
-        .map(|end| end.date_time.clone())
+        .map(|end| outlook_datetime_to_iso(end, all_day))
         .unwrap_or_default();
     let timezone = event
         .start
@@ -245,7 +248,7 @@ fn convert_outlook_event(event: OutlookEvent, calendar_id: &str) -> CalendarEven
         started_at,
         ended_at,
         timezone,
-        is_all_day: event.is_all_day.unwrap_or(false),
+        is_all_day: all_day,
         status: convert_outlook_status(event.is_cancelled, event.show_as),
         organizer,
         attendees,
@@ -269,13 +272,15 @@ fn convert_apple_event(event: AppleEvent) -> CalendarEvent {
     let organizer = event.organizer.as_ref().map(convert_person);
     let attendees = event.attendees.iter().map(convert_apple_attendee).collect();
 
+    // A repeating event without recurrence details would otherwise take the
+    // whole sync down with it, so fall back to the event's own identifier.
     let recurring_event_id = if event.has_recurrence_rules {
         Some(
             event
                 .recurrence
-                .expect("event with has_recurrence_rules: true must have a recurrence")
-                .series_identifier
-                .clone(),
+                .as_ref()
+                .map(|recurrence| recurrence.series_identifier.clone())
+                .unwrap_or_else(|| event.event_identifier.clone()),
         )
     } else {
         None
@@ -304,9 +309,36 @@ fn convert_apple_event(event: AppleEvent) -> CalendarEvent {
     }
 }
 
+/// Graph sends a bare local time next to a zone name, so without this the
+/// time would be read in the viewer's zone instead of the event's.
+fn outlook_datetime_to_iso(value: &OutlookDateTime, all_day: bool) -> String {
+    let raw = value.date_time.trim();
+    let Ok(naive) = NaiveDateTime::parse_from_str(raw, "%Y-%m-%dT%H:%M:%S%.f") else {
+        return raw.to_string();
+    };
+
+    if all_day {
+        return crate::ics::local_midnight(naive.date()).to_rfc3339();
+    }
+
+    let instant = match value.time_zone.as_deref().map(str::trim) {
+        None | Some("") | Some("UTC") => Some(Utc.from_utc_datetime(&naive)),
+        Some(name) => crate::ics::resolve_tz(name)
+            .and_then(|(tz, _)| tz.from_local_datetime(&naive).earliest())
+            .map(|local| local.with_timezone(&Utc)),
+    };
+    instant
+        .unwrap_or_else(|| Utc.from_utc_datetime(&naive))
+        .to_rfc3339()
+}
+
+fn all_day_iso(date: NaiveDate) -> String {
+    crate::ics::local_midnight(date).to_rfc3339()
+}
+
 fn event_datetime_to_iso(edt: &EventDateTime) -> Option<String> {
     if let Some(date) = &edt.date {
-        Some(date.and_hms_opt(0, 0, 0)?.and_utc().to_rfc3339())
+        Some(all_day_iso(*date))
     } else {
         edt.date_time.as_ref().map(|dt| dt.to_rfc3339())
     }
@@ -472,4 +504,42 @@ fn local_date_string(date: &chrono::DateTime<chrono::Utc>, event_tz: Option<&str
     date.with_timezone(&chrono::Local)
         .format("%Y-%m-%d")
         .to_string()
+}
+
+#[cfg(test)]
+mod outlook_time_tests {
+    use super::*;
+
+    fn dt(value: &str, zone: Option<&str>) -> OutlookDateTime {
+        OutlookDateTime {
+            date_time: value.to_string(),
+            time_zone: zone.map(str::to_string),
+        }
+    }
+
+    #[test]
+    fn reads_utc_times_as_utc() {
+        assert_eq!(
+            outlook_datetime_to_iso(&dt("2026-10-21T10:00:00.0000000", Some("UTC")), false),
+            "2026-10-21T10:00:00+00:00"
+        );
+    }
+
+    #[test]
+    fn converts_the_event_zone_instead_of_the_viewers() {
+        assert_eq!(
+            outlook_datetime_to_iso(
+                &dt("2026-10-21T10:00:00.0000000", Some("Pacific Standard Time")),
+                false
+            ),
+            "2026-10-21T17:00:00+00:00"
+        );
+        assert_eq!(
+            outlook_datetime_to_iso(
+                &dt("2026-10-21T10:00:00.0000000", Some("Europe/Paris")),
+                false
+            ),
+            "2026-10-21T08:00:00+00:00"
+        );
+    }
 }

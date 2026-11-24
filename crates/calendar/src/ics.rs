@@ -1,7 +1,7 @@
 use std::collections::{HashMap, HashSet};
 use std::io::BufReader;
 
-use chrono::{DateTime, Duration, NaiveDate, NaiveDateTime, TimeZone, Utc};
+use chrono::{DateTime, Duration, Local, NaiveDate, NaiveDateTime, TimeZone, Utc};
 use ical::{IcalParser, property::Property};
 use notiz_calendar_interface::{
     AttendeeRole, AttendeeStatus, CalendarEvent, CalendarProviderType, EventAttendee, EventPerson,
@@ -34,16 +34,73 @@ pub(crate) fn normalize_url(raw: &str) -> Result<String, Error> {
     Ok(url)
 }
 
+/// Sync asks for every link far more often than a calendar actually changes,
+/// so a copy this fresh is reused instead of downloading and parsing it again.
+const CACHE_FRESH: std::time::Duration = std::time::Duration::from_secs(120);
+/// When a link is briefly unreachable, an older copy beats an empty calendar.
+const CACHE_STALE_OK: std::time::Duration = std::time::Duration::from_secs(6 * 60 * 60);
+
+struct CachedFeed {
+    fetched: std::time::Instant,
+    body: String,
+}
+
+static FEED_CACHE: std::sync::Mutex<Option<HashMap<String, CachedFeed>>> =
+    std::sync::Mutex::new(None);
+
+fn cache_get(url: &str, max_age: std::time::Duration) -> Option<String> {
+    let guard = FEED_CACHE.lock().ok()?;
+    let entry = guard.as_ref()?.get(url)?;
+    (entry.fetched.elapsed() <= max_age).then(|| entry.body.clone())
+}
+
+fn cache_put(url: &str, body: &str) {
+    if let Ok(mut guard) = FEED_CACHE.lock() {
+        let map = guard.get_or_insert_with(HashMap::new);
+        // Links are few, but never let a stale one pile up.
+        map.retain(|_, entry| entry.fetched.elapsed() <= CACHE_STALE_OK);
+        map.insert(
+            url.to_string(),
+            CachedFeed {
+                fetched: std::time::Instant::now(),
+                body: body.to_string(),
+            },
+        );
+    }
+}
+
+fn http_client() -> Result<&'static reqwest::Client, Error> {
+    static CLIENT: std::sync::OnceLock<reqwest::Client> = std::sync::OnceLock::new();
+    if let Some(client) = CLIENT.get() {
+        return Ok(client);
+    }
+    let client = reqwest::Client::builder()
+        .timeout(FETCH_TIMEOUT)
+        .build()
+        .map_err(|e| Error::Api(e.without_url().to_string()))?;
+    Ok(CLIENT.get_or_init(|| client))
+}
+
 pub(crate) async fn fetch(url: &str) -> Result<String, Error> {
+    if let Some(body) = cache_get(url, CACHE_FRESH) {
+        return Ok(body);
+    }
+
+    match download(url).await {
+        Ok(body) => {
+            cache_put(url, &body);
+            Ok(body)
+        }
+        Err(error) => cache_get(url, CACHE_STALE_OK).ok_or(error),
+    }
+}
+
+async fn download(url: &str) -> Result<String, Error> {
     // The link is a secret, and the HTTP library puts the URL in its error text,
     // so strip it before anything can reach the UI or a log.
     let fail = |e: reqwest::Error| Error::Api(e.without_url().to_string());
 
-    let client = reqwest::Client::builder()
-        .timeout(FETCH_TIMEOUT)
-        .build()
-        .map_err(fail)?;
-    let response = client.get(url).send().await.map_err(fail)?;
+    let response = http_client()?.get(url).send().await.map_err(fail)?;
     let status = response.status();
     if !status.is_success() {
         return Err(Error::Api(format!("calendar link returned {status}")));
@@ -65,7 +122,12 @@ pub(crate) async fn fetch(url: &str) -> Result<String, Error> {
 /// Name of the calendar (`X-WR-CALNAME`), when the feed has one.
 pub(crate) fn calendar_name(ics: &str) -> Option<String> {
     ics.lines()
-        .find_map(|line| line.strip_prefix("X-WR-CALNAME:"))
+        .find_map(|line| {
+            let (key, value) = line.split_once(':')?;
+            // Some feeds add parameters, as in `X-WR-CALNAME;VALUE=TEXT:Work`.
+            let key = key.split(';').next()?;
+            key.eq_ignore_ascii_case("X-WR-CALNAME").then_some(value)
+        })
         .map(|name| unescape(name.trim()))
         .filter(|name| !name.is_empty())
 }
@@ -95,11 +157,44 @@ fn value(prop: &Property) -> &str {
 }
 
 fn unescape(text: &str) -> String {
-    text.replace("\\n", "\n")
-        .replace("\\N", "\n")
-        .replace("\\,", ",")
-        .replace("\\;", ";")
-        .replace("\\\\", "\\")
+    let mut out = String::with_capacity(text.len());
+    let mut chars = text.chars();
+    while let Some(c) = chars.next() {
+        if c != '\\' {
+            out.push(c);
+            continue;
+        }
+        match chars.next() {
+            Some('n' | 'N') => out.push('\n'),
+            Some(escaped @ (',' | ';' | '\\')) => out.push(escaped),
+            Some(other) => {
+                out.push('\\');
+                out.push(other);
+            }
+            None => out.push('\\'),
+        }
+    }
+    out
+}
+
+/// Wall-clock time in a zone as an instant. A time that does not exist because
+/// the clocks jumped forward is read an hour later, so the event is kept.
+fn resolve_local<Tz: TimeZone>(tz: &Tz, naive: NaiveDateTime) -> Option<DateTime<Utc>> {
+    tz.from_local_datetime(&naive)
+        .earliest()
+        .or_else(|| {
+            tz.from_local_datetime(&(naive + Duration::hours(1)))
+                .earliest()
+        })
+        .map(|local| local.with_timezone(&Utc))
+}
+
+/// An all-day event belongs to a calendar date, not an instant, so it starts at
+/// local midnight. Apple Calendar reports it the same way, and a UTC midnight
+/// would land on the previous day for anyone west of Greenwich.
+pub(crate) fn local_midnight(date: NaiveDate) -> DateTime<Utc> {
+    let midnight = date.and_hms_opt(0, 0, 0).unwrap_or_default();
+    resolve_local(&Local, midnight).unwrap_or_else(|| Utc.from_utc_datetime(&midnight))
 }
 
 fn windows_to_iana(name: &str) -> Option<&'static str> {
@@ -151,7 +246,7 @@ fn windows_to_iana(name: &str) -> Option<&'static str> {
     })
 }
 
-fn resolve_tz(tzid: &str) -> Option<(chrono_tz::Tz, String)> {
+pub(crate) fn resolve_tz(tzid: &str) -> Option<(chrono_tz::Tz, String)> {
     let tzid = tzid.trim_matches('"');
     if let Ok(tz) = tzid.parse::<chrono_tz::Tz>() {
         return Some((tz, tzid.to_string()));
@@ -170,7 +265,7 @@ fn parse_dt(prop: &Property) -> Option<Dt> {
     if is_date {
         let date = NaiveDate::parse_from_str(raw, "%Y%m%d").ok()?;
         return Some(Dt {
-            utc: Utc.from_utc_datetime(&date.and_hms_opt(0, 0, 0)?),
+            utc: local_midnight(date),
             all_day: true,
             tzid: None,
         });
@@ -187,17 +282,15 @@ fn parse_dt(prop: &Property) -> Option<Dt> {
 
     let naive = NaiveDateTime::parse_from_str(raw, "%Y%m%dT%H%M%S").ok()?;
     match param(prop, "TZID").and_then(resolve_tz) {
-        Some((tz, name)) => {
-            let local = tz.from_local_datetime(&naive).earliest()?;
-            Some(Dt {
-                utc: local.with_timezone(&Utc),
-                all_day: false,
-                tzid: Some(name),
-            })
-        }
-        // Floating or unknown zone: treat as UTC rather than dropping the event.
+        Some((tz, name)) => Some(Dt {
+            utc: resolve_local(&tz, naive)?,
+            all_day: false,
+            tzid: Some(name),
+        }),
+        // Floating or unknown zone: the calendar owner's own clock is the best
+        // guess, and reading it as UTC would shift the event by their offset.
         None => Some(Dt {
-            utc: Utc.from_utc_datetime(&naive),
+            utc: resolve_local(&Local, naive).unwrap_or_else(|| Utc.from_utc_datetime(&naive)),
             all_day: false,
             tzid: None,
         }),
@@ -273,7 +366,10 @@ fn recurrence_text(props: &[Property], start: &Dt) -> Option<String> {
 
     let compact = start.utc.format("%Y%m%dT%H%M%S").to_string();
     let mut out = if start.all_day {
-        format!("DTSTART;VALUE=DATE:{}\n", start.utc.format("%Y%m%d"))
+        format!(
+            "DTSTART;VALUE=DATE:{}\n",
+            start.utc.with_timezone(&Local).format("%Y%m%d")
+        )
     } else if let Some(tz) = &start.tzid {
         let local = tz.parse::<chrono_tz::Tz>().ok().map(|tz| {
             start
@@ -482,7 +578,11 @@ pub(crate) fn parse_events(
                     .all(MAX_INSTANCES_PER_EVENT);
 
                 for date in result.dates {
-                    let start = date.with_timezone(&Utc);
+                    // The date as the rule wrote it, before any zone conversion.
+                    let mut start = date.with_timezone(&Utc);
+                    if parsed.start.all_day {
+                        start = local_midnight(date.date_naive());
+                    }
                     if overridden.contains(&(parsed.uid.clone(), start.timestamp())) {
                         continue;
                     }
@@ -561,7 +661,18 @@ END:VCALENDAR\r\n";
 
         let holiday = events.iter().find(|e| e.external_id == "day@x").unwrap();
         assert!(holiday.is_all_day);
-        assert_eq!(holiday.started_at, "2026-10-21T00:00:00+00:00");
+        let midnight = NaiveDate::from_ymd_opt(2026, 10, 21).unwrap();
+        assert_eq!(holiday.started_at, local_midnight(midnight).to_rfc3339());
+        // The date it shows on is the date it was written with, in any zone.
+        assert_eq!(
+            holiday
+                .started_at
+                .parse::<DateTime<Utc>>()
+                .unwrap()
+                .with_timezone(&Local)
+                .date_naive(),
+            midnight
+        );
     }
 
     #[test]
@@ -624,5 +735,90 @@ END:VCALENDAR\r\n";
         assert_eq!(parse_duration("PT1H30M"), Some(Duration::minutes(90)));
         assert_eq!(parse_duration("P1D"), Some(Duration::days(1)));
         assert_eq!(parse_duration("P1W"), Some(Duration::weeks(1)));
+    }
+
+    #[test]
+    fn unescapes_in_one_pass() {
+        assert_eq!(unescape("a\\nb"), "a\nb");
+        assert_eq!(unescape("a\\\\nb"), "a\\nb");
+        assert_eq!(unescape("x\\,y\\;z"), "x,y;z");
+        assert_eq!(unescape("keep \\q"), "keep \\q");
+    }
+
+    #[test]
+    fn keeps_events_inside_a_daylight_saving_gap() {
+        // 02:30 does not exist in New York on 2026-03-08.
+        let feed = "BEGIN:VCALENDAR\r\nBEGIN:VEVENT\r\nUID:gap@x\r\nDTSTART;TZID=America/New_York:20260308T023000\r\nDTEND;TZID=America/New_York:20260308T033000\r\nSUMMARY:Gap\r\nEND:VEVENT\r\nEND:VCALENDAR\r\n";
+        let events = parse_events(
+            feed,
+            "cal",
+            utc("2026-03-08T00:00:00Z"),
+            utc("2026-03-09T00:00:00Z"),
+        );
+        assert_eq!(events.len(), 1);
+    }
+
+    #[test]
+    fn floating_times_use_the_local_clock() {
+        let feed = "BEGIN:VCALENDAR\r\nBEGIN:VEVENT\r\nUID:f@x\r\nDTSTART:20261020T090000\r\nDTEND:20261020T100000\r\nSUMMARY:Floating\r\nEND:VEVENT\r\nEND:VCALENDAR\r\n";
+        let events = parse_events(
+            feed,
+            "cal",
+            utc("2026-10-19T00:00:00Z"),
+            utc("2026-10-22T00:00:00Z"),
+        );
+        let start = events[0]
+            .started_at
+            .parse::<DateTime<Utc>>()
+            .unwrap()
+            .with_timezone(&Local);
+        assert_eq!(
+            start.format("%Y-%m-%d %H:%M").to_string(),
+            "2026-10-20 09:00"
+        );
+    }
+
+    #[test]
+    fn repeating_all_day_events_stay_on_their_dates() {
+        let feed = "BEGIN:VCALENDAR\r\nBEGIN:VEVENT\r\nUID:d@x\r\nDTSTART;VALUE=DATE:20261020\r\nDTEND;VALUE=DATE:20261021\r\nRRULE:FREQ=DAILY;COUNT=3\r\nSUMMARY:Trip\r\nEND:VEVENT\r\nEND:VCALENDAR\r\n";
+        let events = parse_events(
+            feed,
+            "cal",
+            utc("2026-10-15T00:00:00Z"),
+            utc("2026-10-30T00:00:00Z"),
+        );
+        let days: Vec<String> = events
+            .iter()
+            .map(|e| {
+                e.started_at
+                    .parse::<DateTime<Utc>>()
+                    .unwrap()
+                    .with_timezone(&Local)
+                    .format("%Y-%m-%d")
+                    .to_string()
+            })
+            .collect();
+        assert_eq!(days, ["2026-10-20", "2026-10-21", "2026-10-22"]);
+    }
+
+    #[test]
+    fn reads_calendar_names_with_parameters() {
+        let feed = "BEGIN:VCALENDAR\r\nX-WR-CALNAME;VALUE=TEXT:Team\r\nEND:VCALENDAR\r\n";
+        assert_eq!(calendar_name(feed).as_deref(), Some("Team"));
+    }
+
+    #[test]
+    fn reuses_a_fresh_copy_and_keeps_an_older_one_as_fallback() {
+        let url = "https://cache.test/a.ics";
+        assert!(cache_get(url, CACHE_STALE_OK).is_none());
+        cache_put(url, "BEGIN:VCALENDAR");
+        assert_eq!(
+            cache_get(url, CACHE_FRESH).as_deref(),
+            Some("BEGIN:VCALENDAR")
+        );
+        // Nothing is ever older than a zero age limit once time has passed.
+        std::thread::sleep(std::time::Duration::from_millis(5));
+        assert!(cache_get(url, std::time::Duration::ZERO).is_none());
+        assert!(cache_get(url, CACHE_STALE_OK).is_some());
     }
 }

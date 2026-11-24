@@ -1,3 +1,5 @@
+#[cfg(target_os = "macos")]
+mod app_nap;
 mod commands;
 mod errors;
 mod events;
@@ -128,6 +130,7 @@ pub fn init() -> tauri::plugin::TauriPlugin<tauri::Wry> {
 
             #[cfg(target_os = "macos")]
             {
+                crate::app_nap::prevent_app_nap();
                 crate::window::floating_bar::set_app_handle(app.clone());
                 crate::window::devtools_panel::set_app_handle(app.clone());
             }

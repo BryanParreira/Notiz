@@ -58,7 +58,7 @@ describe("checkEventNotifications", () => {
     expect(showNotificationMock).toHaveBeenCalledWith(
       expect.objectContaining({
         source: { type: "calendar_event", event_id: "event-1" },
-        action_label: "Open Notiz",
+        action_label: "Join",
         participants: null,
         event_details: null,
         options: null,
@@ -140,6 +140,34 @@ describe("checkEventNotifications", () => {
         started_at: "2026-05-15T12:02:00.000Z",
         title: "Holiday",
         is_all_day: true,
+      }),
+      enabledSettings,
+      new Map(),
+    );
+
+    expect(showNotificationMock).not.toHaveBeenCalled();
+  });
+
+  test("a check delayed past the start still notifies once", () => {
+    const notified = new Map();
+    const store = storeWith({
+      started_at: "2026-05-15T11:59:30.000Z",
+      title: "Standup",
+    });
+    checkEventNotifications(store, enabledSettings, notified);
+    checkEventNotifications(store, enabledSettings, notified);
+
+    expect(showNotificationMock).toHaveBeenCalledTimes(1);
+    expect(showNotificationMock.mock.calls[0][0].message).toMatch(
+      /^Started at /,
+    );
+  });
+
+  test("a meeting that started over a minute ago stays silent", () => {
+    checkEventNotifications(
+      storeWith({
+        started_at: "2026-05-15T11:58:00.000Z",
+        title: "Standup",
       }),
       enabledSettings,
       new Map(),

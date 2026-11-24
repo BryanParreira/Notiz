@@ -10,6 +10,9 @@ const NOTIFY_WINDOW_MS = 5 * 60 * 1000; // 5 minutes before
 const NOTIFIED_EVENTS_TTL_MS = 10 * 60 * 1000; // 10 minutes TTL for cleanup
 
 const NOTIFICATION_LINGER_MS = 60 * 1000;
+// A check delayed by sleep or a busy machine can land just after the start;
+// a late alert is still worth showing, a missed one is not.
+const STARTED_GRACE_MS = 60 * 1000;
 const NOTIFIED_STORAGE_KEY = "notiz-notified-events";
 
 export type NotifiedEventsMap = Map<string, number>;
@@ -101,7 +104,10 @@ export function checkEventNotifications(
         return;
     }
 
-    if (timeUntilStart > 0 && timeUntilStart <= NOTIFY_WINDOW_MS) {
+    if (
+      timeUntilStart > -STARTED_GRACE_MS &&
+      timeUntilStart <= NOTIFY_WINDOW_MS
+    ) {
       if (notifiedEvents.has(dedupeKey)) {
         return;
       }
@@ -116,9 +122,15 @@ export function checkEventNotifications(
       void notificationCommands.showNotification({
         key: notificationKey,
         title: title,
-        message: `Starts at ${startLabel}`,
+        message:
+          timeUntilStart > 0
+            ? `Starts at ${startLabel}`
+            : `Started at ${startLabel}`,
         timeout: {
-          secs: Math.ceil((timeUntilStart + NOTIFICATION_LINGER_MS) / 1000),
+          secs: Math.max(
+            15,
+            Math.ceil((timeUntilStart + NOTIFICATION_LINGER_MS) / 1000),
+          ),
           nanos: 0,
         },
         source: { type: "calendar_event", event_id: eventId },
@@ -131,7 +143,7 @@ export function checkEventNotifications(
         footer: null,
         icon: null,
       });
-    } else if (timeUntilStart <= 0) {
+    } else if (timeUntilStart <= -STARTED_GRACE_MS) {
       notifiedEvents.delete(dedupeKey);
     }
   });

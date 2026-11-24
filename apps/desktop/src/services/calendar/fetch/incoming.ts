@@ -23,10 +23,12 @@ export class CalendarFetchError extends Error {
 export async function fetchIncomingEvents(ctx: Ctx): Promise<{
   events: IncomingEvent[];
   participants: IncomingParticipants;
+  /** Calendars that could not be read this time; their stored events are left alone. */
+  failedCalendarTrackingIds: string[];
 }> {
   const trackingIds = Array.from(ctx.calendarTrackingIdToId.keys());
 
-  const results = await Promise.all(
+  const settled = await Promise.allSettled(
     trackingIds.map(async (trackingId) => {
       const result = await calendarCommands.listEvents(
         ctx.provider,
@@ -46,11 +48,37 @@ export async function fetchIncomingEvents(ctx: Ctx): Promise<{
     }),
   );
 
+  // One unreachable calendar must not freeze the rest, so only give up when
+  // none of them could be read.
+  const failedCalendarTrackingIds: string[] = [];
+  const results: CalendarEvent[][] = [];
+  settled.forEach((outcome, index) => {
+    if (outcome.status === "fulfilled") {
+      results.push(outcome.value);
+    } else {
+      failedCalendarTrackingIds.push(trackingIds[index]);
+    }
+  });
+
+  if (trackingIds.length > 0 && results.length === 0) {
+    const first = settled.find(
+      (outcome): outcome is PromiseRejectedResult =>
+        outcome.status === "rejected",
+    );
+    throw first?.reason instanceof Error
+      ? first.reason
+      : new CalendarFetchError(trackingIds[0], String(first?.reason));
+  }
+
   const calendarEvents = results.flat();
   const events: IncomingEvent[] = [];
   const participants: IncomingParticipants = new Map();
 
   for (const calendarEvent of calendarEvents) {
+    // A cancelled meeting is still in the feed; keeping it would keep alerting.
+    if (calendarEvent.status === "cancelled") {
+      continue;
+    }
     if (
       calendarEvent.attendees.find(
         (attendee) =>
@@ -67,7 +95,7 @@ export async function fetchIncomingEvents(ctx: Ctx): Promise<{
     }
   }
 
-  return { events, participants };
+  return { events, participants, failedCalendarTrackingIds };
 }
 
 async function normalizeCalendarEvent(calendarEvent: CalendarEvent): Promise<{
